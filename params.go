@@ -34,8 +34,6 @@ var mainNetParams = params{
 		"seed.ppcoin.net",
 		"seedppc.ppcoin.net",
 		"dnsseed.ppc.altcointech.net",
-		"tnseed.ppcoin.net",
-		"tnseedppc.ppcoin.net",
 	},
 }
 
@@ -56,10 +54,8 @@ var testNet3Params = params{
 	Params:  &btcnet.TestNet3Params,
 	rpcPort: "18334",
 	dnsSeeds: []string{
-		"testnet-seed.alexykot.me",
-		"testnet-seed.bitcoin.schildbach.de",
-		"testnet-seed.bitcoin.petertodd.org",
-		"testnet-seed.bluematt.me",
+		"tnseed.ppcoin.net",
+		"tnseedppc.ppcoin.net",
 	},
 }
 
