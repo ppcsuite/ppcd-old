@@ -597,6 +597,7 @@ func blockDetails(block *btcutil.Block, txIndex int) *btcws.BlockDetails {
 		Hash:   blockSha.String(),
 		Index:  txIndex,
 		Time:   block.MsgBlock().Header.Timestamp.Unix(),
+		Offset: block.Meta().TxOffsets[txIndex],
 	}
 }
 
