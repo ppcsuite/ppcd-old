@@ -72,7 +72,7 @@ func ppcHandleGetKernelStakeModifier(s *rpcServer, cmd btcjson.Cmd, closeChan <-
 	// The verbose flag is set, so generate the JSON object and return it.
 	ksmReply := btcjson.KernelStakeModifierResult{
 		Hash:                c.Hash,
-		KernelStakeModifier: kernelStakeModifier,
+		KernelStakeModifier: btcjson.StakeModifier(kernelStakeModifier),
 	}
 
 	return ksmReply, nil
