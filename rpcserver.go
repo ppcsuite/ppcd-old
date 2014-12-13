@@ -157,6 +157,7 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"validateaddress":      handleValidateAddress,
 	"verifychain":          handleVerifyChain,
 	"verifymessage":        handleVerifyMessage,
+	"getkernelstakemodifier": ppcHandleGetKernelStakeModifier, // ppc:
 }
 
 // list of commands that we recognise, but for which btcd has no support because

@@ -46,3 +46,34 @@ func ppcHandleGetDifficulty(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan stru
 
 	return ret, nil
 }
+
+// ppcHandleGetKernelStakeModifier implements the getkernelstakeModifier command.
+func ppcHandleGetKernelStakeModifier(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan struct{}) (interface{}, error) {
+	c := cmd.(*btcjson.GetKernelStakeModifierCmd)
+	sha, err := btcwire.NewShaHashFromStr(c.Hash)
+	if err != nil {
+		rpcsLog.Errorf("Error generating sha: %v", err)
+		return nil, btcjson.ErrBlockNotFound
+	}
+
+	chain := s.server.blockManager.blockChain
+	kernelStakeModifier, err := chain.GetKernelStakeModifier(sha, s.server.timeSource)
+	if err != nil {
+		rpcsLog.Errorf("Error getting kernel stake modifier for block %v : %v", sha, err)
+		return nil, btcjson.ErrBlockNotFound
+	}
+
+	// When the verbose flag isn't set, simply return the network-serialized
+	// block as a hex-encoded string.
+	if !c.Verbose {
+		return kernelStakeModifier, nil
+	}
+
+	// The verbose flag is set, so generate the JSON object and return it.
+	ksmReply := btcjson.KernelStakeModifierResult{
+		Hash:                c.Hash,
+		KernelStakeModifier: kernelStakeModifier,
+	}
+
+	return ksmReply, nil
+}
