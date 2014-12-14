@@ -5,6 +5,8 @@
 package main
 
 import (
+	"strconv"
+
 	"github.com/mably/btcchain"
 	"github.com/mably/btcdb"
 	"github.com/mably/btcjson"
@@ -63,16 +65,38 @@ func ppcHandleGetKernelStakeModifier(s *rpcServer, cmd btcjson.Cmd, closeChan <-
 		return nil, btcjson.ErrBlockNotFound
 	}
 
-	// When the verbose flag isn't set, simply return the network-serialized
-	// block as a hex-encoded string.
+	// When the verbose flag isn't set, simply return a string.
 	if !c.Verbose {
-		return kernelStakeModifier, nil
+		return strconv.FormatUint(kernelStakeModifier, 10), nil
 	}
 
 	// The verbose flag is set, so generate the JSON object and return it.
 	ksmReply := btcjson.KernelStakeModifierResult{
 		Hash:                c.Hash,
 		KernelStakeModifier: btcjson.StakeModifier(kernelStakeModifier),
+	}
+
+	return ksmReply, nil
+}
+
+// ppcHandleGetNextRequiredTarget implements the getNextRequiredTarget command.
+func ppcHandleGetNextRequiredTarget(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan struct{}) (interface{}, error) {
+	c := cmd.(*btcjson.GetNextRequiredTargetCmd)
+	chain := s.server.blockManager.blockChain
+	nextRequiredTarget, err := chain.PPCCalcNextRequiredDifficulty(c.ProofOfStake)
+	if err != nil {
+		rpcsLog.Errorf("Error getting next required target : %v", err)
+		return nil, btcjson.ErrDifficulty
+	}
+
+	// When the verbose flag isn't set, simply return a string.
+	if !c.Verbose {
+		return strconv.FormatUint(uint64(nextRequiredTarget), 10), nil
+	}
+
+	// The verbose flag is set, so generate the JSON object and return it.
+	ksmReply := btcjson.NextRequiredTargetResult{
+		Difficulty: btcjson.RequiredTarget(nextRequiredTarget),
 	}
 
 	return ksmReply, nil
