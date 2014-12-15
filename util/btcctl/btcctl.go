@@ -121,8 +121,9 @@ var commandHandlers = map[string]*handlerData{
 	"walletpassphrase":       {1, 1, displayGeneric, []conversionHandler{nil, toInt64}, makeWalletPassphrase, "<passphrase> [timeout]"},
 	"walletpassphrasechange": {2, 0, displayGeneric, nil, makeWalletPassphraseChange, "<oldpassphrase> <newpassphrase>"},
 
-	"getkernelstakemodifier": {1, 1, displayJSONDump, []conversionHandler{nil, toBool}, makeGetKernelStakeModifier, "<blockhash>"},          // ppc:
+	"getkernelstakemodifier": {1, 1, displayJSONDump, []conversionHandler{nil, toBool}, makeGetKernelStakeModifier, "<blockhash>"},      // ppc:
 	"getnextrequiredtarget":  {1, 1, displayJSONDump, []conversionHandler{toBool, toBool}, makeGetNextRequiredTarget, "<proofofstake>"}, // ppc:
+	"findstake":              {1, 1, displayJSONDump, []conversionHandler{toInt64, toBool}, makeFindStake, "<maxtime>"},                 // ppc:
 }
 
 // toSatoshi attempts to convert the passed string to a satoshi amount returned

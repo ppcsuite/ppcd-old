@@ -11,6 +11,7 @@ import (
 	"github.com/mably/btcdb"
 	"github.com/mably/btcjson"
 	"github.com/mably/btcwire"
+	"github.com/mably/btcws"
 )
 
 // getDifficultyRatio returns the latest PoW or PoS difficulty up to block sha.
@@ -51,7 +52,7 @@ func ppcHandleGetDifficulty(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan stru
 
 // ppcHandleGetKernelStakeModifier implements the getkernelstakeModifier command.
 func ppcHandleGetKernelStakeModifier(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.GetKernelStakeModifierCmd)
+	c := cmd.(*btcws.GetKernelStakeModifierCmd)
 	sha, err := btcwire.NewShaHashFromStr(c.Hash)
 	if err != nil {
 		rpcsLog.Errorf("Error generating sha: %v", err)
@@ -71,9 +72,9 @@ func ppcHandleGetKernelStakeModifier(s *rpcServer, cmd btcjson.Cmd, closeChan <-
 	}
 
 	// The verbose flag is set, so generate the JSON object and return it.
-	ksmReply := btcjson.KernelStakeModifierResult{
+	ksmReply := btcws.KernelStakeModifierResult{
 		Hash:                c.Hash,
-		KernelStakeModifier: btcjson.StakeModifier(kernelStakeModifier),
+		KernelStakeModifier: btcws.StakeModifier(kernelStakeModifier),
 	}
 
 	return ksmReply, nil
@@ -81,7 +82,7 @@ func ppcHandleGetKernelStakeModifier(s *rpcServer, cmd btcjson.Cmd, closeChan <-
 
 // ppcHandleGetNextRequiredTarget implements the getNextRequiredTarget command.
 func ppcHandleGetNextRequiredTarget(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.GetNextRequiredTargetCmd)
+	c := cmd.(*btcws.GetNextRequiredTargetCmd)
 	chain := s.server.blockManager.blockChain
 	nextRequiredTarget, err := chain.PPCCalcNextRequiredDifficulty(c.ProofOfStake)
 	if err != nil {
@@ -95,8 +96,8 @@ func ppcHandleGetNextRequiredTarget(s *rpcServer, cmd btcjson.Cmd, closeChan <-c
 	}
 
 	// The verbose flag is set, so generate the JSON object and return it.
-	ksmReply := btcjson.NextRequiredTargetResult{
-		Difficulty: btcjson.RequiredTarget(nextRequiredTarget),
+	ksmReply := btcws.NextRequiredTargetResult{
+		Target: btcws.RequiredTarget(nextRequiredTarget),
 	}
 
 	return ksmReply, nil
