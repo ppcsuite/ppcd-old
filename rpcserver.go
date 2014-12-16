@@ -3305,7 +3305,9 @@ handled:
 // getDifficultyRatio returns the proof-of-work difficulty as a multiple of the
 // minimum difficulty using the passed bits field from the header of a block.
 func getDifficultyRatio(bits uint32) float64 {
-	return float64(ppcutil.TargetToDifficulty(bits)) // ppc:
+
+	return ppcutil.TargetToDifficulty(bits) // ppc:
+
 	// The minimum difficulty is the max possible proof-of-work limit bits
 	// converted back to a number.  Note this is not the same as the the
 	// proof of work limit directly because the block difficulty is encoded

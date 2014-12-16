@@ -48,7 +48,7 @@ func makeFindStake(args []interface{}) (btcjson.Cmd, error) {
 	// Create the getblock command with defaults for the optional
 	// parameters.
 	findStakeCmd, err :=
-		btcws.NewFindStakeCmd("btcctl", args[0].(int64), args[1].(float32))
+		btcws.NewFindStakeCmd("btcctl", args[0].(int64), args[1].(float64))
 	if err != nil {
 		return nil, err
 	}
@@ -61,15 +61,15 @@ func makeFindStake(args []interface{}) (btcjson.Cmd, error) {
 	return findStakeCmd, nil
 }
 
-// toFloat32 attempts to convert the passed string to a float32.  It returns the
+// toFloat64 attempts to convert the passed string to a float64.  It returns the
 // float packed into an interface so it can be used in the calls which expect
 // interfaces.  An error will be returned if the string can't be converted to a
 // float.
-func toFloat32(val string) (interface{}, error) {
-	idx, err := strconv.ParseFloat(val, 32)
+func toFloat64(val string) (interface{}, error) {
+	idx, err := strconv.ParseFloat(val, 64)
 	if err != nil {
 		return nil, err
 	}
 
-	return float32(idx), nil
+	return idx, nil
 }

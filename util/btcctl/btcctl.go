@@ -123,7 +123,7 @@ var commandHandlers = map[string]*handlerData{
 
 	"getkernelstakemodifier": {1, 1, displayJSONDump, []conversionHandler{nil, toBool}, makeGetKernelStakeModifier, "<blockhash>"},      // ppc:
 	"getnextrequiredtarget":  {1, 1, displayJSONDump, []conversionHandler{toBool, toBool}, makeGetNextRequiredTarget, "<proofofstake>"}, // ppc:
-	"findstake":              {2, 1, displayJSONDump, []conversionHandler{toInt64, toFloat32, toBool}, makeFindStake, "<maxtime>"},                 // ppc:
+	"findstake":              {2, 1, displayJSONDump, []conversionHandler{toInt64, toFloat64, toBool}, makeFindStake, "<maxtime>"},                 // ppc:
 }
 
 // toSatoshi attempts to convert the passed string to a satoshi amount returned
