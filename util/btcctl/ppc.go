@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strconv"
+
 	"github.com/mably/btcjson"
 	"github.com/mably/btcws"
 )
@@ -46,15 +48,28 @@ func makeFindStake(args []interface{}) (btcjson.Cmd, error) {
 	// Create the getblock command with defaults for the optional
 	// parameters.
 	findStakeCmd, err :=
-		btcws.NewFindStakeCmd("btcctl", args[0].(int64))
+		btcws.NewFindStakeCmd("btcctl", args[0].(int64), args[1].(float32))
 	if err != nil {
 		return nil, err
 	}
 
 	// Override the optional parameters if they were specified.
-	if len(args) > 1 {
-		findStakeCmd.Verbose = args[1].(bool)
+	if len(args) > 2 {
+		findStakeCmd.Verbose = args[2].(bool)
 	}
 
 	return findStakeCmd, nil
+}
+
+// toFloat32 attempts to convert the passed string to a float32.  It returns the
+// float packed into an interface so it can be used in the calls which expect
+// interfaces.  An error will be returned if the string can't be converted to a
+// float.
+func toFloat32(val string) (interface{}, error) {
+	idx, err := strconv.ParseFloat(val, 32)
+	if err != nil {
+		return nil, err
+	}
+
+	return float32(idx), nil
 }
