@@ -13,7 +13,6 @@ import (
 	flags "github.com/btcsuite/go-flags"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/mably/btcjson"
-	"github.com/mably/btcjson"
 	"github.com/mably/btcutil"
 	"github.com/mably/btcws"
 )
