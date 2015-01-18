@@ -17,7 +17,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	socks "github.com/conformal/go-socks"
+	socks "github.com/btcsuite/go-socks/socks"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/mably/btcchain"
 	"github.com/mably/btcdb"

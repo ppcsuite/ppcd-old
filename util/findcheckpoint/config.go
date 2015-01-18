@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
-	flags "github.com/conformal/go-flags"
+	flags "github.com/btcsuite/go-flags"
 	"github.com/mably/btcdb"
 	_ "github.com/mably/btcdb/ldb"
 	"github.com/mably/btcnet"

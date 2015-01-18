@@ -12,8 +12,8 @@ import (
 
 	"github.com/mably/ppcd/addrmgr"
 
-	"github.com/conformal/btclog"
-	"github.com/conformal/seelog"
+	"github.com/btcsuite/btclog"
+	"github.com/btcsuite/seelog"
 	"github.com/mably/btcchain"
 	"github.com/mably/btcdb"
 	"github.com/mably/btcscript"

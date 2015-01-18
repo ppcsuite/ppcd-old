@@ -16,8 +16,8 @@ import (
 	"strings"
 	"time"
 
-	flags "github.com/conformal/go-flags"
-	socks "github.com/conformal/go-socks"
+	flags "github.com/btcsuite/go-flags"
+	socks "github.com/btcsuite/go-socks/socks"
 	"github.com/mably/btcdb"
 	_ "github.com/mably/btcdb/ldb"
 	_ "github.com/mably/btcdb/memdb"

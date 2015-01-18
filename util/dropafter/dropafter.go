@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/conformal/btclog"
-	flags "github.com/conformal/go-flags"
+	"github.com/btcsuite/btclog"
+	flags "github.com/btcsuite/go-flags"
 	"github.com/mably/btcdb"
 	_ "github.com/mably/btcdb/ldb"
 	"github.com/mably/btcnet"
