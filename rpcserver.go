@@ -26,9 +26,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/conformal/btcec"
-	"github.com/conformal/fastsha256"
-	"github.com/conformal/websocket"
+	"github.com/btcsuite/btcec"
+	"github.com/btcsuite/fastsha256"
+	"github.com/btcsuite/websocket"
 	"github.com/mably/btcchain"
 	"github.com/mably/btcdb"
 	"github.com/mably/btcjson"

@@ -18,8 +18,8 @@ import (
 	"time"
 
 	"code.google.com/p/go.crypto/ripemd160"
-	"github.com/conformal/fastsha256"
-	"github.com/conformal/websocket"
+	"github.com/btcsuite/fastsha256"
+	"github.com/btcsuite/websocket"
 	"github.com/mably/btcdb"
 	"github.com/mably/btcjson"
 	"github.com/mably/btcscript"

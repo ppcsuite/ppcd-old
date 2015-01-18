@@ -10,8 +10,7 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/mably/btcjson"
-	flags "github.com/conformal/go-flags"
+	flags "github.com/btcsuite/go-flags"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/mably/btcutil"
 	"github.com/mably/btcws"
@@ -120,6 +119,10 @@ var commandHandlers = map[string]*handlerData{
 	"walletlock":             {0, 0, displayGeneric, nil, makeWalletLock, ""},
 	"walletpassphrase":       {1, 1, displayGeneric, []conversionHandler{nil, toInt64}, makeWalletPassphrase, "<passphrase> [timeout]"},
 	"walletpassphrasechange": {2, 0, displayGeneric, nil, makeWalletPassphraseChange, "<oldpassphrase> <newpassphrase>"},
+
+	"getkernelstakemodifier": {1, 1, displayJSONDump, []conversionHandler{nil, toBool}, makeGetKernelStakeModifier, "<blockhash>"},              // ppc:
+	"getnextrequiredtarget":  {1, 1, displayJSONDump, []conversionHandler{toBool, toBool}, makeGetNextRequiredTarget, "<proofofstake>"},         // ppc:
+	"findstake":              {2, 1, displayJSONDump, []conversionHandler{toInt64, toFloat64, toBool}, makeFindStake, "<maxtime> <difficulty>"}, // ppc:
 }
 
 // toSatoshi attempts to convert the passed string to a satoshi amount returned
