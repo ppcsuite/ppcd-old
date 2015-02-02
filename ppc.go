@@ -6,17 +6,16 @@ package main
 
 import (
 	"strconv"
-
-	"github.com/mably/btcchain"
-	"github.com/mably/btcdb"
+	"github.com/mably/ppcd/blockchain"
+	"github.com/mably/ppcd/database"
 	"github.com/mably/btcjson"
 	"github.com/mably/btcwire"
 	"github.com/mably/btcws"
 )
 
 // getDifficultyRatio returns the latest PoW or PoS difficulty up to block sha.
-func ppcGetDifficultyRatio(db btcdb.Db, sha *btcwire.ShaHash, proofOfStake bool) (float64, error) {
-	bh, _, err := btcchain.GetLastBlockHeader(db, sha, proofOfStake)
+func ppcGetDifficultyRatio(db database.Db, sha *btcwire.ShaHash, proofOfStake bool) (float64, error) {
+	bh, _, err := blockchain.GetLastBlockHeader(db, sha, proofOfStake)
 	if err != nil {
 		return 0, err
 	}

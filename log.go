@@ -14,9 +14,9 @@ import (
 
 	"github.com/btcsuite/btclog"
 	"github.com/btcsuite/seelog"
-	"github.com/mably/btcchain"
-	"github.com/mably/btcdb"
-	"github.com/mably/btcscript"
+	"github.com/mably/ppcd/blockchain"
+	"github.com/mably/ppcd/database"
+	"github.com/mably/ppcd/txscript"
 	"github.com/mably/btcwire"
 )
 
@@ -100,7 +100,7 @@ func useLogger(subsystemID string, logger btclog.Logger) {
 
 	case "BCDB":
 		bcdbLog = logger
-		btcdb.UseLogger(logger)
+		database.UseLogger(logger)
 
 	case "BMGR":
 		bmgrLog = logger
@@ -110,7 +110,7 @@ func useLogger(subsystemID string, logger btclog.Logger) {
 
 	case "CHAN":
 		chanLog = logger
-		btcchain.UseLogger(logger)
+		blockchain.UseLogger(logger)
 
 	case "DISC":
 		discLog = logger
@@ -126,7 +126,7 @@ func useLogger(subsystemID string, logger btclog.Logger) {
 
 	case "SCRP":
 		scrpLog = logger
-		btcscript.UseLogger(logger)
+		txscript.UseLogger(logger)
 
 	case "SRVR":
 		srvrLog = logger

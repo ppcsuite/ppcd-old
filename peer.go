@@ -19,8 +19,8 @@ import (
 
 	socks "github.com/btcsuite/go-socks/socks"
 	"github.com/davecgh/go-spew/spew"
-	"github.com/mably/btcchain"
-	"github.com/mably/btcdb"
+	"github.com/mably/ppcd/blockchain"
+	"github.com/mably/ppcd/database"
 	"github.com/mably/btcutil"
 	"github.com/mably/btcutil/bloom"
 	"github.com/mably/btcwire"
@@ -612,7 +612,7 @@ func (p *peer) pushMerkleBlockMsg(sha *btcwire.ShaHash, doneChan, waitChan chan 
 
 // PushGetBlocksMsg sends a getblocks message for the provided block locator
 // and stop hash.  It will ignore back-to-back duplicate requests.
-func (p *peer) PushGetBlocksMsg(locator btcchain.BlockLocator, stopHash *btcwire.ShaHash) error {
+func (p *peer) PushGetBlocksMsg(locator blockchain.BlockLocator, stopHash *btcwire.ShaHash) error {
 	// Extract the begin hash from the block locator, if one was specified,
 	// to use for filtering duplicate getblocks requests.
 	// request.
@@ -650,7 +650,7 @@ func (p *peer) PushGetBlocksMsg(locator btcchain.BlockLocator, stopHash *btcwire
 
 // PushGetHeadersMsg sends a getblocks message for the provided block locator
 // and stop hash.  It will ignore back-to-back duplicate requests.
-func (p *peer) PushGetHeadersMsg(locator btcchain.BlockLocator, stopHash *btcwire.ShaHash) error {
+func (p *peer) PushGetHeadersMsg(locator blockchain.BlockLocator, stopHash *btcwire.ShaHash) error {
 	// Extract the begin hash from the block locator, if one was specified,
 	// to use for filtering duplicate getheaders requests.
 	var beginHash *btcwire.ShaHash
@@ -894,7 +894,7 @@ func (p *peer) handleGetBlocksMsg(msg *btcwire.MsgGetBlocks) {
 	// Return all block hashes to the latest one (up to max per message) if
 	// no stop hash was specified.
 	// Attempt to find the ending index of the stop hash if specified.
-	endIdx := btcdb.AllShas
+	endIdx := database.AllShas
 	if !msg.HashStop.IsEqual(&zeroHash) {
 		height, err := p.server.db.FetchBlockHeightBySha(&msg.HashStop)
 		if err == nil {
@@ -973,7 +973,7 @@ func (p *peer) handleGetBlocksMsg(msg *btcwire.MsgGetBlocks) {
 // message.
 func (p *peer) handleGetHeadersMsg(msg *btcwire.MsgGetHeaders) {
 	// Attempt to look up the height of the provided stop hash.
-	endIdx := btcdb.AllShas
+	endIdx := database.AllShas
 	height, err := p.server.db.FetchBlockHeightBySha(&msg.HashStop)
 	if err == nil {
 		endIdx = height + 1
@@ -985,7 +985,7 @@ func (p *peer) handleGetHeadersMsg(msg *btcwire.MsgGetHeaders) {
 		// No blocks with the stop hash were found so there is nothing
 		// to do.  Just return.  This behavior mirrors the reference
 		// implementation.
-		if endIdx == btcdb.AllShas {
+		if endIdx == database.AllShas {
 			return
 		}
 

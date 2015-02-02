@@ -29,11 +29,11 @@ import (
 	"github.com/btcsuite/btcec"
 	"github.com/btcsuite/fastsha256"
 	"github.com/btcsuite/websocket"
-	"github.com/mably/btcchain"
-	"github.com/mably/btcdb"
+	"github.com/mably/ppcd/blockchain"
+	"github.com/mably/ppcd/database"
 	"github.com/mably/btcjson"
 	"github.com/mably/btcnet"
-	"github.com/mably/btcscript"
+	"github.com/mably/ppcd/txscript"
 	"github.com/mably/btcutil"
 	"github.com/mably/btcwire"
 	"github.com/mably/btcws"
@@ -93,7 +93,7 @@ var (
 	// overhead of creating a new object on every invocation for constant
 	// data.
 	gbtCoinbaseAux = &btcjson.GetBlockTemplateResultAux{
-		Flags: hex.EncodeToString(btcscript.NewScriptBuilder().
+		Flags: hex.EncodeToString(txscript.NewScriptBuilder().
 			AddData([]byte(coinbaseFlags)).Script()),
 	}
 
@@ -789,7 +789,7 @@ func handleCreateRawTransaction(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan 
 		}
 
 		// Create a new script which pays to the provided address.
-		pkScript, err := btcscript.PayToAddrScript(addr)
+		pkScript, err := txscript.PayToAddrScript(addr)
 		if err != nil {
 			return nil, btcjson.Error{
 				Code:    btcjson.ErrInternal.Code,
@@ -836,13 +836,13 @@ func createVinList(mtx *btcwire.MsgTx) ([]btcjson.Vin, error) {
 	tx := btcutil.NewTx(mtx)
 	vinList := make([]btcjson.Vin, len(mtx.TxIn))
 	for i, v := range mtx.TxIn {
-		if btcchain.IsCoinBase(tx) {
+		if blockchain.IsCoinBase(tx) {
 			vinList[i].Coinbase = hex.EncodeToString(v.SignatureScript)
 		} else {
 			vinList[i].Txid = v.PreviousOutPoint.Hash.String()
 			vinList[i].Vout = v.PreviousOutPoint.Index
 
-			disbuf, err := btcscript.DisasmString(v.SignatureScript)
+			disbuf, err := txscript.DisasmString(v.SignatureScript)
 			if err != nil {
 				return nil, btcjson.Error{
 					Code:    btcjson.ErrInternal.Code,
@@ -867,7 +867,7 @@ func createVoutList(mtx *btcwire.MsgTx, net *btcnet.Params) ([]btcjson.Vout, err
 		voutList[i].N = uint32(i)
 		voutList[i].Value = float64(v.Value) / btcutil.SatoshiPerBitcoin
 
-		disbuf, err := btcscript.DisasmString(v.PkScript)
+		disbuf, err := txscript.DisasmString(v.PkScript)
 		if err != nil {
 			return nil, btcjson.Error{
 				Code:    btcjson.ErrInternal.Code,
@@ -880,7 +880,7 @@ func createVoutList(mtx *btcwire.MsgTx, net *btcnet.Params) ([]btcjson.Vout, err
 		// Ignore the error here since an error means the script
 		// couldn't parse and there is no additional information about
 		// it anyways.
-		scriptClass, addrs, reqSigs, _ := btcscript.ExtractPkScriptAddrs(v.PkScript, net)
+		scriptClass, addrs, reqSigs, _ := txscript.ExtractPkScriptAddrs(v.PkScript, net)
 		voutList[i].ScriptPubKey.Type = scriptClass.String()
 		voutList[i].ScriptPubKey.ReqSigs = int32(reqSigs)
 
@@ -1008,13 +1008,13 @@ func handleDecodeScript(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan struct{}
 
 	// The disassembled string will contain [error] inline if the script
 	// doesn't fully parse, so ignore the error here.
-	disbuf, _ := btcscript.DisasmString(script)
+	disbuf, _ := txscript.DisasmString(script)
 
 	// Get information about the script.
 	// Ignore the error here since an error means the script couldn't parse
 	// and there is no additinal information about it anyways.
 	net := s.server.netParams
-	scriptClass, addrs, reqSigs, _ := btcscript.ExtractPkScriptAddrs(script, net)
+	scriptClass, addrs, reqSigs, _ := txscript.ExtractPkScriptAddrs(script, net)
 	addresses := make([]string, len(addrs))
 	for i, addr := range addrs {
 		addresses[i] = addr.EncodeAddress()
@@ -1473,7 +1473,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *rpcServer, useCoinbaseValue bo
 		template = blkTemplate
 		msgBlock = template.block
 		targetDifficulty = fmt.Sprintf("%064x",
-			btcchain.CompactToBig(msgBlock.Header.Bits))
+			blockchain.CompactToBig(msgBlock.Header.Bits))
 
 		// Find the minimum allowed timestamp for the block based on the
 		// median timestamp of the last several blocks per the chain
@@ -1522,7 +1522,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *rpcServer, useCoinbaseValue bo
 
 			// Update the block coinbase output of the template to
 			// pay to the randomly selected payment address.
-			pkScript, err := btcscript.PayToAddrScript(payToAddr)
+			pkScript, err := txscript.PayToAddrScript(payToAddr)
 			if err != nil {
 				return btcjson.Error{
 					Code:    btcjson.ErrInternal.Code,
@@ -1534,14 +1534,14 @@ func (state *gbtWorkState) updateBlockTemplate(s *rpcServer, useCoinbaseValue bo
 
 			// Update the merkle root.
 			block := btcutil.NewBlock(template.block)
-			merkles := btcchain.BuildMerkleTreeStore(block.Transactions())
+			merkles := blockchain.BuildMerkleTreeStore(block.Transactions())
 			template.block.Header.MerkleRoot = *merkles[len(merkles)-1]
 		}
 
 		// Set locals for convenience.
 		msgBlock = template.block
 		targetDifficulty = fmt.Sprintf("%064x",
-			btcchain.CompactToBig(msgBlock.Header.Bits))
+			blockchain.CompactToBig(msgBlock.Header.Bits))
 
 		// Update the time of the block template to the current time
 		// while accounting for the median time of the past several
@@ -1580,7 +1580,7 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 				state.minTimestamp),
 		}
 	}
-	maxTime := curTime.Add(time.Second * btcchain.MaxTimeOffsetSeconds)
+	maxTime := curTime.Add(time.Second * blockchain.MaxTimeOffsetSeconds)
 	if header.Timestamp.After(maxTime) {
 		return nil, btcjson.Error{
 			Code: btcjson.ErrOutOfRange.Code,
@@ -1645,14 +1645,14 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 	// implied by the included or omission of fields:
 	//  Including MinTime -> time/decrement
 	//  Omitting CoinbaseTxn -> coinbase, generation
-	targetDifficulty := fmt.Sprintf("%064x", btcchain.CompactToBig(header.Bits))
+	targetDifficulty := fmt.Sprintf("%064x", blockchain.CompactToBig(header.Bits))
 	templateID := encodeTemplateID(state.prevHash, state.lastGenerated)
 	reply := btcjson.GetBlockTemplateResult{
 		Bits:         strconv.FormatInt(int64(header.Bits), 16),
 		CurTime:      curTime.Unix(),
 		Height:       template.height,
 		PreviousHash: header.PrevBlock.String(),
-		SigOpLimit:   btcchain.MaxSigOpsPerBlock,
+		SigOpLimit:   blockchain.MaxSigOpsPerBlock,
 		SizeLimit:    btcwire.MaxBlockPayload,
 		Transactions: transactions,
 		Version:      header.Version,
@@ -1886,87 +1886,87 @@ func handleGetBlockTemplateRequest(s *rpcServer, request *btcjson.TemplateReques
 func chainErrToGBTErrString(err error) string {
 	// When the passed error is not a RuleError, just return a generic
 	// rejected string with the error text.
-	ruleErr, ok := err.(btcchain.RuleError)
+	ruleErr, ok := err.(blockchain.RuleError)
 	if !ok {
 		return "rejected: " + err.Error()
 	}
 
 	switch ruleErr.ErrorCode {
-	case btcchain.ErrDuplicateBlock:
+	case blockchain.ErrDuplicateBlock:
 		return "duplicate"
-	case btcchain.ErrBlockTooBig:
+	case blockchain.ErrBlockTooBig:
 		return "bad-block-size"
-	case btcchain.ErrBlockVersionTooOld:
+	case blockchain.ErrBlockVersionTooOld:
 		return "bad-version"
-	case btcchain.ErrInvalidTime:
+	case blockchain.ErrInvalidTime:
 		return "bad-time"
-	case btcchain.ErrTimeTooOld:
+	case blockchain.ErrTimeTooOld:
 		return "time-too-old"
-	case btcchain.ErrTimeTooNew:
+	case blockchain.ErrTimeTooNew:
 		return "time-too-new"
-	case btcchain.ErrDifficultyTooLow:
+	case blockchain.ErrDifficultyTooLow:
 		return "bad-diffbits"
-	case btcchain.ErrUnexpectedDifficulty:
+	case blockchain.ErrUnexpectedDifficulty:
 		return "bad-diffbits"
-	case btcchain.ErrHighHash:
+	case blockchain.ErrHighHash:
 		return "high-hash"
-	case btcchain.ErrBadMerkleRoot:
+	case blockchain.ErrBadMerkleRoot:
 		return "bad-txnmrklroot"
-	case btcchain.ErrBadCheckpoint:
+	case blockchain.ErrBadCheckpoint:
 		return "bad-checkpoint"
-	case btcchain.ErrForkTooOld:
+	case blockchain.ErrForkTooOld:
 		return "fork-too-old"
-	case btcchain.ErrCheckpointTimeTooOld:
+	case blockchain.ErrCheckpointTimeTooOld:
 		return "checkpoint-time-too-old"
-	case btcchain.ErrNoTransactions:
+	case blockchain.ErrNoTransactions:
 		return "bad-txns-none"
-	case btcchain.ErrTooManyTransactions:
+	case blockchain.ErrTooManyTransactions:
 		return "bad-txns-toomany"
-	case btcchain.ErrNoTxInputs:
+	case blockchain.ErrNoTxInputs:
 		return "bad-txns-noinputs"
-	case btcchain.ErrNoTxOutputs:
+	case blockchain.ErrNoTxOutputs:
 		return "bad-txns-nooutputs"
-	case btcchain.ErrTxTooBig:
+	case blockchain.ErrTxTooBig:
 		return "bad-txns-size"
-	case btcchain.ErrBadTxOutValue:
+	case blockchain.ErrBadTxOutValue:
 		return "bad-txns-outputvalue"
-	case btcchain.ErrDuplicateTxInputs:
+	case blockchain.ErrDuplicateTxInputs:
 		return "bad-txns-dupinputs"
-	case btcchain.ErrBadTxInput:
+	case blockchain.ErrBadTxInput:
 		return "bad-txns-badinput"
-	case btcchain.ErrMissingTx:
+	case blockchain.ErrMissingTx:
 		return "bad-txns-missinginput"
-	case btcchain.ErrUnfinalizedTx:
+	case blockchain.ErrUnfinalizedTx:
 		return "bad-txns-unfinalizedtx"
-	case btcchain.ErrDuplicateTx:
+	case blockchain.ErrDuplicateTx:
 		return "bad-txns-duplicate"
-	case btcchain.ErrOverwriteTx:
+	case blockchain.ErrOverwriteTx:
 		return "bad-txns-overwrite"
-	case btcchain.ErrImmatureSpend:
+	case blockchain.ErrImmatureSpend:
 		return "bad-txns-maturity"
-	case btcchain.ErrDoubleSpend:
+	case blockchain.ErrDoubleSpend:
 		return "bad-txns-dblspend"
-	case btcchain.ErrSpendTooHigh:
+	case blockchain.ErrSpendTooHigh:
 		return "bad-txns-highspend"
-	case btcchain.ErrBadFees:
+	case blockchain.ErrBadFees:
 		return "bad-txns-fees"
-	case btcchain.ErrTooManySigOps:
+	case blockchain.ErrTooManySigOps:
 		return "high-sigops"
-	case btcchain.ErrFirstTxNotCoinbase:
+	case blockchain.ErrFirstTxNotCoinbase:
 		return "bad-txns-nocoinbase"
-	case btcchain.ErrMultipleCoinbases:
+	case blockchain.ErrMultipleCoinbases:
 		return "bad-txns-multicoinbase"
-	case btcchain.ErrBadCoinbaseScriptLen:
+	case blockchain.ErrBadCoinbaseScriptLen:
 		return "bad-cb-length"
-	case btcchain.ErrBadCoinbaseValue:
+	case blockchain.ErrBadCoinbaseValue:
 		return "bad-cb-value"
-	case btcchain.ErrMissingCoinbaseHeight:
+	case blockchain.ErrMissingCoinbaseHeight:
 		return "bad-cb-height"
-	case btcchain.ErrBadCoinbaseHeight:
+	case blockchain.ErrBadCoinbaseHeight:
 		return "bad-cb-height"
-	case btcchain.ErrScriptMalformed:
+	case blockchain.ErrScriptMalformed:
 		return "bad-script-malformed"
-	case btcchain.ErrScriptValidation:
+	case blockchain.ErrScriptValidation:
 		return "bad-script-validate"
 	}
 
@@ -2016,10 +2016,10 @@ func handleGetBlockTemplateProposal(s *rpcServer, request *btcjson.TemplateReque
 		return "bad-prevblk", nil
 	}
 
-	flags := btcchain.BFDryRun | btcchain.BFNoPoWCheck
+	flags := blockchain.BFDryRun | blockchain.BFNoPoWCheck
 	isOrphan, err := s.server.blockManager.ProcessBlock(block, flags)
 	if err != nil {
-		if _, ok := err.(btcchain.RuleError); !ok {
+		if _, ok := err.(blockchain.RuleError); !ok {
 			rpcsLog.Errorf("Failed to process block proposal: %v",
 				err)
 			return nil, btcjson.Error{
@@ -2238,7 +2238,7 @@ func handleGetNetworkHashPS(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan stru
 	// starting height is not before the beginning of the chain.
 	var startHeight int64
 	if c.Blocks <= 0 {
-		startHeight = endHeight - ((endHeight % btcchain.BlocksPerRetarget) + 1)
+		startHeight = endHeight - ((endHeight % blockchain.BlocksPerRetarget) + 1)
 	} else {
 		startHeight = endHeight - int64(c.Blocks)
 	}
@@ -2273,7 +2273,7 @@ func handleGetNetworkHashPS(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan stru
 			minTimestamp = header.Timestamp
 			maxTimestamp = minTimestamp
 		} else {
-			totalWork.Add(totalWork, btcchain.CalcWork(header.Bits))
+			totalWork.Add(totalWork, blockchain.CalcWork(header.Bits))
 
 			if minTimestamp.After(header.Timestamp) {
 				minTimestamp = header.Timestamp
@@ -2544,13 +2544,13 @@ func handleGetTxOut(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan struct{}) (i
 	// The disassembled string will contain [error] inline if the script
 	// doesn't fully parse, so ignore the error here.
 	script := txOut.PkScript
-	disbuf, _ := btcscript.DisasmString(script)
+	disbuf, _ := txscript.DisasmString(script)
 
 	// Get further info about the script.
 	// Ignore the error here since an error means the script couldn't parse
 	// and there is no additional information about it anyways.
 	net := s.server.netParams
-	scriptClass, addrs, reqSigs, _ := btcscript.ExtractPkScriptAddrs(script, net)
+	scriptClass, addrs, reqSigs, _ := txscript.ExtractPkScriptAddrs(script, net)
 	addresses := make([]string, len(addrs))
 	for i, addr := range addrs {
 		addresses[i] = addr.EncodeAddress()
@@ -2568,7 +2568,7 @@ func handleGetTxOut(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan struct{}) (i
 			Type:      scriptClass.String(),
 			Addresses: addresses,
 		},
-		Coinbase: btcchain.IsCoinBase(btcutil.NewTx(mtx)),
+		Coinbase: blockchain.IsCoinBase(btcutil.NewTx(mtx)),
 	}
 	return txOutReply, nil
 }
@@ -2630,7 +2630,7 @@ func handleGetWorkRequest(s *rpcServer) (interface{}, error) {
 			"nonce %d, target %064x, merkle root %s, signature "+
 			"script %x)", msgBlock.Header.Timestamp,
 			state.extraNonce,
-			btcchain.CompactToBig(msgBlock.Header.Bits),
+			blockchain.CompactToBig(msgBlock.Header.Bits),
 			msgBlock.Header.MerkleRoot,
 			msgBlock.Transactions[0].TxIn[0].SignatureScript)
 	} else {
@@ -2666,7 +2666,7 @@ func handleGetWorkRequest(s *rpcServer) (interface{}, error) {
 			"nonce %d, target %064x, merkle root %s, signature "+
 			"script %x)", msgBlock.Header.Timestamp,
 			state.extraNonce,
-			btcchain.CompactToBig(msgBlock.Header.Bits),
+			blockchain.CompactToBig(msgBlock.Header.Bits),
 			msgBlock.Header.MerkleRoot,
 			msgBlock.Transactions[0].TxIn[0].SignatureScript)
 	}
@@ -2740,7 +2740,7 @@ func handleGetWorkRequest(s *rpcServer) (interface{}, error) {
 	reverseUint32Array(data)
 	reverseUint32Array(hash1[:])
 	reverseUint32Array(midstate[:])
-	target := bigToLEUint256(btcchain.CompactToBig(msgBlock.Header.Bits))
+	target := bigToLEUint256(blockchain.CompactToBig(msgBlock.Header.Bits))
 	reply := &btcjson.GetWorkResult{
 		Data:     hex.EncodeToString(data),
 		Hash1:    hex.EncodeToString(hash1[:]),
@@ -2813,15 +2813,15 @@ func handleGetWorkSubmission(s *rpcServer, hexData string) (interface{}, error) 
 	msgBlock.Header.Timestamp = submittedHeader.Timestamp
 	msgBlock.Header.Nonce = submittedHeader.Nonce
 	msgBlock.Transactions[0].TxIn[0].SignatureScript = blockInfo.signatureScript
-	merkles := btcchain.BuildMerkleTreeStore(block.Transactions())
+	merkles := blockchain.BuildMerkleTreeStore(block.Transactions())
 	msgBlock.Header.MerkleRoot = *merkles[len(merkles)-1]
 
 	// Ensure the submitted block hash is less than the target difficulty.
-	err = btcchain.CheckProofOfWork(block, activeNetParams.PowLimit)
+	err = blockchain.CheckProofOfWork(block, activeNetParams.PowLimit)
 	if err != nil {
 		// Anything other than a rule violation is an unexpected error,
 		// so return that error as an internal error.
-		if _, ok := err.(btcchain.RuleError); !ok {
+		if _, ok := err.(blockchain.RuleError); !ok {
 			return false, btcjson.Error{
 				Code: btcjson.ErrInternal.Code,
 				Message: fmt.Sprintf("Unexpected error while "+
@@ -2843,11 +2843,11 @@ func handleGetWorkSubmission(s *rpcServer, hexData string) (interface{}, error) 
 
 	// Process this block using the same rules as blocks coming from other
 	// nodes.  This will in turn relay it to the network like normal.
-	isOrphan, err := s.server.blockManager.ProcessBlock(block, btcchain.BFNone)
+	isOrphan, err := s.server.blockManager.ProcessBlock(block, blockchain.BFNone)
 	if err != nil || isOrphan {
 		// Anything other than a rule violation is an unexpected error,
 		// so return that error as an internal error.
-		if _, ok := err.(btcchain.RuleError); !ok {
+		if _, ok := err.(blockchain.RuleError); !ok {
 			return false, btcjson.Error{
 				Code: btcjson.ErrInternal.Code,
 				Message: fmt.Sprintf("Unexpected error while "+
@@ -3093,7 +3093,7 @@ func handleSubmitBlock(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan struct{})
 		}
 	}
 
-	_, err = s.server.blockManager.ProcessBlock(block, btcchain.BFNone)
+	_, err = s.server.blockManager.ProcessBlock(block, blockchain.BFNone)
 	if err != nil {
 		return fmt.Sprintf("rejected: %s", err.Error()), nil
 	}
@@ -3105,7 +3105,7 @@ func handleSubmitBlock(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan struct{})
 	return nil, nil
 }
 
-func verifyChain(db btcdb.Db, level, depth int32, timeSource btcchain.MedianTimeSource) error {
+func verifyChain(db database.Db, level, depth int32, timeSource blockchain.MedianTimeSource) error {
 	_, curHeight64, err := db.NewestSha()
 	if err != nil {
 		rpcsLog.Errorf("Verify is unable to fetch current block "+
@@ -3138,7 +3138,7 @@ func verifyChain(db btcdb.Db, level, depth int32, timeSource btcchain.MedianTime
 
 		// Level 1 does basic chain sanity checks.
 		if level > 0 {
-			err := btcchain.CheckBlockSanity(activeNetParams.Params,
+			err := blockchain.CheckBlockSanity(activeNetParams.Params,
 				block, activeNetParams.PowLimit, timeSource)
 			if err != nil {
 				rpcsLog.Errorf("Verify is unable to "+
@@ -3312,8 +3312,8 @@ func getDifficultyRatio(bits uint32) float64 {
 	// converted back to a number.  Note this is not the same as the the
 	// proof of work limit directly because the block difficulty is encoded
 	// in a block with the compact form which loses precision.
-	max := btcchain.CompactToBig(activeNetParams.PowLimitBits)
-	target := btcchain.CompactToBig(bits)
+	max := blockchain.CompactToBig(activeNetParams.PowLimitBits)
+	target := blockchain.CompactToBig(bits)
 
 	difficulty := new(big.Rat).SetFrac(max, target)
 	outString := difficulty.FloatString(2)

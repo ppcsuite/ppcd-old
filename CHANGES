@@ -90,10 +90,10 @@ Changes in 0.9.0 (Sat Sep 20 2014)
     - Provide new simnet network (--simnet) which is useful for private
       simulation testing
     - Enforce low S values in serialized signatures as detailed in BIP0062
-    - Return errors from all methods on the btcdb.Db interface
+    - Return errors from all methods on the database.Db interface
       (https://github.com/btcsuite/btcdb/issues/5)
-    - Allow behavior flags to alter btcchain.ProcessBlock
-      (https://github.com/btcsuite/btcchain/issues/5)
+    - Allow behavior flags to alter blockchain.ProcessBlock
+      (https://github.com/btcsuite/blockchain/issues/5)
     - Provide a new SerializeSize API for blocks
       (https://github.com/btcsuite/btcwire/issues/19)
     - Several of the core packages now work with Google App Engine
@@ -204,7 +204,7 @@ Changes in 0.8.0-beta (Sun May 25 2014)
     - Add new API to sign transactions including script merging and hash
       types
     - Expose function to extract all pushed data from a script
-      (https://github.com/btcsuite/btcscript/issues/8)
+      (https://github.com/btcsuite/txscript/issues/8)
   - Misc changes:
     - Optimize address manager shuffling to do 67% less work on average
     - Resolve a couple of benign data races found by the race detector
@@ -224,9 +224,9 @@ Changes in 0.7.0 (Thu Feb 20 2014)
   - Fix an issue when parsing scripts which contain a multi-signature script
     which require zero signatures such as testnet block
     000000001881dccfeda317393c261f76d09e399e15e27d280e5368420f442632
-    (https://github.com/btcsuite/btcscript/issues/7)
+    (https://github.com/btcsuite/txscript/issues/7)
   - Add check to ensure all transactions accepted to mempool only contain
-    canonical data pushes (https://github.com/btcsuite/btcscript/issues/6)
+    canonical data pushes (https://github.com/btcsuite/txscript/issues/6)
   - Fix an issue causing excessive memory consumption
   - Significantly rework and improve the websocket notification system:
     - Each client is now independent so slow clients no longer limit the
@@ -268,7 +268,7 @@ Changes in 0.7.0 (Thu Feb 20 2014)
   - Provide a --logdir option (https://github.com/btcsuite/btcd/issues/95)
   - Change the default log file path to include the network
   - Add a new ScriptBuilder interface to btcscript to support creation of
-    custom scripts (https://github.com/btcsuite/btcscript/issues/5)
+    custom scripts (https://github.com/btcsuite/txscript/issues/5)
   - General code cleanup
 
 Changes in 0.6.0 (Tue Feb 04 2014)
@@ -276,7 +276,7 @@ Changes in 0.6.0 (Tue Feb 04 2014)
     caused a chain fork on block
     0000000000000001e4241fd0b3469a713f41c5682605451c05d3033288fb2244
   - Correct an issue which could lead to an error in removeBlockNode
-    (https://github.com/btcsuite/btcchain/issues/4)
+    (https://github.com/btcsuite/blockchain/issues/4)
   - Improve addblock utility as follows:
     - Check imported blocks against all chain rules and checkpoints
     - Skip blocks which are already known so you can stop and restart the
@@ -489,7 +489,7 @@ Changes in 0.3.3 (Wed Nov 13 2013)
   - Optimize most recently used inventory handling
     (https://github.com/btcsuite/btcd/issues/21)
   - Optimize duplicate transaction input check
-    (https://github.com/btcsuite/btcchain/issues/2)
+    (https://github.com/btcsuite/blockchain/issues/2)
   - Optimize transaction hashing
     (https://github.com/btcsuite/btcd/issues/25)
   - Rework and optimize wallet listener notifications
@@ -552,8 +552,8 @@ Changes in 0.3.1-alpha (Tue Oct 15 2013)
     it would take away from more important issues at this stage
   - Add a warning if there are multiple block chain databases of different types
   - Fix issue with unexpected EOF in leveldb -- https://github.com/btcsuite/btcd/issues/18
-  - Fix issue preventing block 21066 on testnet -- https://github.com/btcsuite/btcchain/issues/1
-  - Fix issue preventing block 96464 on testnet -- https://github.com/btcsuite/btcscript/issues/1
+  - Fix issue preventing block 21066 on testnet -- https://github.com/btcsuite/blockchain/issues/1
+  - Fix issue preventing block 96464 on testnet -- https://github.com/btcsuite/txscript/issues/1
   - Optimize transaction lookups
   - Correct a few cases of list removal that could result in improper cleanup
     of no longer needed orphans
