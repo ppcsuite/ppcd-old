@@ -13,9 +13,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mably/btcchain"
-	"github.com/mably/btcdb"
-	"github.com/mably/btcscript"
+	"github.com/mably/ppcd/blockchain"
+	"github.com/mably/ppcd/database"
+	"github.com/mably/ppcd/txscript"
 	"github.com/mably/btcutil"
 	"github.com/mably/btcwire"
 )
@@ -39,7 +39,7 @@ const (
 	// maxSigOpsPerTx is the maximum number of signature operations
 	// in a single transaction we will relay or mine.  It is a fraction
 	// of the max signature operations for a block.
-	maxSigOpsPerTx = btcchain.MaxSigOpsPerBlock / 5
+	maxSigOpsPerTx = blockchain.MaxSigOpsPerBlock / 5
 
 	// maxStandardTxSize is the maximum size allowed for transactions that
 	// are considered standard and will therefore be relayed and considered
@@ -172,10 +172,10 @@ func isDust(txOut *btcwire.TxOut) bool {
 // A standard public key script is one that is a recognized form, and for
 // multi-signature scripts, only contains from 1 to maxStandardMultiSigKeys
 // public keys.
-func checkPkScriptStandard(pkScript []byte, scriptClass btcscript.ScriptClass) error {
+func checkPkScriptStandard(pkScript []byte, scriptClass txscript.ScriptClass) error {
 	switch scriptClass {
-	case btcscript.MultiSigTy:
-		numPubKeys, numSigs, err := btcscript.CalcMultiSigStats(pkScript)
+	case txscript.MultiSigTy:
+		numPubKeys, numSigs, err := txscript.CalcMultiSigStats(pkScript)
 		if err != nil {
 			str := fmt.Sprintf("multi-signature script parse "+
 				"failure: %v", err)
@@ -209,7 +209,7 @@ func checkPkScriptStandard(pkScript []byte, scriptClass btcscript.ScriptClass) e
 			return txRuleError(btcwire.RejectNonstandard, str)
 		}
 
-	case btcscript.NonStandardTy:
+	case txscript.NonStandardTy:
 		return txRuleError(btcwire.RejectNonstandard,
 			"non-standard script form")
 	}
@@ -237,7 +237,7 @@ func checkTransactionStandard(tx *btcutil.Tx, height int64) error {
 
 	// The transaction must be finalized to be standard and therefore
 	// considered for inclusion in a block.
-	if !btcchain.IsFinalizedTransaction(tx, height, time.Now()) {
+	if !blockchain.IsFinalizedTransaction(tx, height, time.Now()) {
 		return txRuleError(btcwire.RejectNonstandard,
 			"transaction is not finalized")
 	}
@@ -268,7 +268,7 @@ func checkTransactionStandard(tx *btcutil.Tx, height int64) error {
 
 		// Each transaction input signature script must only contain
 		// opcodes which push data onto the stack.
-		if !btcscript.IsPushOnlyScript(txIn.SignatureScript) {
+		if !txscript.IsPushOnlyScript(txIn.SignatureScript) {
 			str := fmt.Sprintf("transaction input %d: signature "+
 				"script is not push only", i)
 			return txRuleError(btcwire.RejectNonstandard, str)
@@ -278,7 +278,7 @@ func checkTransactionStandard(tx *btcutil.Tx, height int64) error {
 		// canonical data pushes.  A canonical data push is one where
 		// the minimum possible number of bytes is used to represent
 		// the data push as possible.
-		if !btcscript.HasCanonicalPushes(txIn.SignatureScript) {
+		if !txscript.HasCanonicalPushes(txIn.SignatureScript) {
 			str := fmt.Sprintf("transaction input %d: signature "+
 				"script has a non-canonical data push", i)
 			return txRuleError(btcwire.RejectNonstandard, str)
@@ -289,7 +289,7 @@ func checkTransactionStandard(tx *btcutil.Tx, height int64) error {
 	// be "dust".
 	numNullDataOutputs := 0
 	for i, txOut := range msgTx.TxOut {
-		scriptClass := btcscript.GetScriptClass(txOut.PkScript)
+		scriptClass := txscript.GetScriptClass(txOut.PkScript)
 		err := checkPkScriptStandard(txOut.PkScript, scriptClass)
 		if err != nil {
 			// Attempt to extract a reject code from the error so
@@ -304,7 +304,7 @@ func checkTransactionStandard(tx *btcutil.Tx, height int64) error {
 		}
 
 		// Accumulate the number of outputs which only carry data.
-		if scriptClass == btcscript.NullDataTy {
+		if scriptClass == txscript.NullDataTy {
 			numNullDataOutputs++
 		}
 
@@ -332,7 +332,7 @@ func checkTransactionStandard(tx *btcutil.Tx, height int64) error {
 // exhaustion attacks by "creative" use of scripts that are super expensive to
 // process like OP_DUP OP_CHECKSIG OP_DROP repeated a large number of times
 // followed by a final OP_TRUE.
-func checkInputsStandard(tx *btcutil.Tx, txStore btcchain.TxStore) error {
+func checkInputsStandard(tx *btcutil.Tx, txStore blockchain.TxStore) error {
 	// NOTE: The reference implementation also does a coinbase check here,
 	// but coinbases have already been rejected prior to calling this
 	// function so no need to recheck.
@@ -346,7 +346,7 @@ func checkInputsStandard(tx *btcutil.Tx, txStore btcchain.TxStore) error {
 		originPkScript := originTx.TxOut[prevOut.Index].PkScript
 
 		// Calculate stats for the script pair.
-		scriptInfo, err := btcscript.CalcScriptInfo(txIn.SignatureScript,
+		scriptInfo, err := txscript.CalcScriptInfo(txIn.SignatureScript,
 			originPkScript, true)
 		if err != nil {
 			str := fmt.Sprintf("transaction input #%d script parse "+
@@ -463,7 +463,7 @@ func (mp *txMemPool) limitNumOrphans() error {
 			if foundHash == nil {
 				foundHash = &txHash
 			}
-			txHashNum := btcchain.ShaHashToBig(&txHash)
+			txHashNum := blockchain.ShaHashToBig(&txHash)
 			if txHashNum.Cmp(randHashNum) > 0 {
 				foundHash = &txHash
 				break
@@ -677,7 +677,7 @@ func (mp *txMemPool) addTransaction(tx *btcutil.Tx, height, fee int64) {
 // age is the sum of this value for each txin.  Any inputs to the transaction
 // which are currently in the mempool and hence not mined into a block yet,
 // contribute no additional input age to the transaction.
-func calcInputValueAge(txDesc *TxDesc, txStore btcchain.TxStore, nextBlockHeight int64) float64 {
+func calcInputValueAge(txDesc *TxDesc, txStore blockchain.TxStore, nextBlockHeight int64) float64 {
 	var totalInputAge float64
 	for _, txIn := range txDesc.Tx.MsgTx().TxIn {
 		originHash := &txIn.PreviousOutPoint.Hash
@@ -710,7 +710,7 @@ func calcInputValueAge(txDesc *TxDesc, txStore btcchain.TxStore, nextBlockHeight
 // StartingPriority calculates the priority of this tx descriptor's underlying
 // transaction relative to when it was first added to the mempool.  The result
 // is lazily computed and then cached for subsequent function calls.
-func (txD *TxDesc) StartingPriority(txStore btcchain.TxStore) float64 {
+func (txD *TxDesc) StartingPriority(txStore blockchain.TxStore) float64 {
 	// Return our cached result.
 	if txD.startingPriority != float64(0) {
 		return txD.startingPriority
@@ -726,7 +726,7 @@ func (txD *TxDesc) StartingPriority(txStore btcchain.TxStore) float64 {
 
 // CurrentPriority calculates the current priority of this tx descriptor's
 // underlying transaction relative to the next block height.
-func (txD *TxDesc) CurrentPriority(txStore btcchain.TxStore, nextBlockHeight int64) float64 {
+func (txD *TxDesc) CurrentPriority(txStore blockchain.TxStore, nextBlockHeight int64) float64 {
 	inputAge := calcInputValueAge(txD, txStore, nextBlockHeight)
 	txSize := txD.Tx.MsgTx().SerializeSize()
 	return calcPriority(txD.Tx, txSize, inputAge)
@@ -755,7 +755,7 @@ func (mp *txMemPool) checkPoolDoubleSpend(tx *btcutil.Tx) error {
 // fetch any missing inputs from the transaction pool.
 //
 // This function MUST be called with the mempool lock held (for reads).
-func (mp *txMemPool) fetchInputTransactions(tx *btcutil.Tx) (btcchain.TxStore, error) {
+func (mp *txMemPool) fetchInputTransactions(tx *btcutil.Tx) (blockchain.TxStore, error) {
 	txStore, err := mp.server.blockManager.blockChain.FetchTransactionStore(tx)
 	if err != nil {
 		return nil, err
@@ -763,7 +763,7 @@ func (mp *txMemPool) fetchInputTransactions(tx *btcutil.Tx) (btcchain.TxStore, e
 
 	// Attempt to populate any missing inputs from the transaction pool.
 	for _, txD := range txStore {
-		if txD.Err == btcdb.ErrTxShaMissing || txD.Tx == nil {
+		if txD.Err == database.ErrTxShaMissing || txD.Tx == nil {
 			if poolTxDesc, exists := mp.pool[*txD.Hash]; exists {
 				poolTx := poolTxDesc.Tx
 				txD.Tx = poolTx
@@ -816,16 +816,16 @@ func (mp *txMemPool) maybeAcceptTransaction(tx *btcutil.Tx, isOrphan *bool, isNe
 	// Perform preliminary sanity checks on the transaction.  This makes
 	// use of btcchain which contains the invariant rules for what
 	// transactions are allowed into blocks.
-	err := btcchain.CheckTransactionSanity(tx)
+	err := blockchain.CheckTransactionSanity(tx)
 	if err != nil {
-		if cerr, ok := err.(btcchain.RuleError); ok {
+		if cerr, ok := err.(blockchain.RuleError); ok {
 			return chainRuleError(cerr)
 		}
 		return err
 	}
 
 	// A standalone transaction must not be a coinbase transaction.
-	if btcchain.IsCoinBase(tx) {
+	if blockchain.IsCoinBase(tx) {
 		str := fmt.Sprintf("transaction %v is an individual coinbase",
 			txHash)
 		return txRuleError(btcwire.RejectInvalid, str)
@@ -889,7 +889,7 @@ func (mp *txMemPool) maybeAcceptTransaction(tx *btcutil.Tx, isOrphan *bool, isNe
 	// needing to do a separate lookup.
 	txStore, err := mp.fetchInputTransactions(tx)
 	if err != nil {
-		if cerr, ok := err.(btcchain.RuleError); ok {
+		if cerr, ok := err.(blockchain.RuleError); ok {
 			return chainRuleError(cerr)
 		}
 		return err
@@ -909,7 +909,7 @@ func (mp *txMemPool) maybeAcceptTransaction(tx *btcutil.Tx, isOrphan *bool, isNe
 
 	// Transaction is an orphan if any of the inputs don't exist.
 	for _, txD := range txStore {
-		if txD.Err == btcdb.ErrTxShaMissing {
+		if txD.Err == database.ErrTxShaMissing {
 			if isOrphan != nil {
 				*isOrphan = true
 			}
@@ -921,10 +921,10 @@ func (mp *txMemPool) maybeAcceptTransaction(tx *btcutil.Tx, isOrphan *bool, isNe
 	// rules in btcchain for what transactions are allowed into blocks.
 	// Also returns the fees associated with the transaction which will be
 	// used later.
-	txFee, err := btcchain.CheckTransactionInputs(tx, nextBlockHeight, txStore,
+	txFee, err := blockchain.CheckTransactionInputs(tx, nextBlockHeight, txStore,
 		mp.server.blockManager.blockChain)
 	if err != nil {
-		if cerr, ok := err.(btcchain.RuleError); ok {
+		if cerr, ok := err.(blockchain.RuleError); ok {
 			return chainRuleError(cerr)
 		}
 		return err
@@ -957,14 +957,14 @@ func (mp *txMemPool) maybeAcceptTransaction(tx *btcutil.Tx, isOrphan *bool, isNe
 	// the coinbase address itself can contain signature operations, the
 	// maximum allowed signature operations per transaction is less than
 	// the maximum allowed signature operations per block.
-	numSigOps, err := btcchain.CountP2SHSigOps(tx, false, txStore)
+	numSigOps, err := blockchain.CountP2SHSigOps(tx, false, txStore)
 	if err != nil {
-		if cerr, ok := err.(btcchain.RuleError); ok {
+		if cerr, ok := err.(blockchain.RuleError); ok {
 			return chainRuleError(cerr)
 		}
 		return err
 	}
-	numSigOps += btcchain.CountSigOps(tx)
+	numSigOps += blockchain.CountSigOps(tx)
 	if numSigOps > maxSigOpsPerTx {
 		str := fmt.Sprintf("transaction %v has too many sigops: %d > %d",
 			txHash, numSigOps, maxSigOpsPerTx)
@@ -1017,10 +1017,10 @@ func (mp *txMemPool) maybeAcceptTransaction(tx *btcutil.Tx, isOrphan *bool, isNe
 
 	// Verify crypto signatures for each input and reject the transaction if
 	// any don't verify.
-	err = btcchain.ValidateTransactionScripts(tx, txStore,
+	err = blockchain.ValidateTransactionScripts(tx, txStore,
 		standardScriptVerifyFlags)
 	if err != nil {
-		if cerr, ok := err.(btcchain.RuleError); ok {
+		if cerr, ok := err.(blockchain.RuleError); ok {
 			return chainRuleError(cerr)
 		}
 		return err

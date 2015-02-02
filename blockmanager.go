@@ -13,8 +13,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/mably/btcchain"
-	"github.com/mably/btcdb"
+	"github.com/mably/ppcd/blockchain"
+	"github.com/mably/ppcd/database"
 	"github.com/mably/btcnet"
 	"github.com/mably/btcutil"
 	"github.com/mably/btcwire"
@@ -114,7 +114,7 @@ type processBlockResponse struct {
 // way to call ProcessBlock on the internal block chain instance.
 type processBlockMsg struct {
 	block *btcutil.Block
-	flags btcchain.BehaviorFlags
+	flags blockchain.BehaviorFlags
 	reply chan processBlockResponse
 }
 
@@ -163,7 +163,7 @@ type blockManager struct {
 	server            *server
 	started           int32
 	shutdown          int32
-	blockChain        *btcchain.BlockChain
+	blockChain        *blockchain.BlockChain
 	requestedTxns     map[btcwire.ShaHash]struct{}
 	requestedBlocks   map[btcwire.ShaHash]struct{}
 	receivedLogBlocks int64
@@ -567,13 +567,13 @@ func (b *blockManager) handleBlockMsg(bmsg *blockMsg) {
 	// since it is needed to verify the next round of headers links
 	// properly.
 	isCheckpointBlock := false
-	behaviorFlags := btcchain.BFNone
+	behaviorFlags := blockchain.BFNone
 	if b.headersFirstMode {
 		firstNodeEl := b.headerList.Front()
 		if firstNodeEl != nil {
 			firstNode := firstNodeEl.Value.(*headerNode)
 			if blockSha.IsEqual(firstNode.sha) {
-				behaviorFlags |= btcchain.BFFastAdd
+				behaviorFlags |= blockchain.BFFastAdd
 				if firstNode.sha.IsEqual(b.nextCheckpoint.Hash) {
 					isCheckpointBlock = true
 				} else {
@@ -598,7 +598,7 @@ func (b *blockManager) handleBlockMsg(bmsg *blockMsg) {
 		// rejected as opposed to something actually going wrong, so log
 		// it as such.  Otherwise, something really did go wrong, so log
 		// it as an actual error.
-		if _, ok := err.(btcchain.RuleError); ok {
+		if _, ok := err.(blockchain.RuleError); ok {
 			bmgrLog.Infof("Rejected block %v from %s: %v", blockSha,
 				bmsg.peer, err)
 		} else {
@@ -672,7 +672,7 @@ func (b *blockManager) handleBlockMsg(bmsg *blockMsg) {
 	prevHash := b.nextCheckpoint.Hash
 	b.nextCheckpoint = b.findNextHeaderCheckpoint(prevHeight)
 	if b.nextCheckpoint != nil {
-		locator := btcchain.BlockLocator([]*btcwire.ShaHash{prevHash})
+		locator := blockchain.BlockLocator([]*btcwire.ShaHash{prevHash})
 		err := bmsg.peer.PushGetHeadersMsg(locator, b.nextCheckpoint.Hash)
 		if err != nil {
 			bmgrLog.Warnf("Failed to send getheaders message to "+
@@ -691,7 +691,7 @@ func (b *blockManager) handleBlockMsg(bmsg *blockMsg) {
 	b.headersFirstMode = false
 	b.headerList.Init()
 	bmgrLog.Infof("Reached the final checkpoint -- switching to normal mode")
-	locator := btcchain.BlockLocator([]*btcwire.ShaHash{blockSha})
+	locator := blockchain.BlockLocator([]*btcwire.ShaHash{blockSha})
 	err = bmsg.peer.PushGetBlocksMsg(locator, &zeroHash)
 	if err != nil {
 		bmgrLog.Warnf("Failed to send getblocks message to peer %s: %v",
@@ -845,7 +845,7 @@ func (b *blockManager) handleHeadersMsg(hmsg *headersMsg) {
 	// This header is not a checkpoint, so request the next batch of
 	// headers starting from the latest known header and ending with the
 	// next checkpoint.
-	locator := btcchain.BlockLocator([]*btcwire.ShaHash{finalHash})
+	locator := blockchain.BlockLocator([]*btcwire.ShaHash{finalHash})
 	err := hmsg.peer.PushGetHeadersMsg(locator, b.nextCheckpoint.Hash)
 	if err != nil {
 		bmgrLog.Warnf("Failed to send getheaders message to "+
@@ -1106,13 +1106,13 @@ out:
 	bmgrLog.Trace("Block handler done")
 }
 
-// handleNotifyMsg handles notifications from btcchain.  It does things such
+// handleNotifyMsg handles notifications from blockchain.  It does things such
 // as request orphan block parents and relay accepted blocks to connected peers.
-func (b *blockManager) handleNotifyMsg(notification *btcchain.Notification) {
+func (b *blockManager) handleNotifyMsg(notification *blockchain.Notification) {
 	switch notification.Type {
 	// A block has been accepted into the block chain.  Relay it to other
 	// peers.
-	case btcchain.NTBlockAccepted:
+	case blockchain.NTBlockAccepted:
 		// Don't relay if we are not current. Other peers that are
 		// current should already know about it.
 
@@ -1135,7 +1135,7 @@ func (b *blockManager) handleNotifyMsg(notification *btcchain.Notification) {
 		b.server.RelayInventory(iv)
 
 	// A block has been connected to the main block chain.
-	case btcchain.NTBlockConnected:
+	case blockchain.NTBlockConnected:
 		block, ok := notification.Data.(*btcutil.Block)
 		if !ok {
 			bmgrLog.Warnf("Chain connected notification is not a block.")
@@ -1169,7 +1169,7 @@ func (b *blockManager) handleNotifyMsg(notification *btcchain.Notification) {
 		}
 
 	// A block has been disconnected from the main block chain.
-	case btcchain.NTBlockDisconnected:
+	case blockchain.NTBlockDisconnected:
 		block, ok := notification.Data.(*btcutil.Block)
 		if !ok {
 			bmgrLog.Warnf("Chain disconnected notification is not a block.")
@@ -1320,7 +1320,7 @@ func (b *blockManager) CalcNextRequiredDifficulty(timestamp time.Time) (uint32, 
 // ProcessBlock makes use of ProcessBlock on an internal instance of a block
 // chain.  It is funneled through the block manager since btcchain is not safe
 // for concurrent access.
-func (b *blockManager) ProcessBlock(block *btcutil.Block, flags btcchain.BehaviorFlags) (bool, error) {
+func (b *blockManager) ProcessBlock(block *btcutil.Block, flags blockchain.BehaviorFlags) (bool, error) {
 	reply := make(chan processBlockResponse, 1)
 	b.msgChan <- processBlockMsg{block: block, flags: flags, reply: reply}
 	response := <-reply
@@ -1352,7 +1352,7 @@ func newBlockManager(s *server) (*blockManager, error) {
 		headerList:       list.New(),
 		quit:             make(chan struct{}),
 	}
-	bm.blockChain = btcchain.New(s.db, s.netParams, bm.handleNotifyMsg)
+	bm.blockChain = blockchain.New(s.db, s.netParams, bm.handleNotifyMsg)
 	bm.blockChain.DisableCheckpoints(cfg.DisableCheckpoints)
 	if !cfg.DisableCheckpoints {
 		// Initialize the next checkpoint based on the current height.
@@ -1456,13 +1456,13 @@ func warnMultipeDBs() {
 // such warning the user if there are multiple databases which consume space on
 // the file system and ensuring the regression test database is clean when in
 // regression test mode.
-func setupBlockDB() (btcdb.Db, error) {
+func setupBlockDB() (database.Db, error) {
 	// The memdb backend does not have a file path associated with it, so
 	// handle it uniquely.  We also don't want to worry about the multiple
 	// database type warnings when running with the memory database.
 	if cfg.DbType == "memdb" {
 		btcdLog.Infof("Creating block database in memory.")
-		db, err := btcdb.CreateDB(cfg.DbType)
+		db, err := database.CreateDB(cfg.DbType)
 		if err != nil {
 			return nil, err
 		}
@@ -1479,11 +1479,11 @@ func setupBlockDB() (btcdb.Db, error) {
 	removeRegressionDB(dbPath)
 
 	btcdLog.Infof("Loading block database from '%s'", dbPath)
-	db, err := btcdb.OpenDB(cfg.DbType, dbPath)
+	db, err := database.OpenDB(cfg.DbType, dbPath)
 	if err != nil {
 		// Return the error if it's not because the database
 		// doesn't exist.
-		if err != btcdb.ErrDbDoesNotExist {
+		if err != database.ErrDbDoesNotExist {
 			return nil, err
 		}
 
@@ -1492,7 +1492,7 @@ func setupBlockDB() (btcdb.Db, error) {
 		if err != nil {
 			return nil, err
 		}
-		db, err = btcdb.CreateDB(cfg.DbType, dbPath)
+		db, err = database.CreateDB(cfg.DbType, dbPath)
 		if err != nil {
 			return nil, err
 		}
@@ -1502,7 +1502,7 @@ func setupBlockDB() (btcdb.Db, error) {
 }
 
 // loadBlockDB opens the block database and returns a handle to it.
-func loadBlockDB() (btcdb.Db, error) {
+func loadBlockDB() (database.Db, error) {
 	db, err := setupBlockDB()
 	if err != nil {
 		return nil, err

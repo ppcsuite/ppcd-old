@@ -19,8 +19,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/mably/btcchain"
-	"github.com/mably/btcdb"
+	"github.com/mably/ppcd/blockchain"
+	"github.com/mably/ppcd/database"
 	"github.com/mably/btcjson"
 	"github.com/mably/btcnet"
 	"github.com/mably/btcwire"
@@ -90,8 +90,8 @@ type server struct {
 	wg                   sync.WaitGroup
 	quit                 chan struct{}
 	nat                  NAT
-	db                   btcdb.Db
-	timeSource           btcchain.MedianTimeSource
+	db                   database.Db
+	timeSource           blockchain.MedianTimeSource
 }
 
 type peerState struct {
@@ -1083,7 +1083,7 @@ out:
 // newServer returns a new btcd server configured to listen on addr for the
 // bitcoin network type specified by netParams.  Use start to begin accepting
 // connections from peers.
-func newServer(listenAddrs []string, db btcdb.Db, netParams *btcnet.Params) (*server, error) {
+func newServer(listenAddrs []string, db database.Db, netParams *btcnet.Params) (*server, error) {
 
 	nonce, err := btcwire.RandomUint64()
 	if err != nil {
@@ -1233,7 +1233,7 @@ func newServer(listenAddrs []string, db btcdb.Db, netParams *btcnet.Params) (*se
 		modifyRebroadcastInv: make(chan interface{}),
 		nat:                  nat,
 		db:                   db,
-		timeSource:           btcchain.NewMedianTime(),
+		timeSource:           blockchain.NewMedianTime(),
 	}
 	bm, err := newBlockManager(&s)
 	if err != nil {

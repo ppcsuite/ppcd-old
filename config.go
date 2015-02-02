@@ -18,9 +18,9 @@ import (
 
 	flags "github.com/btcsuite/go-flags"
 	socks "github.com/btcsuite/go-socks/socks"
-	"github.com/mably/btcdb"
-	_ "github.com/mably/btcdb/ldb"
-	_ "github.com/mably/btcdb/memdb"
+	"github.com/mably/ppcd/database"
+	_ "github.com/mably/ppcd/database/ldb"
+	_ "github.com/mably/ppcd/database/memdb"
 	"github.com/mably/btcutil"
 	"github.com/mably/btcwire"
 )
@@ -50,7 +50,7 @@ var (
 	btcdHomeDir        = btcutil.AppDataDir("ppcd", false)
 	defaultConfigFile  = filepath.Join(btcdHomeDir, defaultConfigFilename)
 	defaultDataDir     = filepath.Join(btcdHomeDir, defaultDataDirname)
-	knownDbTypes       = btcdb.SupportedDBs()
+	knownDbTypes       = database.SupportedDBs()
 	defaultRPCKeyFile  = filepath.Join(btcdHomeDir, "rpc.key")
 	defaultRPCCertFile = filepath.Join(btcdHomeDir, "rpc.cert")
 	defaultLogDir      = filepath.Join(btcdHomeDir, defaultLogDirname)
