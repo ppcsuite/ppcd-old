@@ -356,13 +356,13 @@ func (db *LevelDb) InsertBlock(block *btcutil.Block) (height int64, rerr error) 
 
 	defer btcutil.TimeTrack(log, btcutil.Now(), fmt.Sprintf("InsertBlock(%v)", blocksha))
 
-	rawMsg, err := block.BytesWithMeta()
+	txloc, err := block.TxLoc()
 	if err != nil {
 		log.Warnf("Failed to obtain raw block sha %v", blocksha)
 		return 0, err
 	}
 
-	txloc, err := block.TxLoc()
+	rawMsg, err := block.BytesWithMeta()
 	if err != nil {
 		log.Warnf("Failed to obtain raw block sha %v", blocksha)
 		return 0, err

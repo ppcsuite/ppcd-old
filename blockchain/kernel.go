@@ -710,8 +710,10 @@ func (b *BlockChain) checkTxProofOfStake(tx *btcutil.Tx, timeSource MedianTimeSo
 		if txPrev.Sha().IsEqual(&txin.PreviousOutPoint.Hash) {
 			fDebug := true
 			//nTxPrevOffset uint := txindex.pos.nTxPos - txindex.pos.nBlockPos
-			prevBlockTxLoc, _ := prevBlock.TxLoc() // TODO not optimal way
-			nTxPrevOffset := uint32(prevBlockTxLoc[txPrev.Index()].TxStart)
+			//prevBlockTxLoc, _ := prevBlock.TxLoc() // TODO not optimal way
+			//nTxPrevOffset := uint32(prevBlockTxLoc[txPrev.Index()].TxStart)
+			nTxPrevOffset := prevBlock.Meta().TxOffsets[txPrev.Index()]
+			//log.Infof("Comparing txOffset : %v - %v", nTxPrevOffset, nTxPrevOffsetMeta)
 			hashProofOfStake, success, err = b.checkStakeKernelHash(
 				nBits, prevBlock, nTxPrevOffset, txPrev, &txin.PreviousOutPoint,
 				msgTx.Time.Unix(), timeSource, fDebug)

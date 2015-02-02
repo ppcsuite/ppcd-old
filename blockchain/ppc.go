@@ -21,29 +21,29 @@ const (
 	// InitialHashTargetBits TODO(?) golint
 	InitialHashTargetBits uint32 = 0x1c00ffff
 	// TargetSpacingWorkMax TODO(?) golint
-	TargetSpacingWorkMax  int64  = StakeTargetSpacing * 12
+	TargetSpacingWorkMax int64 = StakeTargetSpacing * 12
 	// TargetTimespan TODO(?) golint
-	TargetTimespan        int64  = 7 * 24 * 60 * 60
+	TargetTimespan int64 = 7 * 24 * 60 * 60
 
 	// Cent is the number of sunnys in one cent of peercoin
-	Cent               int64 = 10000
+	Cent int64 = 10000
 	// Coin is the number of sunnys in one peercoin
-	Coin               int64 = 100 * Cent
+	Coin int64 = 100 * Cent
 	// MinTxFee is the minimum transaction fee
-	MinTxFee           int64 = Cent
+	MinTxFee int64 = Cent
 	// MinRelayTxFee is the minimum relayed transaction fee
-	MinRelayTxFee      int64 = Cent
+	MinRelayTxFee int64 = Cent
 	// MaxMoney is the max number of sunnys that can be generated
-	MaxMoney           int64 = 2000000000 * Coin
+	MaxMoney int64 = 2000000000 * Coin
 	// MaxMintProofOfWork is the max number of sunnys that can be POW minted
 	MaxMintProofOfWork int64 = 9999 * Coin
 	// MinTxOutAmount is the minimum output amount required for a transaction
-	MinTxOutAmount     int64 = MinTxFee
+	MinTxOutAmount int64 = MinTxFee
 
 	// FBlockProofOfStake proof of stake blockNode flag (ppc)
-	FBlockProofOfStake  = uint32(1 << 0)
+	FBlockProofOfStake = uint32(1 << 0)
 	// FBlockStakeEntropy entropy bit for stake modifier blockNode flag (ppc)
-	FBlockStakeEntropy  = uint32(1 << 1)
+	FBlockStakeEntropy = uint32(1 << 1)
 	// FBlockStakeModifier regenerated stake modifier blockNode flag (ppc)
 	FBlockStakeModifier = uint32(1 << 2)
 )
@@ -172,9 +172,9 @@ func (b *BlockChain) ppcCalcNextRequiredDifficulty(lastNode *blockNode, proofOfS
 // rules.
 //
 // This function is NOT safe for concurrent access.
-/*func (b *BlockChain) PPCCalcNextRequiredDifficulty(proofOfStake bool) (uint32, error) {
+func (b *BlockChain) PPCCalcNextRequiredDifficulty(proofOfStake bool) (uint32, error) {
 	return b.ppcCalcNextRequiredDifficulty(b.bestChain, proofOfStake)
-}*/
+}
 
 // SetCoinbaseMaturity sets required coinbase maturity and return old one
 // Required for tests
@@ -763,4 +763,10 @@ func GetLastBlockHeader(db database.Db, lastSha *btcwire.ShaHash, proofOfStake b
 		sha = &header.PrevBlock
 	}
 	return
+}
+
+// GetKernelStakeModifier
+func (b *BlockChain) GetKernelStakeModifier(hash *btcwire.ShaHash, timeSource MedianTimeSource) (uint64, error) {
+	stakeModifier, _, _, err := b.getKernelStakeModifier(hash, timeSource, false)
+	return stakeModifier, err
 }
