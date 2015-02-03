@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2014 Conformal Systems LLC.
+// Copyright (c) 2013-2015 Conformal Systems LLC.
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -36,7 +36,7 @@ func TestSetLogWriter(t *testing.T) {
 			name:     "use off level",
 			w:        os.Stdout,
 			level:    "off",
-			expected: errors.New("Min level can't be greater than max. Got min: 6, max: 5"),
+			expected: errors.New("min level can't be greater than max. Got min: 6, max: 5"),
 		},
 		{
 			name:     "pass",
@@ -52,13 +52,13 @@ func TestSetLogWriter(t *testing.T) {
 		if err != nil {
 			if err.Error() != test.expected.Error() {
 				t.Errorf("SetLogWriter #%d (%s) wrong result\n"+
-					"got: %x\nwant: %x", i, test.name, err,
+					"got: %v\nwant: %v", i, test.name, err,
 					test.expected)
 			}
 		} else {
 			if test.expected != nil {
 				t.Errorf("SetLogWriter #%d (%s) wrong result\n"+
-					"got: %x\nwant: %x", i, test.name, err,
+					"got: %v\nwant: %v", i, test.name, err,
 					test.expected)
 			}
 		}

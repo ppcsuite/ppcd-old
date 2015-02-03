@@ -35,6 +35,10 @@ active development.
 
 #### Build from Source
 
+https://github.com/btcsuite/btcd/releases
+
+#### Linux/BSD/MacOSX/POSIX - Build from Source
+
 - Install Go according to the installation instructions here:
 http://golang.org/doc/install
 
@@ -49,6 +53,10 @@ recommend you do so now.
 ## Updating
 
 #### Build from Source
+
+Install a newer MSI
+
+#### Linux/BSD/MacOSX/POSIX - Build from Source
 
 - Run the following command to update btcd, all dependencies, and install it:
 ```$ go get -u -v github.com/mably/ppcd/...```

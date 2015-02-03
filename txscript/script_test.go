@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2014 Conformal Systems LLC.
+// Copyright (c) 2013-2015 Conformal Systems LLC.
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -12,12 +12,26 @@ import (
 
 	"github.com/btcsuite/btcec"
 	"github.com/mably/btcnet"
-	"github.com/mably/ppcd/txscript"
 	"github.com/mably/btcutil"
 	"github.com/mably/btcwire"
+	"github.com/mably/ppcd/txscript"
 )
 
+// builderScript is a convenience function which is used in the tests.  It
+// allows access to the script from a known good script built with the builder.
+// Any errors are converted to a panic since it is only, and must only, be used
+// with hard coded, and therefore, known good, scripts.
+func builderScript(builder *txscript.ScriptBuilder) []byte {
+	script, err := builder.Script()
+	if err != nil {
+		panic(err)
+	}
+	return script
+}
+
 func TestPushedData(t *testing.T) {
+	t.Parallel()
+
 	var tests = []struct {
 		in    []byte
 		out   [][]byte
@@ -29,7 +43,7 @@ func TestPushedData(t *testing.T) {
 			true,
 		},
 		{
-			txscript.NewScriptBuilder().AddInt64(16777216).AddInt64(10000000).Script(),
+			builderScript(txscript.NewScriptBuilder().AddInt64(16777216).AddInt64(10000000)),
 			[][]byte{
 				{0x00, 0x00, 0x00, 0x01}, // 16777216
 				{0x80, 0x96, 0x98, 0x00}, // 10000000
@@ -37,9 +51,9 @@ func TestPushedData(t *testing.T) {
 			true,
 		},
 		{
-			txscript.NewScriptBuilder().AddOp(txscript.OP_DUP).AddOp(txscript.OP_HASH160).
+			builderScript(txscript.NewScriptBuilder().AddOp(txscript.OP_DUP).AddOp(txscript.OP_HASH160).
 				AddData([]byte("17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem")).AddOp(txscript.OP_EQUALVERIFY).
-				AddOp(txscript.OP_CHECKSIG).Script(),
+				AddOp(txscript.OP_CHECKSIG)),
 			[][]byte{
 				// 17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem
 				{
@@ -52,8 +66,8 @@ func TestPushedData(t *testing.T) {
 			true,
 		},
 		{
-			txscript.NewScriptBuilder().AddOp(txscript.OP_PUSHDATA4).AddInt64(1000).
-				AddOp(txscript.OP_EQUAL).Script(),
+			builderScript(txscript.NewScriptBuilder().AddOp(txscript.OP_PUSHDATA4).AddInt64(1000).
+				AddOp(txscript.OP_EQUAL)),
 			[][]byte{},
 			false,
 		},
@@ -78,25 +92,39 @@ func TestPushedData(t *testing.T) {
 }
 
 func TestStandardPushes(t *testing.T) {
-	for i := 0; i < 1000; i++ {
+	t.Parallel()
+
+	for i := 0; i < 65535; i++ {
 		builder := txscript.NewScriptBuilder()
 		builder.AddInt64(int64(i))
-		if result := txscript.IsPushOnlyScript(builder.Script()); !result {
-			t.Errorf("StandardPushesTests IsPushOnlyScript test #%d failed: %x\n", i, builder.Script())
+		script, err := builder.Script()
+		if err != nil {
+			t.Errorf("StandardPushesTests test #%d unexpected error: %v\n", i, err)
+			continue
 		}
-		if result := txscript.HasCanonicalPushes(builder.Script()); !result {
-			t.Errorf("StandardPushesTests HasCanonicalPushes test #%d failed: %x\n", i, builder.Script())
+		if result := txscript.IsPushOnlyScript(script); !result {
+			t.Errorf("StandardPushesTests IsPushOnlyScript test #%d failed: %x\n", i, script)
+			continue
+		}
+		if result := txscript.HasCanonicalPushes(script); !result {
+			t.Errorf("StandardPushesTests HasCanonicalPushes test #%d failed: %x\n", i, script)
 			continue
 		}
 	}
-	for i := 0; i < 1000; i++ {
+	for i := 0; i <= txscript.MaxScriptElementSize; i++ {
 		builder := txscript.NewScriptBuilder()
 		builder.AddData(bytes.Repeat([]byte{0x49}, i))
-		if result := txscript.IsPushOnlyScript(builder.Script()); !result {
-			t.Errorf("StandardPushesTests IsPushOnlyScript test #%d failed: %x\n", i, builder.Script())
+		script, err := builder.Script()
+		if err != nil {
+			t.Errorf("StandardPushesTests test #%d unexpected error: %v\n", i, err)
+			continue
 		}
-		if result := txscript.HasCanonicalPushes(builder.Script()); !result {
-			t.Errorf("StandardPushesTests HasCanonicalPushes test #%d failed: %x\n", i, builder.Script())
+		if result := txscript.IsPushOnlyScript(script); !result {
+			t.Errorf("StandardPushesTests IsPushOnlyScript test #%d failed: %x\n", i, script)
+			continue
+		}
+		if result := txscript.HasCanonicalPushes(script); !result {
+			t.Errorf("StandardPushesTests HasCanonicalPushes test #%d failed: %x\n", i, script)
 			continue
 		}
 	}
@@ -105,16 +133,16 @@ func TestStandardPushes(t *testing.T) {
 type txTest struct {
 	name          string
 	tx            *btcwire.MsgTx
-	pkScript      []byte               // output script of previous tx
-	idx           int                  // tx idx to be run.
-	bip16         bool                 // is bip16 active?
-	canonicalSigs bool                 // should signatures be validated as canonical?
-	parseErr      error                // failure of NewScript
-	err           error                // Failure of Executre
-	shouldFail    bool                 // Execute should fail with nonspecified error.
-	nSigOps       int                  // result of GetPreciseSigOpsCount
+	pkScript      []byte              // output script of previous tx
+	idx           int                 // tx idx to be run.
+	bip16         bool                // is bip16 active?
+	canonicalSigs bool                // should signatures be validated as canonical?
+	parseErr      error               // failure of NewScript
+	err           error               // Failure of Executre
+	shouldFail    bool                // Execute should fail with nonspecified error.
+	nSigOps       int                 // result of GetPreciseSigOpsCount
 	scriptInfo    txscript.ScriptInfo // result of ScriptInfo
-	scriptInfoErr error                // error return of ScriptInfo
+	scriptInfoErr error               // error return of ScriptInfo
 }
 
 var txTests = []txTest{
@@ -1628,12 +1656,16 @@ func testTx(t *testing.T, test txTest) {
 }
 
 func TestTX(t *testing.T) {
+	t.Parallel()
+
 	for i := range txTests {
 		testTx(t, txTests[i])
 	}
 }
 
 func TestGetPreciseSignOps(t *testing.T) {
+	t.Parallel()
+
 	// First we go over the range of tests in testTx and count the sigops in
 	// them.
 	for _, test := range txTests {
@@ -1718,6 +1750,8 @@ type scriptInfoTest struct {
 }
 
 func TestScriptInfo(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range txTests {
 		si, err := txscript.CalcScriptInfo(
 			test.tx.TxIn[test.idx].SignatureScript,
@@ -1972,6 +2006,8 @@ func testRemoveOpcode(t *testing.T, test *removeOpcodeTest) {
 }
 
 func TestRemoveOpcodes(t *testing.T) {
+	t.Parallel()
+
 	for i := range removeOpcodeTests {
 		testRemoveOpcode(t, &removeOpcodeTests[i])
 	}
@@ -2110,6 +2146,8 @@ func testRemoveOpcodeByData(t *testing.T, test *removeOpcodeByDataTest) {
 	}
 }
 func TestRemoveOpcodeByDatas(t *testing.T) {
+	t.Parallel()
+
 	for i := range removeOpcodeByDataTests {
 		testRemoveOpcodeByData(t, &removeOpcodeByDataTests[i])
 	}
@@ -2337,12 +2375,16 @@ func testScriptType(t *testing.T, test *scriptTypeTest) {
 }
 
 func TestScriptTypes(t *testing.T) {
+	t.Parallel()
+
 	for i := range scriptTypeTests {
 		testScriptType(t, &scriptTypeTests[i])
 	}
 }
 
 func TestIsPayToScriptHash(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range scriptTypeTests {
 		shouldBe := (test.scripttype == txscript.ScriptHashTy)
 		p2sh := txscript.IsPayToScriptHash(test.script)
@@ -2356,6 +2398,8 @@ func TestIsPayToScriptHash(t *testing.T) {
 // This test sets the pc to a deliberately bad result then confirms that Step()
 //  and Disasm fail correctly.
 func TestBadPC(t *testing.T) {
+	t.Parallel()
+
 	type pcTest struct {
 		script, off int
 	}
@@ -2428,6 +2472,8 @@ func TestBadPC(t *testing.T) {
 // Most codepaths in CheckErrorCondition() are testd elsewhere, this tests
 // the execute early test.
 func TestCheckErrorCondition(t *testing.T) {
+	t.Parallel()
+
 	// tx with almost empty scripts.
 	tx := &btcwire.MsgTx{
 		Version: 1,
@@ -2763,6 +2809,8 @@ var SigScriptTests = []TstSigScript{
 // created for the MsgTxs in txTests, since they come from the blockchain
 // and we don't have the private keys.
 func TestSignatureScript(t *testing.T) {
+	t.Parallel()
+
 	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyD)
 
 nexttest:
@@ -2844,50 +2892,52 @@ nexttest:
 	}
 }
 
-var classStringifyTests = []struct {
-	name        string
-	scriptclass txscript.ScriptClass
-	stringed    string
-}{
-	{
-		name:        "nonstandardty",
-		scriptclass: txscript.NonStandardTy,
-		stringed:    "nonstandard",
-	},
-	{
-		name:        "pubkey",
-		scriptclass: txscript.PubKeyTy,
-		stringed:    "pubkey",
-	},
-	{
-		name:        "pubkeyhash",
-		scriptclass: txscript.PubKeyHashTy,
-		stringed:    "pubkeyhash",
-	},
-	{
-		name:        "scripthash",
-		scriptclass: txscript.ScriptHashTy,
-		stringed:    "scripthash",
-	},
-	{
-		name:        "multisigty",
-		scriptclass: txscript.MultiSigTy,
-		stringed:    "multisig",
-	},
-	{
-		name:        "nulldataty",
-		scriptclass: txscript.NullDataTy,
-		stringed:    "nulldata",
-	},
-	{
-		name:        "broken",
-		scriptclass: txscript.ScriptClass(255),
-		stringed:    "Invalid",
-	},
-}
-
 func TestStringifyClass(t *testing.T) {
-	for _, test := range classStringifyTests {
+	t.Parallel()
+
+	tests := []struct {
+		name        string
+		scriptclass txscript.ScriptClass
+		stringed    string
+	}{
+		{
+			name:        "nonstandardty",
+			scriptclass: txscript.NonStandardTy,
+			stringed:    "nonstandard",
+		},
+		{
+			name:        "pubkey",
+			scriptclass: txscript.PubKeyTy,
+			stringed:    "pubkey",
+		},
+		{
+			name:        "pubkeyhash",
+			scriptclass: txscript.PubKeyHashTy,
+			stringed:    "pubkeyhash",
+		},
+		{
+			name:        "scripthash",
+			scriptclass: txscript.ScriptHashTy,
+			stringed:    "scripthash",
+		},
+		{
+			name:        "multisigty",
+			scriptclass: txscript.MultiSigTy,
+			stringed:    "multisig",
+		},
+		{
+			name:        "nulldataty",
+			scriptclass: txscript.NullDataTy,
+			stringed:    "nulldata",
+		},
+		{
+			name:        "broken",
+			scriptclass: txscript.ScriptClass(255),
+			stringed:    "Invalid",
+		},
+	}
+
+	for _, test := range tests {
 		typeString := test.scriptclass.String()
 		if typeString != test.stringed {
 			t.Errorf("%s: got \"%s\" expected \"%s\"", test.name,
@@ -2924,6 +2974,8 @@ func (b *bogusAddress) String() string {
 }
 
 func TestPayToAddrScript(t *testing.T) {
+	t.Parallel()
+
 	// 1MirQ9bwyQcGVJPwKUgapu5ouK2E2Ey4gX
 	p2pkhMain, err := btcutil.NewAddressPubKeyHash([]byte{
 		0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
@@ -3078,6 +3130,8 @@ func TestPayToAddrScript(t *testing.T) {
 }
 
 func TestMultiSigScript(t *testing.T) {
+	t.Parallel()
+
 	//  mainnet p2pk 13CG6SJ3yHUXo4Cr2RY4THLLJrNFuG3gUg
 	p2pkCompressedMain, err := btcutil.NewAddressPubKey([]byte{
 		0x02, 0x19, 0x2d, 0x74, 0xd0, 0xcb, 0x94, 0x34, 0x4c, 0x95,
@@ -3298,6 +3352,8 @@ func mkGetScript(scripts map[string][]byte) txscript.ScriptDB {
 }
 
 func TestSignTxOutput(t *testing.T) {
+	t.Parallel()
+
 	// make key
 	// make script based on key.
 	// sign with magic pixie dust.
@@ -4590,6 +4646,8 @@ func TestSignTxOutput(t *testing.T) {
 }
 
 func TestCalcMultiSigStats(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name     string
 		script   []byte
@@ -4667,6 +4725,8 @@ func TestCalcMultiSigStats(t *testing.T) {
 }
 
 func TestHasCanonicalPushes(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name     string
 		script   []byte
@@ -4692,13 +4752,15 @@ func TestHasCanonicalPushes(t *testing.T) {
 	for i, test := range tests {
 		if txscript.HasCanonicalPushes(test.script) != test.expected {
 			t.Errorf("HasCanonicalPushes #%d (%s) wrong result\n"+
-				"got: %x\nwant: %x", i, test.name, true,
+				"got: %v\nwant: %v", i, test.name, true,
 				test.expected)
 		}
 	}
 }
 
 func TestIsPushOnlyScript(t *testing.T) {
+	t.Parallel()
+
 	test := struct {
 		name     string
 		script   []byte
@@ -4716,7 +4778,7 @@ func TestIsPushOnlyScript(t *testing.T) {
 
 	if txscript.IsPushOnlyScript(test.script) != test.expected {
 		t.Errorf("IsPushOnlyScript (%s) wrong result\n"+
-			"got: %x\nwant: %x", test.name, true,
+			"got: %v\nwant: %v", test.name, true,
 			test.expected)
 	}
 }

@@ -82,6 +82,7 @@ type config struct {
 	RPCMaxClients      int           `long:"rpcmaxclients" description:"Max number of RPC clients for standard connections"`
 	RPCMaxWebsockets   int           `long:"rpcmaxwebsockets" description:"Max number of RPC websocket connections"`
 	DisableRPC         bool          `long:"norpc" description:"Disable built-in RPC server -- NOTE: The RPC server is disabled by default if no rpcuser/rpcpass is specified"`
+	DisableTLS         bool          `long:"notls" description:"Disable TLS for the RPC server -- NOTE: This is only allowed if the RPC server is bound to localhost"`
 	DisableDNSSeed     bool          `long:"nodnsseed" description:"Disable DNS seeding for peers"`
 	ExternalIPs        []string      `long:"externalip" description:"Add an ip to the list of local addresses we claim to listen on to peers"`
 	Proxy              string        `long:"proxy" description:"Connect via SOCKS5 proxy (eg. 127.0.0.1:9050)"`
@@ -319,19 +320,12 @@ func loadConfig() (*config, []string, error) {
 	serviceOpts := serviceOptions{}
 
 	// Create the home directory if it doesn't already exist.
-	err := os.MkdirAll(btcdHomeDir, 0700)
-	if err != nil {
-		btcdLog.Errorf("%v", err)
-		return nil, nil, err
-	}
 
 	// Pre-parse the command line options to see if an alternative config
 	// file or the version flag was specified.  Any errors aside from the
-	// help message error can be ignored here since they will be caught by
-	// the final parse below.
 	preCfg := cfg
 	preParser := newConfigParser(&preCfg, &serviceOpts, flags.HelpFlag)
-	_, err = preParser.Parse()
+	_, err := preParser.Parse()
 	if err != nil {
 		if e, ok := err.(*flags.Error); ok && e.Type == flags.ErrHelp {
 			fmt.Fprintln(os.Stderr, err)
@@ -393,6 +387,25 @@ func loadConfig() (*config, []string, error) {
 
 	// Multiple networks can't be selected simultaneously.
 	funcName := "loadConfig"
+	err = os.MkdirAll(btcdHomeDir, 0700)
+	if err != nil {
+		// Show a nicer error message if it's because a symlink is
+		// linked to a directory that does not exist (probably because
+		// it's not mounted).
+		if e, ok := err.(*os.PathError); ok && os.IsExist(err) {
+			if link, lerr := os.Readlink(e.Path); lerr == nil {
+				str := "is symlink %s -> %s mounted?"
+				err = fmt.Errorf(str, e.Path, link)
+			}
+		}
+
+		str := "%s: Failed to create home directory: %v"
+		err := fmt.Errorf(str, funcName, err)
+		fmt.Fprintln(os.Stderr, err)
+		return nil, nil, err
+	}
+
+	// Multiple networks can't be selected simultaneously.
 	numNets := 0
 	// Count number of network flags passed; assign active network params
 	// while we're at it
@@ -528,7 +541,6 @@ func loadConfig() (*config, []string, error) {
 			addr = net.JoinHostPort(addr, activeNetParams.rpcPort)
 			cfg.RPCListeners = append(cfg.RPCListeners, addr)
 		}
-
 	}
 
 	// Limit the max block size to a sane value.
@@ -611,6 +623,36 @@ func loadConfig() (*config, []string, error) {
 	// duplicate addresses.
 	cfg.RPCListeners = normalizeAddresses(cfg.RPCListeners,
 		activeNetParams.rpcPort)
+
+	// Add default port to all added peer addresses if needed and remove
+	// duplicate addresses.
+	if !cfg.DisableRPC && cfg.DisableTLS {
+		allowedTLSListeners := map[string]struct{}{
+			"localhost": struct{}{},
+			"127.0.0.1": struct{}{},
+			"::1":       struct{}{},
+		}
+		for _, addr := range cfg.RPCListeners {
+			host, _, err := net.SplitHostPort(addr)
+			if err != nil {
+				str := "%s: RPC listen interface '%s' is " +
+					"invalid: %v"
+				err := fmt.Errorf(str, funcName, addr, err)
+				fmt.Fprintln(os.Stderr, err)
+				fmt.Fprintln(os.Stderr, usageMessage)
+				return nil, nil, err
+			}
+			if _, ok := allowedTLSListeners[host]; !ok {
+				str := "%s: the --notls option may not be used " +
+					"when binding RPC to non localhost " +
+					"addresses: %s"
+				err := fmt.Errorf(str, funcName, addr)
+				fmt.Fprintln(os.Stderr, err)
+				fmt.Fprintln(os.Stderr, usageMessage)
+				return nil, nil, err
+			}
+		}
+	}
 
 	// Add default port to all added peer addresses if needed and remove
 	// duplicate addresses.

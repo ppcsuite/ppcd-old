@@ -18,7 +18,7 @@ func init() {
 	database.AddDBDriver(driver)
 }
 
-// parseArgs parses the arguments from the btcdb Open/Create methods.
+// parseArgs parses the arguments from the database package Open/Create methods.
 func parseArgs(funcName string, args ...interface{}) error {
 	if len(args) != 0 {
 		return fmt.Errorf("memdb.%s does not accept any arguments",

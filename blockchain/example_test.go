@@ -6,12 +6,13 @@ package blockchain_test
 
 import (
 	"fmt"
+	"math/big"
+
 	"github.com/mably/ppcd/blockchain"
 	"github.com/mably/ppcd/database"
 	_ "github.com/mably/ppcd/database/memdb"
 	"github.com/mably/btcnet"
 	"github.com/mably/btcutil"
-	"math/big"
 )
 
 // This example demonstrates how to create a new chain instance and use

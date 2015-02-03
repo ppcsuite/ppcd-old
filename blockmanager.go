@@ -933,7 +933,7 @@ func (b *blockManager) handleInvMsg(imsg *invMsg) {
 		}
 		if !haveInv {
 			// Add it to the request queue.
-			imsg.peer.requestQueue.PushBack(iv)
+			imsg.peer.requestQueue = append(imsg.peer.requestQueue, iv)
 			continue
 		}
 
@@ -983,9 +983,10 @@ func (b *blockManager) handleInvMsg(imsg *invMsg) {
 	numRequested := 0
 	gdmsg := btcwire.NewMsgGetData()
 	requestQueue := imsg.peer.requestQueue
-	for e := requestQueue.Front(); e != nil; e = requestQueue.Front() {
-		iv := e.Value.(*btcwire.InvVect)
-		imsg.peer.requestQueue.Remove(e)
+	for len(requestQueue) != 0 {
+		iv := requestQueue[0]
+		requestQueue[0] = nil
+		requestQueue = requestQueue[1:]
 
 		switch iv.Type {
 		case btcwire.InvTypeBlock:
@@ -1013,6 +1014,7 @@ func (b *blockManager) handleInvMsg(imsg *invMsg) {
 			break
 		}
 	}
+	imsg.peer.requestQueue = requestQueue
 	if len(gdmsg.InvList) > 0 {
 		imsg.peer.QueueMessage(gdmsg, nil)
 	}
@@ -1132,7 +1134,7 @@ func (b *blockManager) handleNotifyMsg(notification *blockchain.Notification) {
 
 		// Generate the inventory vector and relay it.
 		iv := btcwire.NewInvVect(btcwire.InvTypeBlock, hash)
-		b.server.RelayInventory(iv)
+		b.server.RelayInventory(iv, nil)
 
 	// A block has been connected to the main block chain.
 	case blockchain.NTBlockConnected:
@@ -1179,7 +1181,8 @@ func (b *blockManager) handleNotifyMsg(notification *blockchain.Notification) {
 		// Reinsert all of the transactions (except the coinbase) into
 		// the transaction pool.
 		for _, tx := range block.Transactions()[1:] {
-			err := b.server.txMemPool.MaybeAcceptTransaction(tx, nil, false, true)
+			_, err := b.server.txMemPool.MaybeAcceptTransaction(tx,
+				false, true)
 			if err != nil {
 				// Remove the transaction and all transactions
 				// that depend on it if it wasn't accepted into

@@ -353,8 +353,8 @@ func CountSigOps(tx *btcutil.Tx) int {
 
 // CountP2SHSigOps returns the number of signature operations for all input
 // transactions which are of the pay-to-script-hash type.  This uses the
-// precise, signature operation counting mechanism from btcscript which requires
-// access to the input transaction scripts.
+// precise, signature operation counting mechanism from the script engine which
+// requires access to the input transaction scripts.
 func CountP2SHSigOps(tx *btcutil.Tx, isCoinBaseTx bool, txStore TxStore) (int, error) {
 	// Coinbase transactions have no interesting inputs.
 	if isCoinBaseTx {

@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2014 Conformal Systems LLC.
+// Copyright (c) 2013-2015 Conformal Systems LLC.
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -193,22 +193,23 @@ func (t ScriptClass) String() string {
 	return scriptClassToName[t]
 }
 
-// Script is the virtual machine that executes btcscripts.
+// Script is the virtual machine that executes scripts.
 type Script struct {
-	scripts         [][]parsedOpcode
-	scriptidx       int
-	scriptoff       int
-	lastcodesep     int
-	dstack          Stack // data stack
-	astack          Stack // alt stack
-	tx              btcwire.MsgTx
-	txidx           int
-	condStack       []int
-	numOps          int
-	bip16           bool     // treat execution as pay-to-script-hash
-	der             bool     // enforce DER encoding
-	strictMultiSig  bool     // verify multisig stack item is zero length
-	savedFirstStack [][]byte // stack from first script for bip16 scripts
+	scripts                  [][]parsedOpcode
+	scriptidx                int
+	scriptoff                int
+	lastcodesep              int
+	dstack                   Stack // data stack
+	astack                   Stack // alt stack
+	tx                       btcwire.MsgTx
+	txidx                    int
+	condStack                []int
+	numOps                   int
+	bip16                    bool     // treat execution as pay-to-script-hash
+	der                      bool     // enforce DER encoding
+	strictMultiSig           bool     // verify multisig stack item is zero length
+	discourageUpgradableNops bool     // NOP1 to NOP10 are reserved for future soft-fork upgrades
+	savedFirstStack          [][]byte // stack from first script for bip16 scripts
 }
 
 // isSmallInt returns whether or not the opcode is considered a small integer,
@@ -513,6 +514,18 @@ const (
 	// ScriptStrictMultiSig defines whether to verify the stack item
 	// used by CHECKMULTISIG is zero length.
 	ScriptStrictMultiSig
+
+	// ScriptDiscourageUpgradableNops defines whether to verify that
+	// NOP1 through NOP10 are reserved for future soft-fork upgrades.  This
+	// flag must not be used for consensus critical code nor applied to
+	// blocks as this flag is only for stricter standard transaction
+	// checks.  This flag is only applied when the above opcodes are
+	// executed.
+	ScriptDiscourageUpgradableNops
+
+	// ScriptVerifySigPushOnly defines that signature scripts must contain
+	// only pushed data.  This is rule 2 of BIP0062.
+	ScriptVerifySigPushOnly
 )
 
 // NewScript returns a new script engine for the provided tx and input idx with
@@ -521,6 +534,10 @@ const (
 // pay-to-script hash transactions will be fully validated.
 func NewScript(scriptSig []byte, scriptPubKey []byte, txidx int, tx *btcwire.MsgTx, flags ScriptFlags) (*Script, error) {
 	var m Script
+	if flags&ScriptVerifySigPushOnly == ScriptVerifySigPushOnly && !IsPushOnlyScript(scriptSig) {
+		return nil, ErrStackNonPushOnly
+	}
+
 	scripts := [][]byte{scriptSig, scriptPubKey}
 	m.scripts = make([][]parsedOpcode, len(scripts))
 	for i, scr := range scripts {
@@ -557,6 +574,9 @@ func NewScript(scriptSig []byte, scriptPubKey []byte, txidx int, tx *btcwire.Msg
 	}
 	if flags&ScriptStrictMultiSig == ScriptStrictMultiSig {
 		m.strictMultiSig = true
+	}
+	if flags&ScriptDiscourageUpgradableNops == ScriptDiscourageUpgradableNops {
+		m.discourageUpgradableNops = true
 	}
 
 	m.tx = *tx
@@ -1019,7 +1039,7 @@ func getSigOpCount(pops []parsedOpcode, precise bool) int {
 // payToPubKeyHashScript creates a new script to pay a transaction
 // output to a 20-byte pubkey hash. It is expected that the input is a valid
 // hash.
-func payToPubKeyHashScript(pubKeyHash []byte) []byte {
+func payToPubKeyHashScript(pubKeyHash []byte) ([]byte, error) {
 	return NewScriptBuilder().AddOp(OP_DUP).AddOp(OP_HASH160).
 		AddData(pubKeyHash).AddOp(OP_EQUALVERIFY).AddOp(OP_CHECKSIG).
 		Script()
@@ -1027,14 +1047,14 @@ func payToPubKeyHashScript(pubKeyHash []byte) []byte {
 
 // payToScriptHashScript creates a new script to pay a transaction output to a
 // script hash. It is expected that the input is a valid hash.
-func payToScriptHashScript(scriptHash []byte) []byte {
+func payToScriptHashScript(scriptHash []byte) ([]byte, error) {
 	return NewScriptBuilder().AddOp(OP_HASH160).AddData(scriptHash).
 		AddOp(OP_EQUAL).Script()
 }
 
 // payToPubkeyScript creates a new script to pay a transaction output to a
 // public key. It is expected that the input is a valid pubkey.
-func payToPubKeyScript(serializedPubKey []byte) []byte {
+func payToPubKeyScript(serializedPubKey []byte) ([]byte, error) {
 	return NewScriptBuilder().AddData(serializedPubKey).
 		AddOp(OP_CHECKSIG).Script()
 }
@@ -1047,19 +1067,19 @@ func PayToAddrScript(addr btcutil.Address) ([]byte, error) {
 		if addr == nil {
 			return nil, ErrUnsupportedAddress
 		}
-		return payToPubKeyHashScript(addr.ScriptAddress()), nil
+		return payToPubKeyHashScript(addr.ScriptAddress())
 
 	case *btcutil.AddressScriptHash:
 		if addr == nil {
 			return nil, ErrUnsupportedAddress
 		}
-		return payToScriptHashScript(addr.ScriptAddress()), nil
+		return payToScriptHashScript(addr.ScriptAddress())
 
 	case *btcutil.AddressPubKey:
 		if addr == nil {
 			return nil, ErrUnsupportedAddress
 		}
-		return payToPubKeyScript(addr.ScriptAddress()), nil
+		return payToPubKeyScript(addr.ScriptAddress())
 	}
 
 	return nil, ErrUnsupportedAddress
@@ -1085,7 +1105,7 @@ func MultiSigScript(pubkeys []*btcutil.AddressPubKey, nrequired int) ([]byte, er
 	builder.AddInt64(int64(len(pubkeys)))
 	builder.AddOp(OP_CHECKMULTISIG)
 
-	return builder.Script(), nil
+	return builder.Script()
 }
 
 // SignatureScript creates an input signature script for tx to spend
@@ -1098,7 +1118,7 @@ func MultiSigScript(pubkeys []*btcutil.AddressPubKey, nrequired int) ([]byte, er
 // compress. This format must match the same format used to generate
 // the payment address, or the script validation will fail.
 func SignatureScript(tx *btcwire.MsgTx, idx int, subscript []byte, hashType SigHashType, privKey *btcec.PrivateKey, compress bool) ([]byte, error) {
-	sig, err := signTxOutput(tx, idx, subscript, hashType, privKey)
+	sig, err := RawTxInSignature(tx, idx, subscript, hashType, privKey)
 	if err != nil {
 		return nil, err
 	}
@@ -1111,10 +1131,12 @@ func SignatureScript(tx *btcwire.MsgTx, idx int, subscript []byte, hashType SigH
 		pkData = pk.SerializeUncompressed()
 	}
 
-	return NewScriptBuilder().AddData(sig).AddData(pkData).Script(), nil
+	return NewScriptBuilder().AddData(sig).AddData(pkData).Script()
 }
 
-func signTxOutput(tx *btcwire.MsgTx, idx int, subScript []byte,
+// RawTxInSignature returns the serialized ECDSA signature for the input
+// idx of the given transaction, with hashType appended to it.
+func RawTxInSignature(tx *btcwire.MsgTx, idx int, subScript []byte,
 	hashType SigHashType, key *btcec.PrivateKey) ([]byte, error) {
 	parsedScript, err := parseScript(subScript)
 	if err != nil {
@@ -1130,12 +1152,12 @@ func signTxOutput(tx *btcwire.MsgTx, idx int, subScript []byte,
 }
 
 func p2pkSignatureScript(tx *btcwire.MsgTx, idx int, subScript []byte, hashType SigHashType, privKey *btcec.PrivateKey) ([]byte, error) {
-	sig, err := signTxOutput(tx, idx, subScript, hashType, privKey)
+	sig, err := RawTxInSignature(tx, idx, subScript, hashType, privKey)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewScriptBuilder().AddData(sig).Script(), nil
+	return NewScriptBuilder().AddData(sig).Script()
 }
 
 // signMultiSig signs as many of the outputs in the provided multisig script as
@@ -1154,7 +1176,7 @@ func signMultiSig(tx *btcwire.MsgTx, idx int, subScript []byte, hashType SigHash
 		if err != nil {
 			continue
 		}
-		sig, err := signTxOutput(tx, idx, subScript, hashType, key)
+		sig, err := RawTxInSignature(tx, idx, subScript, hashType, key)
 		if err != nil {
 			continue
 		}
@@ -1167,7 +1189,8 @@ func signMultiSig(tx *btcwire.MsgTx, idx int, subScript []byte, hashType SigHash
 
 	}
 
-	return builder.Script(), signed == nRequired
+	script, _ := builder.Script()
+	return script, signed == nRequired
 }
 
 func sign(net *btcnet.Params, tx *btcwire.MsgTx, idx int, subScript []byte,
@@ -1275,7 +1298,8 @@ func mergeScripts(net *btcnet.Params, tx *btcwire.MsgTx, idx int,
 		builder := NewScriptBuilder()
 		builder.script = mergedScript
 		builder.AddData(script)
-		return builder.Script()
+		finalScript, _ := builder.Script()
+		return finalScript
 	case MultiSigTy:
 		return mergeMultiSig(tx, idx, addresses, nRequired, pkScript,
 			sigScript, prevScript)
@@ -1405,7 +1429,8 @@ sigLoop:
 		builder.AddOp(OP_0)
 	}
 
-	return builder.Script()
+	script, _ := builder.Script()
+	return script
 }
 
 // KeyDB is an interface type provided to SignTxOutput, it encapsulates
@@ -1468,7 +1493,7 @@ func SignTxOutput(net *btcnet.Params, tx *btcwire.MsgTx, idx int,
 		builder.script = realSigScript
 		builder.AddData(sigScript)
 
-		sigScript = builder.Script()
+		sigScript, _ = builder.Script()
 		// TODO keep a copy of the script for merging.
 	}
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2014 Conformal Systems LLC.
+// Copyright (c) 2013-2015 Conformal Systems LLC.
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -17,6 +17,10 @@ import (
 	"github.com/mably/btcutil"
 	"github.com/mably/btcwire"
 )
+
+// TstMaxScriptSize makes the internal maxScriptSize constant available to the
+// test package.
+const TstMaxScriptSize = maxScriptSize
 
 // this file is present to export some internal interfaces so that we can
 // test them reliably.
@@ -3781,7 +3785,7 @@ func ParseShortForm(script string) ([]byte, error) {
 			builder.script = append(builder.script, bts...)
 		} else if len(tok) >= 2 &&
 			tok[0] == '\'' && tok[len(tok)-1] == '\'' {
-			builder.AddData([]byte(tok[1 : len(tok)-1]))
+			builder.AddFullData([]byte(tok[1 : len(tok)-1]))
 		} else if opcode, ok := ops[tok]; ok {
 			builder.AddOp(opcode.value)
 		} else {
@@ -3789,7 +3793,33 @@ func ParseShortForm(script string) ([]byte, error) {
 		}
 
 	}
-	return builder.Script(), nil
+	return builder.Script()
+}
+
+// createSpendTx generates a basic spending transaction given the passed
+// signature and public key scripts.
+func createSpendingTx(sigScript, pkScript []byte) (*btcwire.MsgTx, error) {
+	coinbaseTx := btcwire.NewMsgTx()
+
+	outPoint := btcwire.NewOutPoint(&btcwire.ShaHash{}, ^uint32(0))
+	txIn := btcwire.NewTxIn(outPoint, []byte{OP_0, OP_0})
+	txOut := btcwire.NewTxOut(0, pkScript)
+	coinbaseTx.AddTxIn(txIn)
+	coinbaseTx.AddTxOut(txOut)
+
+	spendingTx := btcwire.NewMsgTx()
+	coinbaseTxSha, err := coinbaseTx.TxSha()
+	if err != nil {
+		return nil, err
+	}
+	outPoint = btcwire.NewOutPoint(&coinbaseTxSha, 0)
+	txIn = btcwire.NewTxIn(outPoint, sigScript)
+	txOut = btcwire.NewTxOut(0, nil)
+
+	spendingTx.AddTxIn(txIn)
+	spendingTx.AddTxOut(txOut)
+
+	return spendingTx, nil
 }
 
 func TestBitcoindInvalidTests(t *testing.T) {
@@ -3802,37 +3832,42 @@ func TestBitcoindInvalidTests(t *testing.T) {
 	var tests [][]string
 	err = json.Unmarshal(file, &tests)
 	if err != nil {
-		t.Errorf("TestBitcoindInvalidTests couldn't Unmarshal: %v\n",
+		t.Errorf("TestBitcoindInvalidTests couldn't Unmarshal: %v",
 			err)
 		return
 	}
-	tx := btcwire.NewMsgTx()
 	for x, test := range tests {
-		if len(test) < 2 && len(test) > 3 {
-			t.Errorf("TestBitcoindInvalidTests: invalid test #%d\n",
+		// Skip comments
+		if len(test) == 1 {
+			continue
+		}
+		name, err := testName(test)
+		if err != nil {
+			t.Errorf("TestBitcoindInvalidTests: invalid test #%d",
 				x)
 			continue
 		}
-		name := ""
-		if len(test) == 3 {
-			name = fmt.Sprintf("test (%s)", test[2])
-		} else {
-			name = fmt.Sprintf("test ([%s, %s])", test[0], test[1])
-		}
-
 		scriptSig, err := ParseShortForm(test[0])
 		if err != nil {
 			t.Errorf("%s: can't parse scriptSig; %v", name, err)
 			continue
 		}
-
 		scriptPubKey, err := ParseShortForm(test[1])
 		if err != nil {
 			t.Errorf("%s: can't parse scriptPubkey; %v", name, err)
 			continue
 		}
-
-		s, err := NewScript(scriptSig, scriptPubKey, 0, tx, ScriptBip16)
+		flags, err := parseScriptFlags(test[2])
+		if err != nil {
+			t.Errorf("%s: %v", name, err)
+			continue
+		}
+		tx, err := createSpendingTx(scriptSig, scriptPubKey)
+		if err != nil {
+			t.Errorf("createSpendingTx failed on test %s: %v", name, err)
+			continue
+		}
+		s, err := NewScript(scriptSig, scriptPubKey, 0, tx, flags)
 		if err == nil {
 			if err := s.Execute(); err == nil {
 				t.Errorf("%s test succeeded when it "+
@@ -3853,42 +3888,46 @@ func TestBitcoindValidTests(t *testing.T) {
 	var tests [][]string
 	err = json.Unmarshal(file, &tests)
 	if err != nil {
-		t.Errorf("TestBitcoindInvalidTests couldn't Unmarshal: %v\n",
+		t.Errorf("TestBitcoindValidTests couldn't Unmarshal: %v",
 			err)
 		return
 	}
-	tx := btcwire.NewMsgTx()
 	for x, test := range tests {
-		if len(test) < 2 && len(test) > 3 {
-			t.Errorf("TestBitcoindInvalidTests: invalid test #%d\n",
+		// Skip comments
+		if len(test) == 1 {
+			continue
+		}
+		name, err := testName(test)
+		if err != nil {
+			t.Errorf("TestBitcoindValidTests: invalid test #%d",
 				x)
 			continue
 		}
-		name := ""
-		if len(test) == 3 {
-			name = fmt.Sprintf("test (%s)", test[2])
-		} else {
-			name = fmt.Sprintf("test ([%s, %s])", test[0], test[1])
-		}
-
 		scriptSig, err := ParseShortForm(test[0])
 		if err != nil {
 			t.Errorf("%s: can't parse scriptSig; %v", name, err)
 			continue
 		}
-
 		scriptPubKey, err := ParseShortForm(test[1])
 		if err != nil {
 			t.Errorf("%s: can't parse scriptPubkey; %v", name, err)
 			continue
 		}
-
-		s, err := NewScript(scriptSig, scriptPubKey, 0, tx, ScriptBip16)
+		flags, err := parseScriptFlags(test[2])
+		if err != nil {
+			t.Errorf("%s: %v", name, err)
+			continue
+		}
+		tx, err := createSpendingTx(scriptSig, scriptPubKey)
+		if err != nil {
+			t.Errorf("createSpendingTx failed on test %s: %v", name, err)
+			continue
+		}
+		s, err := NewScript(scriptSig, scriptPubKey, 0, tx, flags)
 		if err != nil {
 			t.Errorf("%s failed to create script: %v", name, err)
 			continue
 		}
-
 		err = s.Execute()
 		if err != nil {
 			t.Errorf("%s failed to execute: %v", name, err)
@@ -3913,8 +3952,10 @@ func OffTestBitcoindTxValidTests(t *testing.T) {
 		return
 	}
 
-	// for ma is eaitehr a ["this is a comment "]
-	// or [[[previous hash, previous index, previous scripbPubKey]...,]
+	// form is either:
+	//   ["this is a comment "]
+	// or:
+	//   [[[previous hash, previous index, previous scriptPubKey]...,]
 	//	serializedTransaction, verifyFlags]
 testloop:
 	for i, test := range tests {
@@ -3924,9 +3965,8 @@ testloop:
 		}
 
 		if len(test) != 3 {
-			t.Errorf("bad test (bad lenggh) %d: %v", i, test)
+			t.Errorf("bad test (bad length) %d: %v", i, test)
 			continue
-
 		}
 		serializedhex, ok := test[1].(string)
 		if !ok {
@@ -3953,15 +3993,10 @@ testloop:
 			continue
 		}
 
-		var flags ScriptFlags
-		vFlags := strings.Split(verifyFlags, ",")
-		for _, flag := range vFlags {
-			switch flag {
-			case "P2SH":
-				flags |= ScriptBip16
-			case "NULLDUMMY":
-				flags |= ScriptStrictMultiSig
-			}
+		flags, err := parseScriptFlags(verifyFlags)
+		if err != nil {
+			t.Errorf("bad test %d: %v", i, err)
+			continue
 		}
 
 		prevOuts := make(map[btcwire.OutPoint][]byte)
@@ -4042,6 +4077,7 @@ testloop:
 			}
 		}
 	}
+
 }
 
 // TODO(kac-) ppc: port data/tx_invalid.json
@@ -4060,8 +4096,10 @@ func OffTestBitcoindTxInvalidTests(t *testing.T) {
 		return
 	}
 
-	// for ma is eaitehr a ["this is a comment "]
-	// or [[[previous hash, previous index, previous scripbPubKey]...,]
+	// form is either:
+	//   ["this is a comment "]
+	// or:
+	//   [[[previous hash, previous index, previous scriptPubKey]...,]
 	//	serializedTransaction, verifyFlags]
 testloop:
 	for i, test := range tests {
@@ -4100,15 +4138,10 @@ testloop:
 			continue
 		}
 
-		var flags ScriptFlags
-		vFlags := strings.Split(verifyFlags, ",")
-		for _, flag := range vFlags {
-			switch flag {
-			case "P2SH":
-				flags |= ScriptBip16
-			case "NULLDUMMY":
-				flags |= ScriptStrictMultiSig
-			}
+		flags, err := parseScriptFlags(verifyFlags)
+		if err != nil {
+			t.Errorf("bad test %d: %v", i, err)
+			continue
 		}
 
 		prevOuts := make(map[btcwire.OutPoint][]byte)
@@ -4191,4 +4224,45 @@ testloop:
 		t.Errorf("test (%d:%v) succeeded when should fail",
 			i, test)
 	}
+}
+
+func parseScriptFlags(flagStr string) (ScriptFlags, error) {
+	var flags ScriptFlags
+
+	sFlags := strings.Split(flagStr, ",")
+	for _, flag := range sFlags {
+		switch flag {
+		case "DISCOURAGE_UPGRADABLE_NOPS":
+			flags |= ScriptDiscourageUpgradableNops
+		case "", "NONE":
+			// Nothing.
+		case "NULLDUMMY":
+			flags |= ScriptStrictMultiSig
+		case "P2SH":
+			flags |= ScriptBip16
+		case "SIGPUSHONLY":
+			flags |= ScriptVerifySigPushOnly
+		case "STRICTENC":
+			// This is always set.
+		default:
+			return flags, fmt.Errorf("invalid flag: %s", flag)
+		}
+	}
+	return flags, nil
+}
+
+func testName(test []string) (string, error) {
+	var name string
+
+	if len(test) < 3 || len(test) > 4 {
+		return name, fmt.Errorf("invalid test length %d", len(test))
+	}
+
+	if len(test) == 4 {
+		name = fmt.Sprintf("test (%s)", test[3])
+	} else {
+		name = fmt.Sprintf("test ([%s, %s, %s])", test[0], test[1],
+			test[2])
+	}
+	return name, nil
 }

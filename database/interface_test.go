@@ -542,8 +542,8 @@ func testIntegrity(tc *testContext) bool {
 	return true
 }
 
-// testInterface tests performs tests for the various interfaces of btcdb which
-// require state in the database for the given database type.
+// testInterface tests performs tests for the various interfaces of the database
+// package which require state in the database for the given database type.
 func testInterface(t *testing.T, dbType string) {
 	db, teardown, err := setupDB(dbType, "interface")
 	if err != nil {

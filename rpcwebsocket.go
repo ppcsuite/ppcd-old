@@ -17,7 +17,6 @@ import (
 	"sync"
 	"time"
 
-	"code.google.com/p/go.crypto/ripemd160"
 	"github.com/btcsuite/fastsha256"
 	"github.com/btcsuite/websocket"
 	"github.com/mably/ppcd/database"
@@ -26,6 +25,7 @@ import (
 	"github.com/mably/btcutil"
 	"github.com/mably/btcwire"
 	"github.com/mably/btcws"
+	"golang.org/x/crypto/ripemd160"
 )
 
 const (

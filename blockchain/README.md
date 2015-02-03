@@ -14,11 +14,9 @@ real-time report.  package blockchain is licensed under the liberal ISC license.
 There is an associated blog post about the release of this package
 [here](https://blog.conformal.com/blockchain-the-bitcoin-chain-package-from-bctd/).
 
-This package is one of the core packages from btcd, an alternative full-node
-implementation of bitcoin which is under active development by Conformal.
-Although it was primarily written for btcd, this package has intentionally been
-designed so it can be used as a standalone package for any projects needing to
-handle processing of blocks into the bitcoin block chain.
+This package has intentionally been designed so it can be used as a standalone
+package for any projects needing to handle processing of blocks into the bitcoin
+block chain.
 
 ## Documentation
 
@@ -94,10 +92,6 @@ is by no means exhaustive:
   Demonstrates how to convert how to convert a target difficulty into the
   compact "bits" in a block header which represent that target difficulty.
 
-## TODO
-
-- Increase test coverage
-
 ## GPG Verification Key
 
 All official release tags are signed by Conformal so users can ensure the code
@@ -119,7 +113,3 @@ signature perform the following:
   ```
 
 ## License
-
-
-package blockchain is licensed under the [copyfree](http://copyfree.org) ISC
-License.

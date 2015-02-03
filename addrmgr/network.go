@@ -22,6 +22,10 @@ var (
 
 	// rfc3849Net specifies the IPv6 documentation address block as defined
 	// by RFC3849 (2001:DB8::/32).
+	rfc2544Net = ipNet("198.18.0.0", 15, 32)
+
+	// rfc3849Net specifies the IPv6 documentation address block as defined
+	// by RFC3849 (2001:DB8::/32).
 	rfc3849Net = ipNet("2001:DB8::", 32, 128)
 
 	// rfc3927Net specifies the IPv4 auto configuration address block as
@@ -50,6 +54,14 @@ var (
 
 	// rfc6052Net specifies the IPv6 well-known prefix address block as
 	// defined by RFC6052 (64:FF9B::/96).
+	rfc5737Net = []net.IPNet{
+		ipNet("192.0.2.0", 24, 32),
+		ipNet("198.51.100.0", 24, 32),
+		ipNet("203.0.113.0", 24, 32),
+	}
+
+	// rfc6052Net specifies the IPv6 well-known prefix address block as
+	// defined by RFC6052 (64:FF9B::/96).
 	rfc6052Net = ipNet("64:FF9B::", 96, 128)
 
 	// rfc6145Net specifies the IPv6 to IPv4 translated address range as
@@ -57,6 +69,7 @@ var (
 	rfc6145Net = ipNet("::FFFF:0:0:0", 96, 128)
 
 	// onionCatNet defines the IPv6 address block used to support Tor.
+	rfc6598Net = ipNet("100.64.0.0", 10, 32)
 	// bitcoind encodes a .onion address as a 16 byte number by decoding the
 	// address prior to the .onion (i.e. the key hash) base32 into a ten
 	// byte number. It then stores the first 6 bytes of the address as
@@ -65,6 +78,8 @@ var (
 	// This is the same range used by OnionCat, which is part part of the
 	// RFC4193 unique local IPv6 range.
 	//
+	// In summary the format is:
+	// { magic 6 bytes, 10 bytes base32 decode of key hash }
 	// In summary the format is:
 	// { magic 6 bytes, 10 bytes base32 decode of key hash }
 	onionCatNet = ipNet("fd87:d87e:eb43::", 48, 128)
@@ -116,6 +131,12 @@ func IsRFC1918(na *btcwire.NetAddress) bool {
 
 // IsRFC3849 returns whether or not the passed address is part of the IPv6
 // documentation range as defined by RFC3849 (2001:DB8::/32).
+func IsRFC2544(na *btcwire.NetAddress) bool {
+	return rfc2544Net.Contains(na.IP)
+}
+
+// IsRFC3849 returns whether or not the passed address is part of the IPv6
+// documentation range as defined by RFC3849 (2001:DB8::/32).
 func IsRFC3849(na *btcwire.NetAddress) bool {
 	return rfc3849Net.Contains(na.IP)
 }
@@ -158,6 +179,19 @@ func IsRFC4862(na *btcwire.NetAddress) bool {
 
 // IsRFC6052 returns whether or not the passed address is part of the IPv6
 // well-known prefix range as defined by RFC6052 (64:FF9B::/96).
+// 198.51.100.0/24, 203.0.113.0/24)
+func IsRFC5737(na *btcwire.NetAddress) bool {
+	for _, rfc := range rfc5737Net {
+		if rfc.Contains(na.IP) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// IsRFC6052 returns whether or not the passed address is part of the IPv6
+// well-known prefix range as defined by RFC6052 (64:FF9B::/96).
 func IsRFC6052(na *btcwire.NetAddress) bool {
 	return rfc6052Net.Contains(na.IP)
 }
@@ -169,6 +203,12 @@ func IsRFC6145(na *btcwire.NetAddress) bool {
 }
 
 // IsValid returns whether or not the passed address is valid.  The address is
+// considered invalid under the following circumstances:
+func IsRFC6598(na *btcwire.NetAddress) bool {
+	return rfc6598Net.Contains(na.IP)
+}
+// IPv4: It is either a zero or all bits set address.
+// IPv6: It is either a zero or RFC3849 documentation address.
 // considered invalid under the following circumstances:
 // IPv4: It is either a zero or all bits set address.
 // IPv6: It is either a zero or RFC3849 documentation address.
@@ -183,8 +223,9 @@ func IsValid(na *btcwire.NetAddress) bool {
 // the public internet.  This is true as long as the address is valid and is not
 // in any reserved ranges.
 func IsRoutable(na *btcwire.NetAddress) bool {
-	return IsValid(na) && !(IsRFC1918(na) || IsRFC3927(na) ||
-		IsRFC4862(na) || IsRFC3849(na) || IsRFC4843(na) ||
+	return IsValid(na) && !(IsRFC1918(na) || IsRFC2544(na) ||
+		IsRFC3927(na) || IsRFC4862(na) || IsRFC3849(na) ||
+		IsRFC4843(na) || IsRFC5737(na) || IsRFC6598(na) ||
 		IsLocal(na) || (IsRFC4193(na) && !IsOnionCatTor(na)))
 }
 

@@ -1,15 +1,22 @@
-btcdb
-=====
+database
+========
 
-[![Build Status](https://travis-ci.org/mably/ppcd/database.png?branch=master)]
-(https://travis-ci.org/mably/ppcd/database)
-[![tip for next commit](http://peer4commit.com/projects/130.svg)](http://peer4commit.com/projects/130)
+[![Build Status](http://img.shields.io/travis/mably/ppcd.svg)]
+(https://travis-ci.org/mably/ppcd)  [![ISC License]
+(http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
 
-package database provides a database interface for the bitcoin block chain and
-transactions.  There is a test suite with a high percentage of code coverage.
-See `test_coverage.txt` for the current coverage (using gocov).  Alternatively,
-if you are running a POSIX OS, you can run the cov_report.sh script for a
-real-time report.  package database is licensed under the liberal ISC license.
+Package database provides a database interface for the bitcoin block chain and
+transactions.
+
+Please note that this package is intended to enable btcd to support different
+database backends and is not something that a client can directly access as only
+one entity can have the database open at a time (for most database backends),
+and that entity will be btcd.
+
+When a client wants programmatic access to the data provided by btcd, they'll
+likely want to use the [btcrpcclient](https://github.com/btcsuite/btcrpcclient)
+package which makes use of the [JSON-RPC API]
+(https://github.com/btcsuite/btcd/tree/master/docs/json_rpc_api.md).
 
 ## Documentation
 
@@ -66,4 +73,5 @@ signature perform the following:
 
 ## License
 
-package database is licensed under the liberal ISC License.
+Package database is licensed under the [copyfree](http://copyfree.org) ISC
+License.

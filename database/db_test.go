@@ -19,7 +19,7 @@ var (
 	ignoreDbTypes = map[string]bool{"createopenfail": true}
 )
 
-// testNewestShaEmpty ensures the NewestSha returns the values expected by
+// testNewestShaEmpty ensures that NewestSha returns the values expected by
 // the interface contract.
 func testNewestShaEmpty(t *testing.T, db database.Db) {
 	sha, height, err := db.NewestSha()
@@ -167,9 +167,9 @@ func TestCreateOpenUnsupported(t *testing.T) {
 	}
 }
 
-// TestInterface performs tests for the various interfaces of btcdb which
-// require state in the database for each supported database type (those loaded
-// in common_test.go that is).
+// TestInterface performs tests for the various interfaces of the database
+// package which require state in the database for each supported database
+// type (those loaded in common_test.go that is).
 func TestInterface(t *testing.T) {
 	for _, dbType := range database.SupportedDBs() {
 		if _, exists := ignoreDbTypes[dbType]; !exists {
