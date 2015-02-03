@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ppcsuite/ppcd/blockchain"
 	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/btcwire"
+	"github.com/ppcsuite/ppcd/blockchain"
 )
 
 const (
