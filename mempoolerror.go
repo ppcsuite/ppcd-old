@@ -13,7 +13,8 @@ import (
 // processing of a transaction failed due to one of the many validation
 // rules.  The caller can use type assertions to determine if a failure was
 // specifically due to a rule violation and use the Err field to access the
-// underlying error, which will be either a TxRuleError or a blockchain.RuleError.
+// underlying error, which will be either a TxRuleError or a
+// blockchain.RuleError.
 type RuleError struct {
 	Err error
 }

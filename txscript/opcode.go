@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2014 Conformal Systems LLC.
+// Copyright (c) 2013-2015 Conformal Systems LLC.
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -13,13 +13,13 @@ import (
 	"hash"
 	"math/big"
 
-	"code.google.com/p/go.crypto/ripemd160"
+	"golang.org/x/crypto/ripemd160"
 	"github.com/btcsuite/btcec"
-	"github.com/mably/btcwire"
 	"github.com/btcsuite/fastsha256"
+	"github.com/mably/btcwire"
 )
 
-// An opcode defines the information related to a btcscript opcode.
+// An opcode defines the information related to a txscript opcode.
 // opfunc if present is the function to call to perform the opcode on
 // the script. The current script is passed in as a slice with the firs
 // member being the opcode itself.
@@ -1084,7 +1084,13 @@ func opcodeN(op *parsedOpcode, s *Script) error {
 }
 
 func opcodeNop(op *parsedOpcode, s *Script) error {
-	// This page left intentionally blank
+	switch op.opcode.value {
+	case OP_NOP1, OP_NOP2, OP_NOP3, OP_NOP4, OP_NOP5,
+		OP_NOP6, OP_NOP7, OP_NOP8, OP_NOP9, OP_NOP10:
+		if s.discourageUpgradableNops {
+			return fmt.Errorf("%s reserved for soft-fork upgrades", opcodemap[op.opcode.value].name)
+		}
+	}
 	return nil
 }
 

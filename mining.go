@@ -48,7 +48,8 @@ const (
 	// are more strict.
 	standardScriptVerifyFlags = txscript.ScriptBip16 |
 		txscript.ScriptCanonicalSignatures |
-		txscript.ScriptStrictMultiSig
+		txscript.ScriptStrictMultiSig |
+		txscript.ScriptDiscourageUpgradableNops
 )
 
 // txPrioItem houses a transaction along with extra information that allows the
@@ -188,8 +189,8 @@ func minInt(a, b int) int {
 func mergeTxStore(txStoreA blockchain.TxStore, txStoreB blockchain.TxStore) {
 	for hash, txDataB := range txStoreB {
 		if txDataA, exists := txStoreA[hash]; !exists ||
-			(txDataA.Err == database.ErrTxShaMissing && txDataB.Err !=
-				database.ErrTxShaMissing) {
+			(txDataA.Err == database.ErrTxShaMissing &&
+				txDataB.Err != database.ErrTxShaMissing) {
 
 			txStoreA[hash] = txDataB
 		}
@@ -200,7 +201,7 @@ func mergeTxStore(txStoreA blockchain.TxStore, txStoreB blockchain.TxStore) {
 // signature script of the coinbase transaction of a new block.  In particular,
 // it starts with the block height that is required by version 2 blocks and adds
 // the extra nonce as well as additional coinbase flags.
-func standardCoinbaseScript(nextBlockHeight int64, extraNonce uint64) []byte {
+func standardCoinbaseScript(nextBlockHeight int64, extraNonce uint64) ([]byte, error) {
 	return txscript.NewScriptBuilder().AddInt64(nextBlockHeight).
 		AddUint64(extraNonce).AddData([]byte(coinbaseFlags)).Script()
 }
@@ -223,8 +224,12 @@ func createCoinbaseTx(coinbaseScript []byte, nextBlockHeight int64, addr btcutil
 			return nil, err
 		}
 	} else {
+		var err error
 		scriptBuilder := txscript.NewScriptBuilder()
-		pkScript = scriptBuilder.AddOp(txscript.OP_TRUE).Script()
+		pkScript, err = scriptBuilder.AddOp(txscript.OP_TRUE).Script()
+		if err != nil {
+			return nil, err
+	}
 	}
 
 	tx := btcwire.NewMsgTx()
@@ -439,7 +444,10 @@ func NewBlockTemplate(mempool *txMemPool, payToAddress btcutil.Address) (*BlockT
 	// same value to the same public key address would otherwise be an
 	// identical transaction for block version 1).
 	extraNonce := uint64(0)
-	coinbaseScript := standardCoinbaseScript(nextBlockHeight, extraNonce)
+	coinbaseScript, err := standardCoinbaseScript(nextBlockHeight, extraNonce)
+	if err != nil {
+		return nil, err
+	}
 	coinbaseTx, err := createCoinbaseTx(coinbaseScript, nextBlockHeight,
 		payToAddress)
 	if err != nil {
@@ -841,7 +849,10 @@ func UpdateBlockTime(msgBlock *btcwire.MsgBlock, bManager *blockManager) error {
 // height.  It also recalculates and updates the new merkle root that results
 // from changing the coinbase script.
 func UpdateExtraNonce(msgBlock *btcwire.MsgBlock, blockHeight int64, extraNonce uint64) error {
-	coinbaseScript := standardCoinbaseScript(blockHeight, extraNonce)
+	coinbaseScript, err := standardCoinbaseScript(blockHeight, extraNonce)
+	if err != nil {
+		return err
+	}
 	if len(coinbaseScript) > blockchain.MaxCoinbaseScriptLen {
 		return fmt.Errorf("coinbase transaction script length "+
 			"of %d is out of range (min: %d, max: %d)",

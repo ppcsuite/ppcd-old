@@ -9,7 +9,11 @@ import (
 	"math/big"
 	"time"
 
+<<<<<<< HEAD
 	"github.com/mably/btcwire"
+=======
+	"github.com/btcsuite/btcwire"
+>>>>>>> remotes/btcsuite/master
 )
 
 const (

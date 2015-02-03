@@ -92,8 +92,8 @@ var (
 	// overhead of creating a new object on every invocation for constant
 	// data.
 	gbtCoinbaseAux = &btcjson.GetBlockTemplateResultAux{
-		Flags: hex.EncodeToString(txscript.NewScriptBuilder().
-			AddData([]byte(coinbaseFlags)).Script()),
+		Flags: hex.EncodeToString(builderScript(txscript.
+			NewScriptBuilder().AddData([]byte(coinbaseFlags)))),
 	}
 
 	// gbtCapabilities describes additional capabilities returned with a
@@ -212,6 +212,18 @@ var rpcUnimplemented = map[string]struct{}{}
 
 // workStateBlockInfo houses information about how to reconstruct a block given
 // its template and signature script.
+// since it is only, and must only, be used with hard-coded, and therefore,
+// known good, scripts.
+func builderScript(builder *txscript.ScriptBuilder) []byte {
+	script, err := builder.Script()
+	if err != nil {
+		panic(err)
+	}
+	return script
+}
+
+// workStateBlockInfo houses information about how to reconstruct a block given
+// its template and signature script.
 type workStateBlockInfo struct {
 	msgBlock        *btcwire.MsgBlock
 	signatureScript []byte
@@ -247,13 +259,15 @@ type gbtWorkState struct {
 	minTimestamp  time.Time
 	template      *BlockTemplate
 	notifyMap     map[btcwire.ShaHash]map[int64]chan struct{}
+	timeSource    blockchain.MedianTimeSource
 }
 
 // newGbtWorkState returns a new instance of a gbtWorkState with all internal
 // fields initialized and ready to use.
-func newGbtWorkState() *gbtWorkState {
+func newGbtWorkState(timeSource blockchain.MedianTimeSource) *gbtWorkState {
 	return &gbtWorkState{
 		notifyMap: make(map[btcwire.ShaHash]map[int64]chan struct{}),
+		timeSource: timeSource,
 	}
 }
 
@@ -519,14 +533,17 @@ func newRPCServer(listenAddrs []string, s *server) (*rpcServer, error) {
 		server:       s,
 		statusLines:  make(map[int]string),
 		workState:    newWorkState(),
-		gbtWorkState: newGbtWorkState(),
+		gbtWorkState: newGbtWorkState(s.timeSource),
 		quit:         make(chan int),
 	}
 	rpc.ntfnMgr = newWsNotificationManager(&rpc)
 
 	// check for existence of cert file and key file
+	listenFunc := net.Listen
+	if !cfg.DisableTLS {
+		// Generate the TLS cert and key file if both don't already
+		// exist.
 	if !fileExists(cfg.RPCKey) && !fileExists(cfg.RPCCert) {
-		// if both files do not exist, we generate them.
 		err := genCertPair(cfg.RPCCert, cfg.RPCKey)
 		if err != nil {
 			return nil, err
@@ -539,8 +556,15 @@ func newRPCServer(listenAddrs []string, s *server) (*rpcServer, error) {
 
 	tlsConfig := tls.Config{
 		Certificates: []tls.Certificate{keypair},
+			MinVersion:   tls.VersionTLS12,
 	}
 
+	// TODO(oga) this code is similar to that in server, should be
+		listenFunc = func(net string, laddr string) (net.Listener, error) {
+			return tls.Listen(net, laddr, &tlsConfig)
+		}
+	}
+	// factored into something shared.
 	// TODO(oga) this code is similar to that in server, should be
 	// factored into something shared.
 	ipv4ListenAddrs, ipv6ListenAddrs, _, err := parseListeners(listenAddrs)
@@ -550,20 +574,18 @@ func newRPCServer(listenAddrs []string, s *server) (*rpcServer, error) {
 	listeners := make([]net.Listener, 0,
 		len(ipv6ListenAddrs)+len(ipv4ListenAddrs))
 	for _, addr := range ipv4ListenAddrs {
-		listener, err := tls.Listen("tcp4", addr, &tlsConfig)
+		listener, err := listenFunc("tcp4", addr)
 		if err != nil {
-			rpcsLog.Warnf("Can't listen on %s: %v", addr,
-				err)
+			rpcsLog.Warnf("Can't listen on %s: %v", addr, err)
 			continue
 		}
 		listeners = append(listeners, listener)
 	}
 
 	for _, addr := range ipv6ListenAddrs {
-		listener, err := tls.Listen("tcp6", addr, &tlsConfig)
+		listener, err := listenFunc("tcp6", addr)
 		if err != nil {
-			rpcsLog.Warnf("Can't listen on %s: %v", addr,
-				err)
+			rpcsLog.Warnf("Can't listen on %s: %v", addr, err)
 			continue
 		}
 		listeners = append(listeners, listener)
@@ -826,7 +848,7 @@ func handleDebugLevel(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan struct{}) 
 
 // createVinList returns a slice of JSON objects for the inputs of the passed
 // transaction.
-func createVinList(mtx *btcwire.MsgTx) ([]btcjson.Vin, error) {
+func createVinList(mtx *btcwire.MsgTx) []btcjson.Vin {
 	tx := btcutil.NewTx(mtx)
 	vinList := make([]btcjson.Vin, len(mtx.TxIn))
 	for i, v := range mtx.TxIn {
@@ -836,13 +858,10 @@ func createVinList(mtx *btcwire.MsgTx) ([]btcjson.Vin, error) {
 			vinList[i].Txid = v.PreviousOutPoint.Hash.String()
 			vinList[i].Vout = v.PreviousOutPoint.Index
 
-			disbuf, err := txscript.DisasmString(v.SignatureScript)
-			if err != nil {
-				return nil, btcjson.Error{
-					Code:    btcjson.ErrInternal.Code,
-					Message: err.Error(),
-				}
-			}
+			// The disassembled string will contain [error] inline
+			// if the script doesn't fully parse, so ignore the
+			// error here.
+			disbuf, _ := txscript.DisasmString(v.SignatureScript)
 			vinList[i].ScriptSig = new(btcjson.ScriptSig)
 			vinList[i].ScriptSig.Asm = disbuf
 			vinList[i].ScriptSig.Hex = hex.EncodeToString(v.SignatureScript)
@@ -850,24 +869,20 @@ func createVinList(mtx *btcwire.MsgTx) ([]btcjson.Vin, error) {
 		vinList[i].Sequence = v.Sequence
 	}
 
-	return vinList, nil
+	return vinList
 }
 
 // createVoutList returns a slice of JSON objects for the outputs of the passed
 // transaction.
-func createVoutList(mtx *btcwire.MsgTx, net *btcnet.Params) ([]btcjson.Vout, error) {
+func createVoutList(mtx *btcwire.MsgTx, net *btcnet.Params) []btcjson.Vout {
 	voutList := make([]btcjson.Vout, len(mtx.TxOut))
 	for i, v := range mtx.TxOut {
 		voutList[i].N = uint32(i)
 		voutList[i].Value = float64(v.Value) / btcutil.SatoshiPerBitcoin
 
-		disbuf, err := txscript.DisasmString(v.PkScript)
-		if err != nil {
-			return nil, btcjson.Error{
-				Code:    btcjson.ErrInternal.Code,
-				Message: err.Error(),
-			}
-		}
+		// The disassembled string will contain [error] inline if the
+		// script doesn't fully parse, so ignore the error here.
+		disbuf, _ := txscript.DisasmString(v.PkScript)
 		voutList[i].ScriptPubKey.Asm = disbuf
 		voutList[i].ScriptPubKey.Hex = hex.EncodeToString(v.PkScript)
 
@@ -888,7 +903,7 @@ func createVoutList(mtx *btcwire.MsgTx, net *btcnet.Params) ([]btcjson.Vout, err
 		}
 	}
 
-	return voutList, nil
+	return voutList
 }
 
 // createTxRawResult converts the passed transaction and associated parameters
@@ -902,20 +917,11 @@ func createTxRawResult(net *btcnet.Params, txSha string, mtx *btcwire.MsgTx,
 		return nil, err
 	}
 
-	vin, err := createVinList(mtx)
-	if err != nil {
-		return nil, err
-	}
-	vout, err := createVoutList(mtx, net)
-	if err != nil {
-		return nil, err
-	}
-
 	txReply := &btcjson.TxRawResult{
 		Hex:      mtxHex,
 		Txid:     txSha,
-		Vout:     vout,
-		Vin:      vin,
+		Vout:     createVoutList(mtx, net),
+		Vin:      createVinList(mtx),
 		Version:  mtx.Version,
 		LockTime: mtx.LockTime,
 		Time:     mtx.Time.Unix(), // ppc:
@@ -962,22 +968,13 @@ func handleDecodeRawTransaction(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan 
 	}
 	txSha, _ := mtx.TxSha()
 
-	vin, err := createVinList(&mtx)
-	if err != nil {
-		return nil, err
-	}
-	vout, err := createVoutList(&mtx, s.server.netParams)
-	if err != nil {
-		return nil, err
-	}
 
-	// Create and return the result.
 	txReply := btcjson.TxRawDecodeResult{
 		Txid:     txSha.String(),
 		Version:  mtx.Version,
 		Locktime: mtx.LockTime,
-		Vin:      vin,
-		Vout:     vout,
+		Vin:      createVinList(&mtx),
+		Vout:     createVoutList(&mtx, s.server.netParams),
 	}
 	return txReply, nil
 }
@@ -1564,23 +1561,15 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 	template := state.template
 	msgBlock := template.block
 	header := &msgBlock.Header
-	curTime := time.Now()
-	if curTime.Before(state.minTimestamp) {
-		return nil, btcjson.Error{
-			Code: btcjson.ErrOutOfRange.Code,
-			Message: fmt.Sprintf("The local time is before the "+
-				"minimum allowed time for a block - current "+
-				"time %v, minimum time %v", curTime,
-				state.minTimestamp),
-		}
-	}
-	maxTime := curTime.Add(time.Second * blockchain.MaxTimeOffsetSeconds)
+	adjustedTime := state.timeSource.AdjustedTime()
+	maxTime := adjustedTime.Add(time.Second * blockchain.MaxTimeOffsetSeconds)
 	if header.Timestamp.After(maxTime) {
 		return nil, btcjson.Error{
 			Code: btcjson.ErrOutOfRange.Code,
 			Message: fmt.Sprintf("The template time is after the "+
 				"maximum allowed time for a block - template "+
-				"time %v, maximum time %v", curTime, maxTime),
+				"time %v, maximum time %v", adjustedTime,
+				maxTime),
 		}
 	}
 
@@ -1643,7 +1632,7 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 	templateID := encodeTemplateID(state.prevHash, state.lastGenerated)
 	reply := btcjson.GetBlockTemplateResult{
 		Bits:         strconv.FormatInt(int64(header.Bits), 16),
-		CurTime:      curTime.Unix(),
+		CurTime:      header.Timestamp.Unix(),
 		Height:       template.height,
 		PreviousHash: header.PrevBlock.String(),
 		SigOpLimit:   blockchain.MaxSigOpsPerBlock,
@@ -2120,7 +2109,7 @@ func handleGetInfo(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan struct{}) (in
 		ProtocolVersion: int32(maxProtocolVersion),
 		MoneySupply:     btcjson.FloatAmount(blkMeta.MoneySupply) / btcutil.SatoshiPerBitcoin,
 		Blocks:          int32(height),
-		TimeOffset:      0,
+		TimeOffset:      int64(s.server.timeSource.Offset().Seconds()),
 		Connections:     s.server.ConnectedCount(),
 		Proxy:           cfg.Proxy,
 		Difficulty:      powDifficulty, // ppc: POW only
@@ -2420,11 +2409,11 @@ func handleGetRawTransaction(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan str
 		}
 	}
 
-	rawTxn, jsonErr := createTxRawResult(s.server.netParams, c.Txid, mtx,
+	rawTxn, err := createTxRawResult(s.server.netParams, c.Txid, mtx,
 		blk, maxidx, blksha)
 	if err != nil {
 		rpcsLog.Errorf("Cannot create TxRawResult for txSha=%s: %v", txSha, err)
-		return nil, jsonErr
+		return nil, err
 	}
 	return *rawTxn, nil
 }
@@ -3018,7 +3007,7 @@ func handleSendRawTransaction(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan st
 	// We keep track of all the sendrawtransaction request txs so that we
 	// can rebroadcast them if they don't make their way into a block.
 	iv := btcwire.NewInvVect(btcwire.InvTypeTx, tx.Sha())
-	s.server.AddRebroadcastInventory(iv)
+	s.server.AddRebroadcastInventory(iv, tx)
 
 	return tx.Sha().String(), nil
 }

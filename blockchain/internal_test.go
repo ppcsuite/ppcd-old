@@ -3,10 +3,11 @@
 // license that can be found in the LICENSE file.
 
 /*
-This test file is part of the btcchain package rather than than the
-btcchain_test package so it can bridge access to the internals to properly test
-cases which are either not possible or can't reliably be tested via the public
-interface.  The functions are only exported while the tests are being run.
+This test file is part of the blockchain package rather than than the
+blockchain_test package so it can bridge access to the internals to properly
+test cases which are either not possible or can't reliably be tested via the
+public interface.  The functions are only exported while the tests are being
+run.
 */
 
 package blockchain
@@ -44,3 +45,7 @@ func TstCheckSerializedHeight(coinbaseTx *btcutil.Tx, wantHeight int64) error {
 func TstSetMaxMedianTimeEntries(val int) {
 	maxMedianTimeEntries = val
 }
+
+// TstCheckBlockScripts makes the internal checkBlockScripts function available
+// to the test package.
+var TstCheckBlockScripts = checkBlockScripts

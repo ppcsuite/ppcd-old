@@ -7,6 +7,7 @@ package blockchain_test
 import (
 	"testing"
 
+<<<<<<< HEAD
 	"github.com/mably/ppcd/blockchain"
 	"github.com/mably/btcnet"
 	"github.com/mably/btcutil"
@@ -16,6 +17,16 @@ import (
 // TestHaveBlock tests the HaveBlock API to ensure proper functionality.
 // TODO(kac-) create test data for PPC
 func TODO_TestHaveBlock(t *testing.T) {
+=======
+	"github.com/btcsuite/btcd/blockchain"
+	"github.com/btcsuite/btcnet"
+	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcwire"
+)
+
+// TestHaveBlock tests the HaveBlock API to ensure proper functionality.
+func TestHaveBlock(t *testing.T) {
+>>>>>>> remotes/btcsuite/master
 	// Load up blocks such that there is a side chain.
 	// (genesis block) -> 1 -> 2 -> 3 -> 4
 	//                          \-> 3a
@@ -47,12 +58,16 @@ func TODO_TestHaveBlock(t *testing.T) {
 	// Since we're not dealing with the real block chain, disable
 	// checkpoints and set the coinbase maturity to 1.
 	chain.DisableCheckpoints(true)
+<<<<<<< HEAD
 	// Peercoin
 	// blockchain.TstSetCoinbaseMaturity(1)
 	originalMaturity := chain.SetCoinbaseMaturity(1)
 	defer func(){
 		chain.SetCoinbaseMaturity(originalMaturity)
 	}()
+=======
+	blockchain.TstSetCoinbaseMaturity(1)
+>>>>>>> remotes/btcsuite/master
 
 	timeSource := blockchain.NewMedianTime()
 	for i := 1; i < len(blocks); i++ {

@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2014 Conformal Systems LLC.
+// Copyright (c) 2013-2015 Conformal Systems LLC.
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -12,475 +12,475 @@ import (
 	"github.com/mably/btcwire"
 )
 
-// test scripts to test as many opcodes as possible.
-// All run on a fake tx with a single in, single out.
-type opcodeTest struct {
-	script     []byte
-	canonical  bool
-	shouldPass bool
-	shouldFail error
-}
+// TestScripts tests script execution for a wide variety of opcodes.  All tests
+// against a fake transaction with a single input and output.
+func TestScripts(t *testing.T) {
+	t.Parallel()
 
-var opcodeTests = []opcodeTest{
-	// does nothing, but doesn't put a true on the stack, should fail
-	{script: []byte{txscript.OP_NOP}, shouldPass: false},
-	// should just put true on the stack, thus passes.
-	{script: []byte{txscript.OP_TRUE}, shouldPass: true},
-	// should just put false on the stack, thus fails.
-	{script: []byte{txscript.OP_FALSE}, shouldPass: false},
-	// tests OP_VERIFY (true). true is needed since else stack is empty.
-	{script: []byte{txscript.OP_TRUE, txscript.OP_VERIFY,
-		txscript.OP_TRUE}, shouldPass: true},
-	// tests OP_VERIFY (false), will error out.
-	{script: []byte{txscript.OP_FALSE, txscript.OP_VERIFY,
-		txscript.OP_TRUE}, shouldPass: false},
-	// tests OP_VERIFY with empty stack (errors)
-	{script: []byte{txscript.OP_VERIFY}, shouldPass: false},
-	// test OP_RETURN immediately fails the script (empty stack)
-	{script: []byte{txscript.OP_RETURN}, shouldPass: false},
-	// test OP_RETURN immediately fails the script (full stack)
-	{script: []byte{txscript.OP_TRUE, txscript.OP_RETURN},
-		shouldPass: false},
-	// tests numequal with a trivial example (passing)
-	{script: []byte{txscript.OP_TRUE, txscript.OP_TRUE,
-		txscript.OP_NUMEQUAL}, shouldPass: true},
-	// tests numequal with a trivial example (failing)
-	{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE,
-		txscript.OP_NUMEQUAL}, shouldPass: false},
-	// tests numequal with insufficient arguments (1/2)
-	{script: []byte{txscript.OP_TRUE, txscript.OP_NUMEQUAL},
-		shouldPass: false},
-	// tests numequal with insufficient arguments (0/2)
-	{script: []byte{txscript.OP_NUMEQUAL}, shouldPass: false},
-	// tests numnotequal with a trivial example (passing)
-	{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE,
-		txscript.OP_NUMNOTEQUAL}, shouldPass: true},
-	// tests numnotequal with a trivial example (failing)
-	{script: []byte{txscript.OP_TRUE, txscript.OP_TRUE,
-		txscript.OP_NUMNOTEQUAL}, shouldPass: false},
-	// tests numnotequal with insufficient arguments (1/2)
-	{script: []byte{txscript.OP_TRUE, txscript.OP_NUMNOTEQUAL},
-		shouldPass: false},
-	// tests numnotequal with insufficient arguments (0/2)
-	{script: []byte{txscript.OP_NUMNOTEQUAL}, shouldPass: false},
-	// test numequal_verify with a trivial example (passing)
-	{script: []byte{txscript.OP_TRUE, txscript.OP_TRUE,
-		txscript.OP_NUMEQUALVERIFY, txscript.OP_TRUE},
-		shouldPass: true},
-	// test numequal_verify with a trivial example (failing)
-	{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE,
-		txscript.OP_NUMEQUALVERIFY, txscript.OP_TRUE},
-		shouldPass: false},
-	// test OP_1ADD by adding 1 to 0
-	{script: []byte{txscript.OP_FALSE, txscript.OP_1ADD},
-		shouldPass: true},
-	// test OP_1ADD without args (should error)
-	{script: []byte{txscript.OP_1ADD}, shouldPass: false},
-	// test OP_1NEGATE by adding 1 to -1
-	{script: []byte{txscript.OP_1NEGATE, txscript.OP_1ADD},
-		shouldPass: false},
-	// test OP_1NEGATE by adding negating -1
-	{script: []byte{txscript.OP_1NEGATE, txscript.OP_NEGATE},
-		shouldPass: true},
-	// test OP_NEGATE by adding 1 to -1
-	{script: []byte{txscript.OP_TRUE, txscript.OP_NEGATE,
-		txscript.OP_1ADD}, shouldPass: false},
-	// test OP_NEGATE with no args
-	{script: []byte{txscript.OP_NEGATE}, shouldPass: false},
-	// test OP_1SUB -> 1 - 1 = 0
-	{script: []byte{txscript.OP_TRUE, txscript.OP_1SUB},
-		shouldPass: false},
-	// test OP_1SUB -> negate(0 -1) = 1
-	{script: []byte{txscript.OP_FALSE, txscript.OP_1SUB,
-		txscript.OP_NEGATE}, shouldPass: true},
-	// test OP_1SUB with empty stack
-	{script: []byte{txscript.OP_1SUB}, shouldPass: false},
-	// OP_DEPTH with empty stack, means 0 on stack at end
-	{script: []byte{txscript.OP_DEPTH}, shouldPass: false},
-	// 1 +1 -1 = 1. tests depth + add
-	{script: []byte{txscript.OP_TRUE, txscript.OP_DEPTH, txscript.OP_ADD,
-		txscript.OP_1SUB}, shouldPass: true},
-	// 1 +1 -1 = 0 . tests dept + add
-	{script: []byte{txscript.OP_TRUE, txscript.OP_DEPTH,
-		txscript.OP_ADD, txscript.OP_1SUB, txscript.OP_1SUB},
-		shouldPass: false},
-	// OP_ADD with only one thing on stack should error
-	{script: []byte{txscript.OP_TRUE, txscript.OP_ADD},
-		shouldPass: false},
-	// OP_ADD with nothing on stack should error
-	{script: []byte{txscript.OP_ADD}, shouldPass: false},
-	// OP_SUB: 1-1=0
-	{script: []byte{txscript.OP_TRUE, txscript.OP_TRUE,
-		txscript.OP_SUB}, shouldPass: false},
-	// OP_SUB: 1+1-1=1
-	{script: []byte{txscript.OP_TRUE, txscript.OP_TRUE, txscript.OP_TRUE,
-		txscript.OP_ADD, txscript.OP_SUB}, shouldPass: true},
-	// OP_SUB with only one thing on stack should error
-	{script: []byte{txscript.OP_TRUE, txscript.OP_SUB},
-		shouldPass: false},
-	// OP_SUB with nothing on stack should error
-	{script: []byte{txscript.OP_SUB}, shouldPass: false},
-	// OP_LESSTHAN  1 < 1 == false
-	{script: []byte{txscript.OP_TRUE, txscript.OP_TRUE,
-		txscript.OP_LESSTHAN}, shouldPass: false},
-	// OP_LESSTHAN  1 < 0 == false
-	{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE,
-		txscript.OP_LESSTHAN}, shouldPass: false},
-	// OP_LESSTHAN  0 < 1 == true
-	{script: []byte{txscript.OP_FALSE, txscript.OP_TRUE,
-		txscript.OP_LESSTHAN}, shouldPass: true},
-	// OP_LESSTHAN only one arg
-	{script: []byte{txscript.OP_TRUE, txscript.OP_LESSTHAN},
-		shouldPass: false},
-	// OP_LESSTHAN no args
-	{script: []byte{txscript.OP_LESSTHAN}, shouldPass: false},
+	tests := []struct {
+		script     []byte
+		canonical  bool
+		shouldPass bool
+		shouldFail error
+	}{
+		// does nothing, but doesn't put a true on the stack, should fail
+		{script: []byte{txscript.OP_NOP}, shouldPass: false},
+		// should just put true on the stack, thus passes.
+		{script: []byte{txscript.OP_TRUE}, shouldPass: true},
+		// should just put false on the stack, thus fails.
+		{script: []byte{txscript.OP_FALSE}, shouldPass: false},
+		// tests OP_VERIFY (true). true is needed since else stack is empty.
+		{script: []byte{txscript.OP_TRUE, txscript.OP_VERIFY,
+			txscript.OP_TRUE}, shouldPass: true},
+		// tests OP_VERIFY (false), will error out.
+		{script: []byte{txscript.OP_FALSE, txscript.OP_VERIFY,
+			txscript.OP_TRUE}, shouldPass: false},
+		// tests OP_VERIFY with empty stack (errors)
+		{script: []byte{txscript.OP_VERIFY}, shouldPass: false},
+		// test OP_RETURN immediately fails the script (empty stack)
+		{script: []byte{txscript.OP_RETURN}, shouldPass: false},
+		// test OP_RETURN immediately fails the script (full stack)
+		{script: []byte{txscript.OP_TRUE, txscript.OP_RETURN},
+			shouldPass: false},
+		// tests numequal with a trivial example (passing)
+		{script: []byte{txscript.OP_TRUE, txscript.OP_TRUE,
+			txscript.OP_NUMEQUAL}, shouldPass: true},
+		// tests numequal with a trivial example (failing)
+		{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE,
+			txscript.OP_NUMEQUAL}, shouldPass: false},
+		// tests numequal with insufficient arguments (1/2)
+		{script: []byte{txscript.OP_TRUE, txscript.OP_NUMEQUAL},
+			shouldPass: false},
+		// tests numequal with insufficient arguments (0/2)
+		{script: []byte{txscript.OP_NUMEQUAL}, shouldPass: false},
+		// tests numnotequal with a trivial example (passing)
+		{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE,
+			txscript.OP_NUMNOTEQUAL}, shouldPass: true},
+		// tests numnotequal with a trivial example (failing)
+		{script: []byte{txscript.OP_TRUE, txscript.OP_TRUE,
+			txscript.OP_NUMNOTEQUAL}, shouldPass: false},
+		// tests numnotequal with insufficient arguments (1/2)
+		{script: []byte{txscript.OP_TRUE, txscript.OP_NUMNOTEQUAL},
+			shouldPass: false},
+		// tests numnotequal with insufficient arguments (0/2)
+		{script: []byte{txscript.OP_NUMNOTEQUAL}, shouldPass: false},
+		// test numequal_verify with a trivial example (passing)
+		{script: []byte{txscript.OP_TRUE, txscript.OP_TRUE,
+			txscript.OP_NUMEQUALVERIFY, txscript.OP_TRUE},
+			shouldPass: true},
+		// test numequal_verify with a trivial example (failing)
+		{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE,
+			txscript.OP_NUMEQUALVERIFY, txscript.OP_TRUE},
+			shouldPass: false},
+		// test OP_1ADD by adding 1 to 0
+		{script: []byte{txscript.OP_FALSE, txscript.OP_1ADD},
+			shouldPass: true},
+		// test OP_1ADD without args (should error)
+		{script: []byte{txscript.OP_1ADD}, shouldPass: false},
+		// test OP_1NEGATE by adding 1 to -1
+		{script: []byte{txscript.OP_1NEGATE, txscript.OP_1ADD},
+			shouldPass: false},
+		// test OP_1NEGATE by adding negating -1
+		{script: []byte{txscript.OP_1NEGATE, txscript.OP_NEGATE},
+			shouldPass: true},
+		// test OP_NEGATE by adding 1 to -1
+		{script: []byte{txscript.OP_TRUE, txscript.OP_NEGATE,
+			txscript.OP_1ADD}, shouldPass: false},
+		// test OP_NEGATE with no args
+		{script: []byte{txscript.OP_NEGATE}, shouldPass: false},
+		// test OP_1SUB -> 1 - 1 = 0
+		{script: []byte{txscript.OP_TRUE, txscript.OP_1SUB},
+			shouldPass: false},
+		// test OP_1SUB -> negate(0 -1) = 1
+		{script: []byte{txscript.OP_FALSE, txscript.OP_1SUB,
+			txscript.OP_NEGATE}, shouldPass: true},
+		// test OP_1SUB with empty stack
+		{script: []byte{txscript.OP_1SUB}, shouldPass: false},
+		// OP_DEPTH with empty stack, means 0 on stack at end
+		{script: []byte{txscript.OP_DEPTH}, shouldPass: false},
+		// 1 +1 -1 = 1. tests depth + add
+		{script: []byte{txscript.OP_TRUE, txscript.OP_DEPTH, txscript.OP_ADD,
+			txscript.OP_1SUB}, shouldPass: true},
+		// 1 +1 -1 = 0 . tests dept + add
+		{script: []byte{txscript.OP_TRUE, txscript.OP_DEPTH,
+			txscript.OP_ADD, txscript.OP_1SUB, txscript.OP_1SUB},
+			shouldPass: false},
+		// OP_ADD with only one thing on stack should error
+		{script: []byte{txscript.OP_TRUE, txscript.OP_ADD},
+			shouldPass: false},
+		// OP_ADD with nothing on stack should error
+		{script: []byte{txscript.OP_ADD}, shouldPass: false},
+		// OP_SUB: 1-1=0
+		{script: []byte{txscript.OP_TRUE, txscript.OP_TRUE,
+			txscript.OP_SUB}, shouldPass: false},
+		// OP_SUB: 1+1-1=1
+		{script: []byte{txscript.OP_TRUE, txscript.OP_TRUE, txscript.OP_TRUE,
+			txscript.OP_ADD, txscript.OP_SUB}, shouldPass: true},
+		// OP_SUB with only one thing on stack should error
+		{script: []byte{txscript.OP_TRUE, txscript.OP_SUB},
+			shouldPass: false},
+		// OP_SUB with nothing on stack should error
+		{script: []byte{txscript.OP_SUB}, shouldPass: false},
+		// OP_LESSTHAN  1 < 1 == false
+		{script: []byte{txscript.OP_TRUE, txscript.OP_TRUE,
+			txscript.OP_LESSTHAN}, shouldPass: false},
+		// OP_LESSTHAN  1 < 0 == false
+		{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE,
+			txscript.OP_LESSTHAN}, shouldPass: false},
+		// OP_LESSTHAN  0 < 1 == true
+		{script: []byte{txscript.OP_FALSE, txscript.OP_TRUE,
+			txscript.OP_LESSTHAN}, shouldPass: true},
+		// OP_LESSTHAN only one arg
+		{script: []byte{txscript.OP_TRUE, txscript.OP_LESSTHAN},
+			shouldPass: false},
+		// OP_LESSTHAN no args
+		{script: []byte{txscript.OP_LESSTHAN}, shouldPass: false},
 
-	// OP_LESSTHANOREQUAL  1 <= 1 == true
-	{script: []byte{txscript.OP_TRUE, txscript.OP_TRUE,
-		txscript.OP_LESSTHANOREQUAL}, shouldPass: true},
-	// OP_LESSTHANOREQUAL  1 <= 0 == false
-	{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE,
-		txscript.OP_LESSTHANOREQUAL}, shouldPass: false},
-	// OP_LESSTHANOREQUAL  0 <= 1 == true
-	{script: []byte{txscript.OP_FALSE, txscript.OP_TRUE,
-		txscript.OP_LESSTHANOREQUAL}, shouldPass: true},
-	// OP_LESSTHANOREQUAL only one arg
-	{script: []byte{txscript.OP_TRUE, txscript.OP_LESSTHANOREQUAL},
-		shouldPass: false},
-	// OP_LESSTHANOREQUAL no args
-	{script: []byte{txscript.OP_LESSTHANOREQUAL}, shouldPass: false},
+		// OP_LESSTHANOREQUAL  1 <= 1 == true
+		{script: []byte{txscript.OP_TRUE, txscript.OP_TRUE,
+			txscript.OP_LESSTHANOREQUAL}, shouldPass: true},
+		// OP_LESSTHANOREQUAL  1 <= 0 == false
+		{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE,
+			txscript.OP_LESSTHANOREQUAL}, shouldPass: false},
+		// OP_LESSTHANOREQUAL  0 <= 1 == true
+		{script: []byte{txscript.OP_FALSE, txscript.OP_TRUE,
+			txscript.OP_LESSTHANOREQUAL}, shouldPass: true},
+		// OP_LESSTHANOREQUAL only one arg
+		{script: []byte{txscript.OP_TRUE, txscript.OP_LESSTHANOREQUAL},
+			shouldPass: false},
+		// OP_LESSTHANOREQUAL no args
+		{script: []byte{txscript.OP_LESSTHANOREQUAL}, shouldPass: false},
 
-	// OP_GREATERTHAN  1 > 1 == false
-	{script: []byte{txscript.OP_TRUE, txscript.OP_TRUE,
-		txscript.OP_GREATERTHAN}, shouldPass: false},
-	// OP_GREATERTHAN  1 > 0 == true
-	{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE,
-		txscript.OP_GREATERTHAN}, shouldPass: true},
-	// OP_GREATERTHAN  0 > 1 == false
-	{script: []byte{txscript.OP_FALSE, txscript.OP_TRUE,
-		txscript.OP_GREATERTHAN}, shouldPass: false},
-	// OP_GREATERTHAN only one arg
-	{script: []byte{txscript.OP_TRUE, txscript.OP_GREATERTHAN},
-		shouldPass: false},
-	// OP_GREATERTHAN no args
-	{script: []byte{txscript.OP_GREATERTHAN}, shouldPass: false},
+		// OP_GREATERTHAN  1 > 1 == false
+		{script: []byte{txscript.OP_TRUE, txscript.OP_TRUE,
+			txscript.OP_GREATERTHAN}, shouldPass: false},
+		// OP_GREATERTHAN  1 > 0 == true
+		{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE,
+			txscript.OP_GREATERTHAN}, shouldPass: true},
+		// OP_GREATERTHAN  0 > 1 == false
+		{script: []byte{txscript.OP_FALSE, txscript.OP_TRUE,
+			txscript.OP_GREATERTHAN}, shouldPass: false},
+		// OP_GREATERTHAN only one arg
+		{script: []byte{txscript.OP_TRUE, txscript.OP_GREATERTHAN},
+			shouldPass: false},
+		// OP_GREATERTHAN no args
+		{script: []byte{txscript.OP_GREATERTHAN}, shouldPass: false},
 
-	// OP_GREATERTHANOREQUAL  1 >= 1 == true
-	{script: []byte{txscript.OP_TRUE, txscript.OP_TRUE,
-		txscript.OP_GREATERTHANOREQUAL}, shouldPass: true},
-	// OP_GREATERTHANOREQUAL  1 >= 0 == false
-	{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE,
-		txscript.OP_GREATERTHANOREQUAL}, shouldPass: true},
-	// OP_GREATERTHANOREQUAL  0 >= 1 == true
-	{script: []byte{txscript.OP_FALSE, txscript.OP_TRUE,
-		txscript.OP_GREATERTHANOREQUAL}, shouldPass: false},
-	// OP_GREATERTHANOREQUAL only one arg
-	{script: []byte{txscript.OP_TRUE, txscript.OP_GREATERTHANOREQUAL},
-		shouldPass: false},
-	// OP_GREATERTHANOREQUAL no args
-	{script: []byte{txscript.OP_GREATERTHANOREQUAL}, shouldPass: false},
+		// OP_GREATERTHANOREQUAL  1 >= 1 == true
+		{script: []byte{txscript.OP_TRUE, txscript.OP_TRUE,
+			txscript.OP_GREATERTHANOREQUAL}, shouldPass: true},
+		// OP_GREATERTHANOREQUAL  1 >= 0 == false
+		{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE,
+			txscript.OP_GREATERTHANOREQUAL}, shouldPass: true},
+		// OP_GREATERTHANOREQUAL  0 >= 1 == true
+		{script: []byte{txscript.OP_FALSE, txscript.OP_TRUE,
+			txscript.OP_GREATERTHANOREQUAL}, shouldPass: false},
+		// OP_GREATERTHANOREQUAL only one arg
+		{script: []byte{txscript.OP_TRUE, txscript.OP_GREATERTHANOREQUAL},
+			shouldPass: false},
+		// OP_GREATERTHANOREQUAL no args
+		{script: []byte{txscript.OP_GREATERTHANOREQUAL}, shouldPass: false},
 
-	// OP_MIN basic functionality -> min(0,1) = 0 = min(1,0)
-	{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE,
-		txscript.OP_MIN}, shouldPass: false},
-	{script: []byte{txscript.OP_FALSE, txscript.OP_TRUE,
-		txscript.OP_MIN}, shouldPass: false},
-	// OP_MIN -> 1 arg errors
-	{script: []byte{txscript.OP_TRUE, txscript.OP_MIN},
-		shouldPass: false},
-	// OP_MIN -> 0 arg errors
-	{script: []byte{txscript.OP_MIN}, shouldPass: false},
-	// OP_MAX basic functionality -> max(0,1) = 1 = max(1,0)
-	{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE,
-		txscript.OP_MAX}, shouldPass: true},
-	{script: []byte{txscript.OP_FALSE, txscript.OP_TRUE,
-		txscript.OP_MAX}, shouldPass: true},
-	// OP_MAX -> 1 arg errors
-	{script: []byte{txscript.OP_TRUE, txscript.OP_MAX},
-		shouldPass: false},
-	// OP_MAX -> 0 arg errors
-	{script: []byte{txscript.OP_MAX}, shouldPass: false},
+		// OP_MIN basic functionality -> min(0,1) = 0 = min(1,0)
+		{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE,
+			txscript.OP_MIN}, shouldPass: false},
+		{script: []byte{txscript.OP_FALSE, txscript.OP_TRUE,
+			txscript.OP_MIN}, shouldPass: false},
+		// OP_MIN -> 1 arg errors
+		{script: []byte{txscript.OP_TRUE, txscript.OP_MIN},
+			shouldPass: false},
+		// OP_MIN -> 0 arg errors
+		{script: []byte{txscript.OP_MIN}, shouldPass: false},
+		// OP_MAX basic functionality -> max(0,1) = 1 = max(1,0)
+		{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE,
+			txscript.OP_MAX}, shouldPass: true},
+		{script: []byte{txscript.OP_FALSE, txscript.OP_TRUE,
+			txscript.OP_MAX}, shouldPass: true},
+		// OP_MAX -> 1 arg errors
+		{script: []byte{txscript.OP_TRUE, txscript.OP_MAX},
+			shouldPass: false},
+		// OP_MAX -> 0 arg errors
+		{script: []byte{txscript.OP_MAX}, shouldPass: false},
 
-	// By this point we know a number of operations appear to be working
-	// correctly. we can use them to test the other number pushing
-	// operations
-	{script: []byte{txscript.OP_TRUE, txscript.OP_1ADD, txscript.OP_2,
-		txscript.OP_EQUAL}, shouldPass: true},
-	{script: []byte{txscript.OP_2, txscript.OP_1ADD, txscript.OP_3,
-		txscript.OP_EQUAL}, shouldPass: true},
-	{script: []byte{txscript.OP_3, txscript.OP_1ADD, txscript.OP_4,
-		txscript.OP_EQUAL}, shouldPass: true},
-	{script: []byte{txscript.OP_4, txscript.OP_1ADD, txscript.OP_5,
-		txscript.OP_EQUAL}, shouldPass: true},
-	{script: []byte{txscript.OP_5, txscript.OP_1ADD, txscript.OP_6,
-		txscript.OP_EQUAL}, shouldPass: true},
-	{script: []byte{txscript.OP_6, txscript.OP_1ADD, txscript.OP_7,
-		txscript.OP_EQUAL}, shouldPass: true},
-	{script: []byte{txscript.OP_7, txscript.OP_1ADD, txscript.OP_8,
-		txscript.OP_EQUAL}, shouldPass: true},
-	{script: []byte{txscript.OP_8, txscript.OP_1ADD, txscript.OP_9,
-		txscript.OP_EQUAL}, shouldPass: true},
-	{script: []byte{txscript.OP_9, txscript.OP_1ADD, txscript.OP_10,
-		txscript.OP_EQUAL}, shouldPass: true},
-	{script: []byte{txscript.OP_10, txscript.OP_1ADD, txscript.OP_11,
-		txscript.OP_EQUAL}, shouldPass: true},
-	{script: []byte{txscript.OP_11, txscript.OP_1ADD, txscript.OP_12,
-		txscript.OP_EQUAL}, shouldPass: true},
-	{script: []byte{txscript.OP_12, txscript.OP_1ADD, txscript.OP_13,
-		txscript.OP_EQUAL}, shouldPass: true},
-	{script: []byte{txscript.OP_13, txscript.OP_1ADD, txscript.OP_14,
-		txscript.OP_EQUAL}, shouldPass: true},
-	{script: []byte{txscript.OP_14, txscript.OP_1ADD, txscript.OP_15,
-		txscript.OP_EQUAL}, shouldPass: true},
-	{script: []byte{txscript.OP_15, txscript.OP_1ADD, txscript.OP_16,
-		txscript.OP_EQUAL}, shouldPass: true},
+		// By this point we know a number of operations appear to be working
+		// correctly. we can use them to test the other number pushing
+		// operations
+		{script: []byte{txscript.OP_TRUE, txscript.OP_1ADD, txscript.OP_2,
+			txscript.OP_EQUAL}, shouldPass: true},
+		{script: []byte{txscript.OP_2, txscript.OP_1ADD, txscript.OP_3,
+			txscript.OP_EQUAL}, shouldPass: true},
+		{script: []byte{txscript.OP_3, txscript.OP_1ADD, txscript.OP_4,
+			txscript.OP_EQUAL}, shouldPass: true},
+		{script: []byte{txscript.OP_4, txscript.OP_1ADD, txscript.OP_5,
+			txscript.OP_EQUAL}, shouldPass: true},
+		{script: []byte{txscript.OP_5, txscript.OP_1ADD, txscript.OP_6,
+			txscript.OP_EQUAL}, shouldPass: true},
+		{script: []byte{txscript.OP_6, txscript.OP_1ADD, txscript.OP_7,
+			txscript.OP_EQUAL}, shouldPass: true},
+		{script: []byte{txscript.OP_7, txscript.OP_1ADD, txscript.OP_8,
+			txscript.OP_EQUAL}, shouldPass: true},
+		{script: []byte{txscript.OP_8, txscript.OP_1ADD, txscript.OP_9,
+			txscript.OP_EQUAL}, shouldPass: true},
+		{script: []byte{txscript.OP_9, txscript.OP_1ADD, txscript.OP_10,
+			txscript.OP_EQUAL}, shouldPass: true},
+		{script: []byte{txscript.OP_10, txscript.OP_1ADD, txscript.OP_11,
+			txscript.OP_EQUAL}, shouldPass: true},
+		{script: []byte{txscript.OP_11, txscript.OP_1ADD, txscript.OP_12,
+			txscript.OP_EQUAL}, shouldPass: true},
+		{script: []byte{txscript.OP_12, txscript.OP_1ADD, txscript.OP_13,
+			txscript.OP_EQUAL}, shouldPass: true},
+		{script: []byte{txscript.OP_13, txscript.OP_1ADD, txscript.OP_14,
+			txscript.OP_EQUAL}, shouldPass: true},
+		{script: []byte{txscript.OP_14, txscript.OP_1ADD, txscript.OP_15,
+			txscript.OP_EQUAL}, shouldPass: true},
+		{script: []byte{txscript.OP_15, txscript.OP_1ADD, txscript.OP_16,
+			txscript.OP_EQUAL}, shouldPass: true},
 
-	// Test OP_WITHIN x, min, max
-	// 0 <= 1 < 2
-	{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE, txscript.OP_2,
-		txscript.OP_WITHIN}, shouldPass: true},
-	// 1 <= 0 < 2 FAIL
-	{script: []byte{txscript.OP_FALSE, txscript.OP_TRUE, txscript.OP_2,
-		txscript.OP_WITHIN}, shouldPass: false},
-	// 1 <= 1 < 2
-	{script: []byte{txscript.OP_TRUE, txscript.OP_TRUE, txscript.OP_2,
-		txscript.OP_WITHIN}, shouldPass: true},
-	// 1 <= 2 < 2 FAIL
-	{script: []byte{txscript.OP_2, txscript.OP_TRUE, txscript.OP_2,
-		txscript.OP_WITHIN}, shouldPass: false},
-	// only two arguments
-	{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE,
-		txscript.OP_WITHIN}, shouldPass: false},
-	// only one argument
-	{script: []byte{txscript.OP_TRUE, txscript.OP_WITHIN},
-		shouldPass: false},
-	// no arguments
-	{script: []byte{txscript.OP_WITHIN}, shouldPass: false},
+		// Test OP_WITHIN x, min, max
+		// 0 <= 1 < 2
+		{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE, txscript.OP_2,
+			txscript.OP_WITHIN}, shouldPass: true},
+		// 1 <= 0 < 2 FAIL
+		{script: []byte{txscript.OP_FALSE, txscript.OP_TRUE, txscript.OP_2,
+			txscript.OP_WITHIN}, shouldPass: false},
+		// 1 <= 1 < 2
+		{script: []byte{txscript.OP_TRUE, txscript.OP_TRUE, txscript.OP_2,
+			txscript.OP_WITHIN}, shouldPass: true},
+		// 1 <= 2 < 2 FAIL
+		{script: []byte{txscript.OP_2, txscript.OP_TRUE, txscript.OP_2,
+			txscript.OP_WITHIN}, shouldPass: false},
+		// only two arguments
+		{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE,
+			txscript.OP_WITHIN}, shouldPass: false},
+		// only one argument
+		{script: []byte{txscript.OP_TRUE, txscript.OP_WITHIN},
+			shouldPass: false},
+		// no arguments
+		{script: []byte{txscript.OP_WITHIN}, shouldPass: false},
 
-	// OP_BOOLAND
-	// 1 && 1 == 1
-	{script: []byte{txscript.OP_TRUE, txscript.OP_TRUE,
-		txscript.OP_BOOLAND}, shouldPass: true},
-	// 1 && 0 == 0
-	{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE,
-		txscript.OP_BOOLAND}, shouldPass: false},
-	// 0 && 1 == 0
-	{script: []byte{txscript.OP_FALSE, txscript.OP_TRUE,
-		txscript.OP_BOOLAND}, shouldPass: false},
-	// 0 && 0 == 0
-	{script: []byte{txscript.OP_FALSE, txscript.OP_FALSE,
-		txscript.OP_BOOLAND}, shouldPass: false},
-	// 0 && <nothing> - boom
-	{script: []byte{txscript.OP_TRUE, txscript.OP_BOOLAND},
-		shouldPass: false},
-	// <nothing> && <nothing> - boom
-	{script: []byte{txscript.OP_BOOLAND}, shouldPass: false},
+		// OP_BOOLAND
+		// 1 && 1 == 1
+		{script: []byte{txscript.OP_TRUE, txscript.OP_TRUE,
+			txscript.OP_BOOLAND}, shouldPass: true},
+		// 1 && 0 == 0
+		{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE,
+			txscript.OP_BOOLAND}, shouldPass: false},
+		// 0 && 1 == 0
+		{script: []byte{txscript.OP_FALSE, txscript.OP_TRUE,
+			txscript.OP_BOOLAND}, shouldPass: false},
+		// 0 && 0 == 0
+		{script: []byte{txscript.OP_FALSE, txscript.OP_FALSE,
+			txscript.OP_BOOLAND}, shouldPass: false},
+		// 0 && <nothing> - boom
+		{script: []byte{txscript.OP_TRUE, txscript.OP_BOOLAND},
+			shouldPass: false},
+		// <nothing> && <nothing> - boom
+		{script: []byte{txscript.OP_BOOLAND}, shouldPass: false},
 
-	// OP_BOOLOR
-	// 1 || 1 == 1
-	{script: []byte{txscript.OP_TRUE, txscript.OP_TRUE,
-		txscript.OP_BOOLOR}, shouldPass: true},
-	// 1 || 0 == 1
-	{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE,
-		txscript.OP_BOOLOR}, shouldPass: true},
-	// 0 || 1 == 1
-	{script: []byte{txscript.OP_FALSE, txscript.OP_TRUE,
-		txscript.OP_BOOLOR}, shouldPass: true},
-	// 0 || 0 == 0
-	{script: []byte{txscript.OP_FALSE, txscript.OP_FALSE,
-		txscript.OP_BOOLOR}, shouldPass: false},
-	// 0 && <nothing> - boom
-	{script: []byte{txscript.OP_TRUE, txscript.OP_BOOLOR},
-		shouldPass: false},
-	// <nothing> && <nothing> - boom
-	{script: []byte{txscript.OP_BOOLOR}, shouldPass: false},
+		// OP_BOOLOR
+		// 1 || 1 == 1
+		{script: []byte{txscript.OP_TRUE, txscript.OP_TRUE,
+			txscript.OP_BOOLOR}, shouldPass: true},
+		// 1 || 0 == 1
+		{script: []byte{txscript.OP_TRUE, txscript.OP_FALSE,
+			txscript.OP_BOOLOR}, shouldPass: true},
+		// 0 || 1 == 1
+		{script: []byte{txscript.OP_FALSE, txscript.OP_TRUE,
+			txscript.OP_BOOLOR}, shouldPass: true},
+		// 0 || 0 == 0
+		{script: []byte{txscript.OP_FALSE, txscript.OP_FALSE,
+			txscript.OP_BOOLOR}, shouldPass: false},
+		// 0 && <nothing> - boom
+		{script: []byte{txscript.OP_TRUE, txscript.OP_BOOLOR},
+			shouldPass: false},
+		// <nothing> && <nothing> - boom
+		{script: []byte{txscript.OP_BOOLOR}, shouldPass: false},
 
-	// OP_0NOTEQUAL
-	//  1 with input != 0 XXX check output is actually 1.
-	{script: []byte{txscript.OP_TRUE, txscript.OP_0NOTEQUAL},
-		shouldPass: true},
-	{script: []byte{txscript.OP_2, txscript.OP_0NOTEQUAL},
-		shouldPass: true},
-	{script: []byte{txscript.OP_3, txscript.OP_0NOTEQUAL},
-		shouldPass: true},
-	{script: []byte{txscript.OP_4, txscript.OP_0NOTEQUAL},
-		shouldPass: true},
-	{script: []byte{txscript.OP_5, txscript.OP_0NOTEQUAL},
-		shouldPass: true},
-	{script: []byte{txscript.OP_6, txscript.OP_0NOTEQUAL},
-		shouldPass: true},
-	{script: []byte{txscript.OP_7, txscript.OP_0NOTEQUAL},
-		shouldPass: true},
-	{script: []byte{txscript.OP_8, txscript.OP_0NOTEQUAL},
-		shouldPass: true},
-	{script: []byte{txscript.OP_9, txscript.OP_0NOTEQUAL},
-		shouldPass: true},
-	{script: []byte{txscript.OP_10, txscript.OP_0NOTEQUAL},
-		shouldPass: true},
-	{script: []byte{txscript.OP_11, txscript.OP_0NOTEQUAL},
-		shouldPass: true},
-	{script: []byte{txscript.OP_12, txscript.OP_0NOTEQUAL},
-		shouldPass: true},
-	{script: []byte{txscript.OP_13, txscript.OP_0NOTEQUAL},
-		shouldPass: true},
-	{script: []byte{txscript.OP_14, txscript.OP_0NOTEQUAL},
-		shouldPass: true},
-	{script: []byte{txscript.OP_15, txscript.OP_0NOTEQUAL},
-		shouldPass: true},
-	{script: []byte{txscript.OP_16, txscript.OP_0NOTEQUAL},
-		shouldPass: true},
-	{script: []byte{txscript.OP_FALSE, txscript.OP_0NOTEQUAL}, shouldPass: false},
-	// No arguments also blows up
-	{script: []byte{txscript.OP_0NOTEQUAL}, shouldPass: false},
+		// OP_0NOTEQUAL
+		//  1 with input != 0 XXX check output is actually 1.
+		{script: []byte{txscript.OP_TRUE, txscript.OP_0NOTEQUAL},
+			shouldPass: true},
+		{script: []byte{txscript.OP_2, txscript.OP_0NOTEQUAL},
+			shouldPass: true},
+		{script: []byte{txscript.OP_3, txscript.OP_0NOTEQUAL},
+			shouldPass: true},
+		{script: []byte{txscript.OP_4, txscript.OP_0NOTEQUAL},
+			shouldPass: true},
+		{script: []byte{txscript.OP_5, txscript.OP_0NOTEQUAL},
+			shouldPass: true},
+		{script: []byte{txscript.OP_6, txscript.OP_0NOTEQUAL},
+			shouldPass: true},
+		{script: []byte{txscript.OP_7, txscript.OP_0NOTEQUAL},
+			shouldPass: true},
+		{script: []byte{txscript.OP_8, txscript.OP_0NOTEQUAL},
+			shouldPass: true},
+		{script: []byte{txscript.OP_9, txscript.OP_0NOTEQUAL},
+			shouldPass: true},
+		{script: []byte{txscript.OP_10, txscript.OP_0NOTEQUAL},
+			shouldPass: true},
+		{script: []byte{txscript.OP_11, txscript.OP_0NOTEQUAL},
+			shouldPass: true},
+		{script: []byte{txscript.OP_12, txscript.OP_0NOTEQUAL},
+			shouldPass: true},
+		{script: []byte{txscript.OP_13, txscript.OP_0NOTEQUAL},
+			shouldPass: true},
+		{script: []byte{txscript.OP_14, txscript.OP_0NOTEQUAL},
+			shouldPass: true},
+		{script: []byte{txscript.OP_15, txscript.OP_0NOTEQUAL},
+			shouldPass: true},
+		{script: []byte{txscript.OP_16, txscript.OP_0NOTEQUAL},
+			shouldPass: true},
+		{script: []byte{txscript.OP_FALSE, txscript.OP_0NOTEQUAL}, shouldPass: false},
+		// No arguments also blows up
+		{script: []byte{txscript.OP_0NOTEQUAL}, shouldPass: false},
 
-	// OP_NOT: 1 i input is 0, else 0
-	{script: []byte{txscript.OP_TRUE, txscript.OP_NOT}, shouldPass: false},
-	{script: []byte{txscript.OP_2, txscript.OP_NOT}, shouldPass: false},
-	{script: []byte{txscript.OP_3, txscript.OP_NOT}, shouldPass: false},
-	{script: []byte{txscript.OP_4, txscript.OP_NOT}, shouldPass: false},
-	{script: []byte{txscript.OP_5, txscript.OP_NOT}, shouldPass: false},
-	{script: []byte{txscript.OP_6, txscript.OP_NOT}, shouldPass: false},
-	{script: []byte{txscript.OP_7, txscript.OP_NOT}, shouldPass: false},
-	{script: []byte{txscript.OP_8, txscript.OP_NOT}, shouldPass: false},
-	{script: []byte{txscript.OP_9, txscript.OP_NOT}, shouldPass: false},
-	{script: []byte{txscript.OP_10, txscript.OP_NOT}, shouldPass: false},
-	{script: []byte{txscript.OP_11, txscript.OP_NOT}, shouldPass: false},
-	{script: []byte{txscript.OP_12, txscript.OP_NOT}, shouldPass: false},
-	{script: []byte{txscript.OP_13, txscript.OP_NOT}, shouldPass: false},
-	{script: []byte{txscript.OP_14, txscript.OP_NOT}, shouldPass: false},
-	{script: []byte{txscript.OP_15, txscript.OP_NOT}, shouldPass: false},
-	{script: []byte{txscript.OP_16, txscript.OP_NOT}, shouldPass: false},
-	// check negative numbers too
-	{script: []byte{txscript.OP_TRUE, txscript.OP_NEGATE,
-		txscript.OP_NOT}, shouldPass: false},
-	{script: []byte{txscript.OP_FALSE, txscript.OP_NOT},
-		shouldPass: true},
-	// No arguments also blows up
-	{script: []byte{txscript.OP_NOT}, shouldPass: false},
+		// OP_NOT: 1 i input is 0, else 0
+		{script: []byte{txscript.OP_TRUE, txscript.OP_NOT}, shouldPass: false},
+		{script: []byte{txscript.OP_2, txscript.OP_NOT}, shouldPass: false},
+		{script: []byte{txscript.OP_3, txscript.OP_NOT}, shouldPass: false},
+		{script: []byte{txscript.OP_4, txscript.OP_NOT}, shouldPass: false},
+		{script: []byte{txscript.OP_5, txscript.OP_NOT}, shouldPass: false},
+		{script: []byte{txscript.OP_6, txscript.OP_NOT}, shouldPass: false},
+		{script: []byte{txscript.OP_7, txscript.OP_NOT}, shouldPass: false},
+		{script: []byte{txscript.OP_8, txscript.OP_NOT}, shouldPass: false},
+		{script: []byte{txscript.OP_9, txscript.OP_NOT}, shouldPass: false},
+		{script: []byte{txscript.OP_10, txscript.OP_NOT}, shouldPass: false},
+		{script: []byte{txscript.OP_11, txscript.OP_NOT}, shouldPass: false},
+		{script: []byte{txscript.OP_12, txscript.OP_NOT}, shouldPass: false},
+		{script: []byte{txscript.OP_13, txscript.OP_NOT}, shouldPass: false},
+		{script: []byte{txscript.OP_14, txscript.OP_NOT}, shouldPass: false},
+		{script: []byte{txscript.OP_15, txscript.OP_NOT}, shouldPass: false},
+		{script: []byte{txscript.OP_16, txscript.OP_NOT}, shouldPass: false},
+		// check negative numbers too
+		{script: []byte{txscript.OP_TRUE, txscript.OP_NEGATE,
+			txscript.OP_NOT}, shouldPass: false},
+		{script: []byte{txscript.OP_FALSE, txscript.OP_NOT},
+			shouldPass: true},
+		// No arguments also blows up
+		{script: []byte{txscript.OP_NOT}, shouldPass: false},
 
-	// Conditional Execution
-	{script: []byte{txscript.OP_0, txscript.OP_IF, txscript.OP_0, txscript.OP_ELSE, txscript.OP_2, txscript.OP_ENDIF}, shouldPass: true},
-	{script: []byte{txscript.OP_1, txscript.OP_IF, txscript.OP_0, txscript.OP_ELSE, txscript.OP_2, txscript.OP_ENDIF}, shouldPass: false},
-	{script: []byte{txscript.OP_1, txscript.OP_NOTIF, txscript.OP_0, txscript.OP_ELSE, txscript.OP_2, txscript.OP_ENDIF}, shouldPass: true},
-	{script: []byte{txscript.OP_0, txscript.OP_NOTIF, txscript.OP_0, txscript.OP_ELSE, txscript.OP_2, txscript.OP_ENDIF}, shouldPass: false},
-	{script: []byte{txscript.OP_0, txscript.OP_IF, txscript.OP_0, txscript.OP_ELSE, txscript.OP_2}, shouldFail: txscript.ErrStackMissingEndif},
-	{script: []byte{txscript.OP_1, txscript.OP_NOTIF, txscript.OP_0, txscript.OP_ELSE, txscript.OP_2}, shouldFail: txscript.ErrStackMissingEndif},
-	{script: []byte{txscript.OP_1, txscript.OP_1, txscript.OP_IF, txscript.OP_IF, txscript.OP_1, txscript.OP_ELSE, txscript.OP_0, txscript.OP_ENDIF, txscript.OP_ENDIF}, shouldPass: true},
-	{script: []byte{txscript.OP_1, txscript.OP_IF, txscript.OP_IF, txscript.OP_1, txscript.OP_ELSE, txscript.OP_0, txscript.OP_ENDIF, txscript.OP_ENDIF}, shouldFail: txscript.ErrStackUnderflow},
-	{script: []byte{txscript.OP_0, txscript.OP_IF, txscript.OP_IF, txscript.OP_0, txscript.OP_ELSE, txscript.OP_0, txscript.OP_ENDIF, txscript.OP_ELSE, txscript.OP_1, txscript.OP_ENDIF}, shouldPass: true},
-	{script: []byte{txscript.OP_0, txscript.OP_IF, txscript.OP_NOTIF, txscript.OP_0, txscript.OP_ELSE, txscript.OP_0, txscript.OP_ENDIF, txscript.OP_ELSE, txscript.OP_1, txscript.OP_ENDIF}, shouldPass: true},
-	{script: []byte{txscript.OP_NOTIF, txscript.OP_0, txscript.OP_ENDIF}, shouldFail: txscript.ErrStackUnderflow},
-	{script: []byte{txscript.OP_ELSE, txscript.OP_0, txscript.OP_ENDIF}, shouldFail: txscript.ErrStackNoIf},
-	{script: []byte{txscript.OP_ENDIF}, shouldFail: txscript.ErrStackNoIf},
-	/* up here because error from sig parsing is undefined. */
-	{script: []byte{txscript.OP_1, txscript.OP_1, txscript.OP_DATA_65,
-		0x04, 0xae, 0x1a, 0x62, 0xfe, 0x09, 0xc5, 0xf5, 0x1b, 0x13,
-		0x90, 0x5f, 0x07, 0xf0, 0x6b, 0x99, 0xa2, 0xf7, 0x15, 0x9b,
-		0x22, 0x25, 0xf3, 0x74, 0xcd, 0x37, 0x8d, 0x71, 0x30, 0x2f,
-		0xa2, 0x84, 0x14, 0xe7, 0xaa, 0xb3, 0x73, 0x97, 0xf5, 0x54,
-		0xa7, 0xdf, 0x5f, 0x14, 0x2c, 0x21, 0xc1, 0xb7, 0x30, 0x3b,
-		0x8a, 0x06, 0x26, 0xf1, 0xba, 0xde, 0xd5, 0xc7, 0x2a, 0x70,
-		0x4f, 0x7e, 0x6c, 0xd8, 0x4c,
-		txscript.OP_1, txscript.OP_CHECKMULTISIG},
-		canonical:  false,
-		shouldPass: false},
-	{script: []byte{txscript.OP_1, txscript.OP_1, txscript.OP_DATA_65,
-		0x04, 0xae, 0x1a, 0x62, 0xfe, 0x09, 0xc5, 0xf5, 0x1b, 0x13,
-		0x90, 0x5f, 0x07, 0xf0, 0x6b, 0x99, 0xa2, 0xf7, 0x15, 0x9b,
-		0x22, 0x25, 0xf3, 0x74, 0xcd, 0x37, 0x8d, 0x71, 0x30, 0x2f,
-		0xa2, 0x84, 0x14, 0xe7, 0xaa, 0xb3, 0x73, 0x97, 0xf5, 0x54,
-		0xa7, 0xdf, 0x5f, 0x14, 0x2c, 0x21, 0xc1, 0xb7, 0x30, 0x3b,
-		0x8a, 0x06, 0x26, 0xf1, 0xba, 0xde, 0xd5, 0xc7, 0x2a, 0x70,
-		0x4f, 0x7e, 0x6c, 0xd8, 0x4c,
-		txscript.OP_1, txscript.OP_CHECKMULTISIG},
-		canonical:  true,
-		shouldPass: false},
-	/* up here because no defined error case. */
-	{script: []byte{txscript.OP_1, txscript.OP_1, txscript.OP_DATA_65,
-		0x04, 0xae, 0x1a, 0x62, 0xfe, 0x09, 0xc5, 0xf5, 0x1b, 0x13,
-		0x90, 0x5f, 0x07, 0xf0, 0x6b, 0x99, 0xa2, 0xf7, 0x15, 0x9b,
-		0x22, 0x25, 0xf3, 0x74, 0xcd, 0x37, 0x8d, 0x71, 0x30, 0x2f,
-		0xa2, 0x84, 0x14, 0xe7, 0xaa, 0xb3, 0x73, 0x97, 0xf5, 0x54,
-		0xa7, 0xdf, 0x5f, 0x14, 0x2c, 0x21, 0xc1, 0xb7, 0x30, 0x3b,
-		0x8a, 0x06, 0x26, 0xf1, 0xba, 0xde, 0xd5, 0xc7, 0x2a, 0x70,
-		0x4f, 0x7e, 0x6c, 0xd8, 0x4c,
-		txscript.OP_1, txscript.OP_CHECKMULTISIGVERIFY},
-		shouldPass: false},
+		// Conditional Execution
+		{script: []byte{txscript.OP_0, txscript.OP_IF, txscript.OP_0, txscript.OP_ELSE, txscript.OP_2, txscript.OP_ENDIF}, shouldPass: true},
+		{script: []byte{txscript.OP_1, txscript.OP_IF, txscript.OP_0, txscript.OP_ELSE, txscript.OP_2, txscript.OP_ENDIF}, shouldPass: false},
+		{script: []byte{txscript.OP_1, txscript.OP_NOTIF, txscript.OP_0, txscript.OP_ELSE, txscript.OP_2, txscript.OP_ENDIF}, shouldPass: true},
+		{script: []byte{txscript.OP_0, txscript.OP_NOTIF, txscript.OP_0, txscript.OP_ELSE, txscript.OP_2, txscript.OP_ENDIF}, shouldPass: false},
+		{script: []byte{txscript.OP_0, txscript.OP_IF, txscript.OP_0, txscript.OP_ELSE, txscript.OP_2}, shouldFail: txscript.ErrStackMissingEndif},
+		{script: []byte{txscript.OP_1, txscript.OP_NOTIF, txscript.OP_0, txscript.OP_ELSE, txscript.OP_2}, shouldFail: txscript.ErrStackMissingEndif},
+		{script: []byte{txscript.OP_1, txscript.OP_1, txscript.OP_IF, txscript.OP_IF, txscript.OP_1, txscript.OP_ELSE, txscript.OP_0, txscript.OP_ENDIF, txscript.OP_ENDIF}, shouldPass: true},
+		{script: []byte{txscript.OP_1, txscript.OP_IF, txscript.OP_IF, txscript.OP_1, txscript.OP_ELSE, txscript.OP_0, txscript.OP_ENDIF, txscript.OP_ENDIF}, shouldFail: txscript.ErrStackUnderflow},
+		{script: []byte{txscript.OP_0, txscript.OP_IF, txscript.OP_IF, txscript.OP_0, txscript.OP_ELSE, txscript.OP_0, txscript.OP_ENDIF, txscript.OP_ELSE, txscript.OP_1, txscript.OP_ENDIF}, shouldPass: true},
+		{script: []byte{txscript.OP_0, txscript.OP_IF, txscript.OP_NOTIF, txscript.OP_0, txscript.OP_ELSE, txscript.OP_0, txscript.OP_ENDIF, txscript.OP_ELSE, txscript.OP_1, txscript.OP_ENDIF}, shouldPass: true},
+		{script: []byte{txscript.OP_NOTIF, txscript.OP_0, txscript.OP_ENDIF}, shouldFail: txscript.ErrStackUnderflow},
+		{script: []byte{txscript.OP_ELSE, txscript.OP_0, txscript.OP_ENDIF}, shouldFail: txscript.ErrStackNoIf},
+		{script: []byte{txscript.OP_ENDIF}, shouldFail: txscript.ErrStackNoIf},
+		/* up here because error from sig parsing is undefined. */
+		{script: []byte{txscript.OP_1, txscript.OP_1, txscript.OP_DATA_65,
+			0x04, 0xae, 0x1a, 0x62, 0xfe, 0x09, 0xc5, 0xf5, 0x1b, 0x13,
+			0x90, 0x5f, 0x07, 0xf0, 0x6b, 0x99, 0xa2, 0xf7, 0x15, 0x9b,
+			0x22, 0x25, 0xf3, 0x74, 0xcd, 0x37, 0x8d, 0x71, 0x30, 0x2f,
+			0xa2, 0x84, 0x14, 0xe7, 0xaa, 0xb3, 0x73, 0x97, 0xf5, 0x54,
+			0xa7, 0xdf, 0x5f, 0x14, 0x2c, 0x21, 0xc1, 0xb7, 0x30, 0x3b,
+			0x8a, 0x06, 0x26, 0xf1, 0xba, 0xde, 0xd5, 0xc7, 0x2a, 0x70,
+			0x4f, 0x7e, 0x6c, 0xd8, 0x4c,
+			txscript.OP_1, txscript.OP_CHECKMULTISIG},
+			canonical:  false,
+			shouldPass: false},
+		{script: []byte{txscript.OP_1, txscript.OP_1, txscript.OP_DATA_65,
+			0x04, 0xae, 0x1a, 0x62, 0xfe, 0x09, 0xc5, 0xf5, 0x1b, 0x13,
+			0x90, 0x5f, 0x07, 0xf0, 0x6b, 0x99, 0xa2, 0xf7, 0x15, 0x9b,
+			0x22, 0x25, 0xf3, 0x74, 0xcd, 0x37, 0x8d, 0x71, 0x30, 0x2f,
+			0xa2, 0x84, 0x14, 0xe7, 0xaa, 0xb3, 0x73, 0x97, 0xf5, 0x54,
+			0xa7, 0xdf, 0x5f, 0x14, 0x2c, 0x21, 0xc1, 0xb7, 0x30, 0x3b,
+			0x8a, 0x06, 0x26, 0xf1, 0xba, 0xde, 0xd5, 0xc7, 0x2a, 0x70,
+			0x4f, 0x7e, 0x6c, 0xd8, 0x4c,
+			txscript.OP_1, txscript.OP_CHECKMULTISIG},
+			canonical:  true,
+			shouldPass: false},
+		/* up here because no defined error case. */
+		{script: []byte{txscript.OP_1, txscript.OP_1, txscript.OP_DATA_65,
+			0x04, 0xae, 0x1a, 0x62, 0xfe, 0x09, 0xc5, 0xf5, 0x1b, 0x13,
+			0x90, 0x5f, 0x07, 0xf0, 0x6b, 0x99, 0xa2, 0xf7, 0x15, 0x9b,
+			0x22, 0x25, 0xf3, 0x74, 0xcd, 0x37, 0x8d, 0x71, 0x30, 0x2f,
+			0xa2, 0x84, 0x14, 0xe7, 0xaa, 0xb3, 0x73, 0x97, 0xf5, 0x54,
+			0xa7, 0xdf, 0x5f, 0x14, 0x2c, 0x21, 0xc1, 0xb7, 0x30, 0x3b,
+			0x8a, 0x06, 0x26, 0xf1, 0xba, 0xde, 0xd5, 0xc7, 0x2a, 0x70,
+			0x4f, 0x7e, 0x6c, 0xd8, 0x4c,
+			txscript.OP_1, txscript.OP_CHECKMULTISIGVERIFY},
+			shouldPass: false},
 
-	// Invalid Opcodes
-	{script: []byte{186}, shouldPass: false},
-	{script: []byte{187}, shouldPass: false},
-	{script: []byte{188}, shouldPass: false},
-	{script: []byte{189}, shouldPass: false},
-	{script: []byte{190}, shouldPass: false},
-	{script: []byte{191}, shouldPass: false},
-	{script: []byte{192}, shouldPass: false},
-	{script: []byte{193}, shouldPass: false},
-	{script: []byte{194}, shouldPass: false},
-	{script: []byte{195}, shouldPass: false},
-	{script: []byte{195}, shouldPass: false},
-	{script: []byte{196}, shouldPass: false},
-	{script: []byte{197}, shouldPass: false},
-	{script: []byte{198}, shouldPass: false},
-	{script: []byte{199}, shouldPass: false},
-	{script: []byte{200}, shouldPass: false},
-	{script: []byte{201}, shouldPass: false},
-	{script: []byte{202}, shouldPass: false},
-	{script: []byte{203}, shouldPass: false},
-	{script: []byte{204}, shouldPass: false},
-	{script: []byte{205}, shouldPass: false},
-	{script: []byte{206}, shouldPass: false},
-	{script: []byte{207}, shouldPass: false},
-	{script: []byte{208}, shouldPass: false},
-	{script: []byte{209}, shouldPass: false},
-	{script: []byte{210}, shouldPass: false},
-	{script: []byte{211}, shouldPass: false},
-	{script: []byte{212}, shouldPass: false},
-	{script: []byte{213}, shouldPass: false},
-	{script: []byte{214}, shouldPass: false},
-	{script: []byte{215}, shouldPass: false},
-	{script: []byte{216}, shouldPass: false},
-	{script: []byte{217}, shouldPass: false},
-	{script: []byte{218}, shouldPass: false},
-	{script: []byte{219}, shouldPass: false},
-	{script: []byte{220}, shouldPass: false},
-	{script: []byte{221}, shouldPass: false},
-	{script: []byte{222}, shouldPass: false},
-	{script: []byte{223}, shouldPass: false},
-	{script: []byte{224}, shouldPass: false},
-	{script: []byte{225}, shouldPass: false},
-	{script: []byte{226}, shouldPass: false},
-	{script: []byte{227}, shouldPass: false},
-	{script: []byte{228}, shouldPass: false},
-	{script: []byte{229}, shouldPass: false},
-	{script: []byte{230}, shouldPass: false},
-	{script: []byte{231}, shouldPass: false},
-	{script: []byte{232}, shouldPass: false},
-	{script: []byte{233}, shouldPass: false},
-	{script: []byte{234}, shouldPass: false},
-	{script: []byte{235}, shouldPass: false},
-	{script: []byte{236}, shouldPass: false},
-	{script: []byte{237}, shouldPass: false},
-	{script: []byte{238}, shouldPass: false},
-	{script: []byte{239}, shouldPass: false},
-	{script: []byte{240}, shouldPass: false},
-	{script: []byte{241}, shouldPass: false},
-	{script: []byte{242}, shouldPass: false},
-	{script: []byte{243}, shouldPass: false},
-	{script: []byte{244}, shouldPass: false},
-	{script: []byte{245}, shouldPass: false},
-	{script: []byte{246}, shouldPass: false},
-	{script: []byte{247}, shouldPass: false},
-	{script: []byte{248}, shouldPass: false},
-	{script: []byte{249}, shouldPass: false},
-	{script: []byte{250}, shouldPass: false},
-	{script: []byte{251}, shouldPass: false},
-	{script: []byte{252}, shouldPass: false},
-}
+		// Invalid Opcodes
+		{script: []byte{186}, shouldPass: false},
+		{script: []byte{187}, shouldPass: false},
+		{script: []byte{188}, shouldPass: false},
+		{script: []byte{189}, shouldPass: false},
+		{script: []byte{190}, shouldPass: false},
+		{script: []byte{191}, shouldPass: false},
+		{script: []byte{192}, shouldPass: false},
+		{script: []byte{193}, shouldPass: false},
+		{script: []byte{194}, shouldPass: false},
+		{script: []byte{195}, shouldPass: false},
+		{script: []byte{195}, shouldPass: false},
+		{script: []byte{196}, shouldPass: false},
+		{script: []byte{197}, shouldPass: false},
+		{script: []byte{198}, shouldPass: false},
+		{script: []byte{199}, shouldPass: false},
+		{script: []byte{200}, shouldPass: false},
+		{script: []byte{201}, shouldPass: false},
+		{script: []byte{202}, shouldPass: false},
+		{script: []byte{203}, shouldPass: false},
+		{script: []byte{204}, shouldPass: false},
+		{script: []byte{205}, shouldPass: false},
+		{script: []byte{206}, shouldPass: false},
+		{script: []byte{207}, shouldPass: false},
+		{script: []byte{208}, shouldPass: false},
+		{script: []byte{209}, shouldPass: false},
+		{script: []byte{210}, shouldPass: false},
+		{script: []byte{211}, shouldPass: false},
+		{script: []byte{212}, shouldPass: false},
+		{script: []byte{213}, shouldPass: false},
+		{script: []byte{214}, shouldPass: false},
+		{script: []byte{215}, shouldPass: false},
+		{script: []byte{216}, shouldPass: false},
+		{script: []byte{217}, shouldPass: false},
+		{script: []byte{218}, shouldPass: false},
+		{script: []byte{219}, shouldPass: false},
+		{script: []byte{220}, shouldPass: false},
+		{script: []byte{221}, shouldPass: false},
+		{script: []byte{222}, shouldPass: false},
+		{script: []byte{223}, shouldPass: false},
+		{script: []byte{224}, shouldPass: false},
+		{script: []byte{225}, shouldPass: false},
+		{script: []byte{226}, shouldPass: false},
+		{script: []byte{227}, shouldPass: false},
+		{script: []byte{228}, shouldPass: false},
+		{script: []byte{229}, shouldPass: false},
+		{script: []byte{230}, shouldPass: false},
+		{script: []byte{231}, shouldPass: false},
+		{script: []byte{232}, shouldPass: false},
+		{script: []byte{233}, shouldPass: false},
+		{script: []byte{234}, shouldPass: false},
+		{script: []byte{235}, shouldPass: false},
+		{script: []byte{236}, shouldPass: false},
+		{script: []byte{237}, shouldPass: false},
+		{script: []byte{238}, shouldPass: false},
+		{script: []byte{239}, shouldPass: false},
+		{script: []byte{240}, shouldPass: false},
+		{script: []byte{241}, shouldPass: false},
+		{script: []byte{242}, shouldPass: false},
+		{script: []byte{243}, shouldPass: false},
+		{script: []byte{244}, shouldPass: false},
+		{script: []byte{245}, shouldPass: false},
+		{script: []byte{246}, shouldPass: false},
+		{script: []byte{247}, shouldPass: false},
+		{script: []byte{248}, shouldPass: false},
+		{script: []byte{249}, shouldPass: false},
+		{script: []byte{250}, shouldPass: false},
+		{script: []byte{251}, shouldPass: false},
+		{script: []byte{252}, shouldPass: false},
+	}
 
-func testScript(t *testing.T, script []byte, canonical bool) (err error) {
-	// mock up fake tx.
-	tx := &btcwire.MsgTx{
+	// Mock up fake tx used during script execution.
+	mockTx := &btcwire.MsgTx{
 		Version: 1,
 		TxIn: []*btcwire.TxIn{
 			{
@@ -501,38 +501,38 @@ func testScript(t *testing.T, script []byte, canonical bool) (err error) {
 		LockTime: 0,
 	}
 
-	tx.TxOut[0].PkScript = script
+	for i, test := range tests {
+		// Parse and execute the test script.
+		var flags txscript.ScriptFlags
+		if test.canonical {
+			flags = txscript.ScriptCanonicalSignatures
+		}
+		mockTx.TxOut[0].PkScript = test.script
+		sigScript := mockTx.TxIn[0].SignatureScript
+		engine, err := txscript.NewScript(sigScript, test.script, 0,
+			mockTx, flags)
+		if err == nil {
+			err = engine.Execute()
+		}
 
-	var flags txscript.ScriptFlags
-	if canonical {
-		flags = txscript.ScriptCanonicalSignatures
-	}
-
-	engine, err := txscript.NewScript(tx.TxIn[0].SignatureScript,
-		tx.TxOut[0].PkScript, 0, tx, flags)
-	if err != nil {
-		return err
-	}
-	return engine.Execute()
-}
-
-func TestScripts(t *testing.T) {
-	// for each entry in the list
-	for i := range opcodeTests {
-		shouldPass := opcodeTests[i].shouldPass
-		shouldFail := opcodeTests[i].shouldFail
-		err := testScript(t, opcodeTests[i].script, opcodeTests[i].canonical)
-		if shouldFail != nil {
+		if test.shouldFail != nil {
 			if err == nil {
-				t.Errorf("test %d passed should fail with %v", i, err)
-			} else if shouldFail != err {
-				t.Errorf("test %d failed with wrong error [%v], expected [%v]", i, err, shouldFail)
+				t.Errorf("test %d passed should fail with %v",
+					i, test.shouldFail)
+				continue
+			} else if test.shouldFail != err {
+				t.Errorf("test %d failed with wrong error "+
+					"[%v], expected [%v]", i, err,
+					test.shouldFail)
+				continue
 			}
 		}
-		if shouldPass && err != nil {
+		if test.shouldPass && err != nil {
 			t.Errorf("test %d failed: %v", i, err)
-		} else if !shouldPass && err == nil {
+			continue
+		} else if !test.shouldPass && err == nil {
 			t.Errorf("test %d passed, should fail", i)
+			continue
 		}
 	}
 }
@@ -4374,6 +4374,8 @@ func testOpcode(t *testing.T, test *detailedTest) {
 }
 
 func TestOpcodes(t *testing.T) {
+	t.Parallel()
+
 	for i := range detailedTests {
 		testOpcode(t, &detailedTests[i])
 	}
@@ -4402,6 +4404,8 @@ func testDisasmString(t *testing.T, test *detailedTest) {
 }
 
 func TestDisasmStrings(t *testing.T) {
+	t.Parallel()
+
 	for i := range detailedTests {
 		testDisasmString(t, &detailedTests[i])
 	}
@@ -4414,6 +4418,8 @@ func TestDisasmStrings(t *testing.T) {
 // While this isn't as precise as using full transaction scripts, this gives
 // us coverage over a wider range of opcodes.
 func TestSigOps(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range detailedTests {
 		count := txscript.GetSigOpCount(test.script)
 		if count != test.nSigOps {
@@ -4432,6 +4438,8 @@ func TestSigOps(t *testing.T) {
 // us coverage over a wider range of opcodes. See script_test.go for tests
 // using real transactions to provide a bit more coverage.
 func TestPreciseSigOps(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range detailedTests {
 		count := txscript.GetPreciseSigOpCount(
 			[]byte{txscript.OP_1}, test.script, false)
