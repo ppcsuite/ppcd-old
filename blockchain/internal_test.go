@@ -16,7 +16,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/mably/btcutil"
+	"github.com/ppcsuite/btcutil"
 )
 
 /* Peercoin - now it's btcnet.Params parameter

@@ -2,9 +2,9 @@ package blockchain_test
 
 import (
 	"bytes"
-	"github.com/mably/ppcd/blockchain"
-	"github.com/mably/btcnet"
-	"github.com/mably/btcwire"
+	"github.com/ppcsuite/ppcd/blockchain"
+	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/btcwire"
 	"testing"
 )
 

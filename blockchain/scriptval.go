@@ -9,9 +9,9 @@ import (
 	"math"
 	"runtime"
 
-	"github.com/mably/ppcd/txscript"
-	"github.com/mably/btcutil"
-	"github.com/mably/btcwire"
+	"github.com/ppcsuite/ppcd/txscript"
+	"github.com/ppcsuite/btcutil"
+	"github.com/ppcsuite/btcwire"
 )
 
 // txValidateItem holds a transaction along with which input to validate.

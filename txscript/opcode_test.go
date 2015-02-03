@@ -8,8 +8,8 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/mably/ppcd/txscript"
-	"github.com/mably/btcwire"
+	"github.com/ppcsuite/ppcd/txscript"
+	"github.com/ppcsuite/btcwire"
 )
 
 // TestScripts tests script execution for a wide variety of opcodes.  All tests

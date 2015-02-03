@@ -9,11 +9,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/mably/ppcd/blockchain"
-	"github.com/mably/ppcd/database"
-	_ "github.com/mably/ppcd/database/ldb"
-	"github.com/mably/btcnet"
-	"github.com/mably/btcwire"
+	"github.com/ppcsuite/ppcd/blockchain"
+	"github.com/ppcsuite/ppcd/database"
+	_ "github.com/ppcsuite/ppcd/database/ldb"
+	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/btcwire"
 )
 
 const blockDbNamePrefix = "blocks"

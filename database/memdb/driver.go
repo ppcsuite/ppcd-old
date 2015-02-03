@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/btcsuite/btclog"
-	"github.com/mably/ppcd/database"
+	"github.com/ppcsuite/ppcd/database"
 )
 
 var log = btclog.Disabled

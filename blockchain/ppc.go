@@ -9,11 +9,11 @@ import (
 	"math/big"
 
 	"github.com/btcsuite/btcec"
-	"github.com/mably/ppcd/database"
-	"github.com/mably/btcnet"
-	"github.com/mably/ppcd/txscript"
-	"github.com/mably/btcutil"
-	"github.com/mably/btcwire"
+	"github.com/ppcsuite/ppcd/database"
+	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/ppcd/txscript"
+	"github.com/ppcsuite/btcutil"
+	"github.com/ppcsuite/btcwire"
 )
 
 // Peercoin

@@ -5,8 +5,8 @@
 package txscript
 
 import (
-	"github.com/mably/btcnet"
-	"github.com/mably/btcutil"
+	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/btcutil"
 )
 
 // ExtractPkScriptAddrs returns the type of script, addresses and required

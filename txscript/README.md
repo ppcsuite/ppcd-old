@@ -1,8 +1,8 @@
 txscript
 ========
 
-[![Build Status](https://travis-ci.org/mably/ppcd.png?branch=master)]
-(https://travis-ci.org/mably/ppcd)
+[![Build Status](https://travis-ci.org/ppcsuite/ppcd.png?branch=master)]
+(https://travis-ci.org/ppcsuite/ppcd)
 
 Package txscript implements the bitcoin transaction script language.  There is
 a comprehensive test suite.  Package txscript is licensed under the liberal ISC
@@ -20,21 +20,21 @@ can be found at https://en.bitcoin.it/wiki/Script
 
 ## Documentation
 
-[![GoDoc](https://godoc.org/github.com/mably/ppcd/txscript?status.png)]
-(http://godoc.org/github.com/mably/ppcd/txscript)
+[![GoDoc](https://godoc.org/github.com/ppcsuite/ppcd/txscript?status.png)]
+(http://godoc.org/github.com/ppcsuite/ppcd/txscript)
 
 Full `go doc` style documentation for the project can be viewed online without
 installing this package by using the GoDoc site
-[here](http://godoc.org/github.com/mably/ppcd/txscript).
+[here](http://godoc.org/github.com/ppcsuite/ppcd/txscript).
 
 You can also view the documentation locally once the package is installed with
 the `godoc` tool by running `godoc -http=":6060"` and pointing your browser to
-http://localhost:6060/pkg/github.com/mably/ppcd/txscript
+http://localhost:6060/pkg/github.com/ppcsuite/ppcd/txscript
 
 ## Installation
 
 ```bash
-$ go get github.com/mably/ppcd/txscript
+$ go get github.com/ppcsuite/ppcd/txscript
 ```
 
 ## Examples

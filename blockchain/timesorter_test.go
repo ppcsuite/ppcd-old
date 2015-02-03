@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mably/ppcd/blockchain"
+	"github.com/ppcsuite/ppcd/blockchain"
 )
 
 // TestTimeSorter tests the timeSorter implementation.

@@ -9,9 +9,9 @@ import (
 	"encoding/binary"
 	"errors"
 
-	"github.com/mably/ppcd/database"
-	"github.com/mably/btcutil"
-	"github.com/mably/btcwire"
+	"github.com/ppcsuite/ppcd/database"
+	"github.com/ppcsuite/btcutil"
+	"github.com/ppcsuite/btcwire"
 	"github.com/btcsuite/goleveldb/leveldb"
 	"github.com/btcsuite/goleveldb/leveldb/util"
 

@@ -7,9 +7,9 @@ package blockchain
 import (
 	"fmt"
 
-	"github.com/mably/ppcd/database"
-	"github.com/mably/btcutil"
-	"github.com/mably/btcwire"
+	"github.com/ppcsuite/ppcd/database"
+	"github.com/ppcsuite/btcutil"
+	"github.com/ppcsuite/btcwire"
 )
 
 // TxData contains contextual information about transactions such as which block

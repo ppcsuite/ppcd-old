@@ -5,8 +5,8 @@
 package main
 
 import (
-	"github.com/mably/ppcd/blockchain"
-	"github.com/mably/btcwire"
+	"github.com/ppcsuite/ppcd/blockchain"
+	"github.com/ppcsuite/btcwire"
 )
 
 // RuleError identifies a rule violation.  It is used to indicate that

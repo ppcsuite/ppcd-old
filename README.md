@@ -1,7 +1,7 @@
 ppcd
 ====
 
-[![Build Status](https://travis-ci.org/mably/ppcd.png?branch=master)](https://travis-ci.org/mably/ppcd)
+[![Build Status](https://travis-ci.org/ppcsuite/ppcd.png?branch=master)](https://travis-ci.org/ppcsuite/ppcd)
 [![tip for next commit](http://peer4commit.com/projects/130.svg)](http://peer4commit.com/projects/130)
 
 ppcd is an alternative full node peercoin implementation written in Go (golang) based on Conformal btcd code.
@@ -43,7 +43,7 @@ https://github.com/btcsuite/btcd/releases
 http://golang.org/doc/install
 
 - Run the following command to obtain btcd, all dependencies, and install it:
-```$ go get github.com/mably/ppcd/...```
+```$ go get github.com/ppcsuite/ppcd/...```
 
 - btcd (and utilities) will now be installed in either ```$GOROOT/bin``` or
 ```$GOPATH/bin``` depending on your configuration.  If you did not already
@@ -59,7 +59,7 @@ Install a newer MSI
 #### Linux/BSD/MacOSX/POSIX - Build from Source
 
 - Run the following command to update btcd, all dependencies, and install it:
-```$ go get -u -v github.com/mably/ppcd/...```
+```$ go get -u -v github.com/ppcsuite/ppcd/...```
 
 ## Getting Started
 
@@ -88,12 +88,12 @@ $ ./ppcd
 
 ## Issue Tracker
 
-The [integrated github issue tracker](https://github.com/mably/ppcd/issues)
+The [integrated github issue tracker](https://github.com/ppcsuite/ppcd/issues)
 is used for this project.
 
 ## Documentation
 
-The documentation is a work-in-progress.  It uses the [github wiki](https://github.com/mably/ppcd/wiki) facility.
+The documentation is a work-in-progress.  It uses the [github wiki](https://github.com/ppcsuite/ppcd/wiki) facility.
 
 <!--## GPG Verification Key
 

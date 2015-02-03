@@ -1,8 +1,8 @@
 database
 ========
 
-[![Build Status](http://img.shields.io/travis/mably/ppcd.svg)]
-(https://travis-ci.org/mably/ppcd)  [![ISC License]
+[![Build Status](http://img.shields.io/travis/ppcsuite/ppcd.svg)]
+(https://travis-ci.org/ppcsuite/ppcd)  [![ISC License]
 (http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
 
 Package database provides a database interface for the bitcoin block chain and
@@ -20,31 +20,31 @@ package which makes use of the [JSON-RPC API]
 
 ## Documentation
 
-[![GoDoc](https://godoc.org/github.com/mably/ppcd/database?status.png)]
-(http://godoc.org/github.com/mably/ppcd/database)
+[![GoDoc](https://godoc.org/github.com/ppcsuite/ppcd/database?status.png)]
+(http://godoc.org/github.com/ppcsuite/ppcd/database)
 
 Full `go doc` style documentation for the project can be viewed online without
 installing this package by using the GoDoc site
-[here](http://godoc.org/github.com/mably/ppcd/database).
+[here](http://godoc.org/github.com/ppcsuite/ppcd/database).
 
 You can also view the documentation locally once the package is installed with
 the `godoc` tool by running `godoc -http=":6060"` and pointing your browser to
-http://localhost:6060/pkg/github.com/mably/ppcd/database
+http://localhost:6060/pkg/github.com/ppcsuite/ppcd/database
 
 ## Installation
 
 ```bash
-$ go get github.com/mably/ppcd/database
+$ go get github.com/ppcsuite/ppcd/database
 ```
 
 ## Examples
 
 * [CreateDB Example]
-  (http://godoc.org/github.com/mably/ppcd/database#example-CreateDB)  
+  (http://godoc.org/github.com/ppcsuite/ppcd/database#example-CreateDB)  
   Demonstrates creating a new database and inserting the genesis block into it.
 
 * [NewestSha Example]
-  (http://godoc.org/github.com/mably/ppcd/database#example-Db--NewestSha)  
+  (http://godoc.org/github.com/ppcsuite/ppcd/database#example-Db--NewestSha)  
   Demonstrates  querying the database for the most recent best block height and
   hash.
 

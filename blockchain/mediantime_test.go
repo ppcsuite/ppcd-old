@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mably/ppcd/blockchain"
+	"github.com/ppcsuite/ppcd/blockchain"
 )
 
 // TestMedianTime tests the medianTime implementation.

@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/mably/ppcd/txscript"
+	"github.com/ppcsuite/ppcd/txscript"
 )
 
 // TestScriptBuilderAddOp tests that pushing opcodes to a script via the

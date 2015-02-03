@@ -11,7 +11,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/mably/ppcd/txscript"
+	"github.com/ppcsuite/ppcd/txscript"
 )
 
 // TestStack tests that all of the stack operations work as expected.

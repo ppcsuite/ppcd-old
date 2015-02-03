@@ -18,11 +18,11 @@ import (
 
 	flags "github.com/btcsuite/go-flags"
 	socks "github.com/btcsuite/go-socks/socks"
-	"github.com/mably/ppcd/database"
-	_ "github.com/mably/ppcd/database/ldb"
-	_ "github.com/mably/ppcd/database/memdb"
-	"github.com/mably/btcutil"
-	"github.com/mably/btcwire"
+	"github.com/ppcsuite/ppcd/database"
+	_ "github.com/ppcsuite/ppcd/database/ldb"
+	_ "github.com/ppcsuite/ppcd/database/memdb"
+	"github.com/ppcsuite/btcutil"
+	"github.com/ppcsuite/btcwire"
 )
 
 const (

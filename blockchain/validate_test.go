@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mably/ppcd/blockchain"
-	"github.com/mably/btcnet"
-	"github.com/mably/btcutil"
-	"github.com/mably/btcwire"
+	"github.com/ppcsuite/ppcd/blockchain"
+	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/btcutil"
+	"github.com/ppcsuite/btcwire"
 )
 
 // TestCheckConnectBlock tests the CheckConnectBlock function to ensure it

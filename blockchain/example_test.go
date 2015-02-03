@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/mably/ppcd/blockchain"
-	"github.com/mably/ppcd/database"
-	_ "github.com/mably/ppcd/database/memdb"
-	"github.com/mably/btcnet"
-	"github.com/mably/btcutil"
+	"github.com/ppcsuite/ppcd/blockchain"
+	"github.com/ppcsuite/ppcd/database"
+	_ "github.com/ppcsuite/ppcd/database/memdb"
+	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/btcutil"
 )
 
 // This example demonstrates how to create a new chain instance and use

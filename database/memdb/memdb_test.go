@@ -8,11 +8,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/mably/ppcd/database"
-	"github.com/mably/ppcd/database/memdb"
-	"github.com/mably/btcnet"
-	"github.com/mably/btcutil"
-	"github.com/mably/btcwire"
+	"github.com/ppcsuite/ppcd/database"
+	"github.com/ppcsuite/ppcd/database/memdb"
+	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/btcutil"
+	"github.com/ppcsuite/btcwire"
 )
 
 // TestClosed ensure calling the interface functions on a closed database

@@ -6,10 +6,10 @@ package database_test
 
 import (
 	"fmt"
-	"github.com/mably/ppcd/database"
-	_ "github.com/mably/ppcd/database/memdb"
-	"github.com/mably/btcnet"
-	"github.com/mably/btcutil"
+	"github.com/ppcsuite/ppcd/database"
+	_ "github.com/ppcsuite/ppcd/database/memdb"
+	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/btcutil"
 )
 
 // This example demonstrates creating a new database and inserting the genesis
@@ -19,8 +19,8 @@ func ExampleCreateDB() {
 	// Ordinarily this would be whatever driver(s) your application
 	// requires.
 	// import (
-	//	"github.com/mably/ppcd/database"
-	// 	_ "github.com/mably/ppcd/database/memdb"
+	//	"github.com/ppcsuite/ppcd/database"
+	// 	_ "github.com/ppcsuite/ppcd/database/memdb"
 	// )
 
 	// Create a database and schedule it to be closed on exit.  This example

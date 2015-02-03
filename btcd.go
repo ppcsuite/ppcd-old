@@ -13,7 +13,7 @@ import (
 	"runtime"
 	"runtime/pprof"
 
-	"github.com/mably/ppcd/limits"
+	"github.com/ppcsuite/ppcd/limits"
 )
 
 var (

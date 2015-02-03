@@ -10,7 +10,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/mably/ppcd/txscript"
+	"github.com/ppcsuite/ppcd/txscript"
 )
 
 func TestSetLogWriter(t *testing.T) {

@@ -7,8 +7,8 @@ package blockchain
 import (
 	"fmt"
 
-	"github.com/mably/btcutil"
-	"github.com/mably/btcwire"
+	"github.com/ppcsuite/btcutil"
+	"github.com/ppcsuite/btcwire"
 )
 
 // BehaviorFlags is a bitmask defining tweaks to the normal behavior when

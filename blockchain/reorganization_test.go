@@ -13,9 +13,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mably/ppcd/blockchain"
-	"github.com/mably/btcutil"
-	"github.com/mably/btcwire"
+	"github.com/ppcsuite/ppcd/blockchain"
+	"github.com/ppcsuite/btcutil"
+	"github.com/ppcsuite/btcwire"
 )
 
 // TestReorganization loads a set of test blocks which force a chain

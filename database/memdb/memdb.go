@@ -10,9 +10,9 @@ import (
 	"math"
 	"sync"
 
-	"github.com/mably/ppcd/database"
-	"github.com/mably/btcutil"
-	"github.com/mably/btcwire"
+	"github.com/ppcsuite/ppcd/database"
+	"github.com/ppcsuite/btcutil"
+	"github.com/ppcsuite/btcwire"
 )
 
 // Errors that the various database functions may return.

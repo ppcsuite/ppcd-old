@@ -19,12 +19,12 @@ import (
 
 	"github.com/btcsuite/fastsha256"
 	"github.com/btcsuite/websocket"
-	"github.com/mably/ppcd/database"
-	"github.com/mably/btcjson"
-	"github.com/mably/ppcd/txscript"
-	"github.com/mably/btcutil"
-	"github.com/mably/btcwire"
-	"github.com/mably/btcws"
+	"github.com/ppcsuite/ppcd/database"
+	"github.com/ppcsuite/btcjson"
+	"github.com/ppcsuite/ppcd/txscript"
+	"github.com/ppcsuite/btcutil"
+	"github.com/ppcsuite/btcwire"
+	"github.com/ppcsuite/btcws"
 	"golang.org/x/crypto/ripemd160"
 )
 

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/mably/ppcd/database"
+	"github.com/ppcsuite/ppcd/database"
 )
 
 var (

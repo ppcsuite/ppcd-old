@@ -20,13 +20,13 @@ import (
 
 	"github.com/btcsuite/go-socks/socks"
 	"github.com/davecgh/go-spew/spew"
-	"github.com/mably/btcutil"
-	"github.com/mably/btcutil/bloom"
-	"github.com/mably/btcwire"
-	"github.com/mably/ppcd/addrmgr"
-	"github.com/mably/ppcd/blockchain"
-	"github.com/mably/ppcd/database"
-	"github.com/mably/ppcutil"
+	"github.com/ppcsuite/btcutil"
+	"github.com/ppcsuite/btcutil/bloom"
+	"github.com/ppcsuite/btcwire"
+	"github.com/ppcsuite/ppcd/addrmgr"
+	"github.com/ppcsuite/ppcd/blockchain"
+	"github.com/ppcsuite/ppcd/database"
+	"github.com/ppcsuite/ppcutil"
 )
 
 const (

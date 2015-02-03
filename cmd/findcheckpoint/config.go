@@ -10,11 +10,11 @@ import (
 	"path/filepath"
 
 	flags "github.com/btcsuite/go-flags"
-	"github.com/mably/ppcd/database"
-	_ "github.com/mably/ppcd/database/ldb"
-	"github.com/mably/btcnet"
-	"github.com/mably/btcutil"
-	"github.com/mably/btcwire"
+	"github.com/ppcsuite/ppcd/database"
+	_ "github.com/ppcsuite/ppcd/database/ldb"
+	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/btcutil"
+	"github.com/ppcsuite/btcwire"
 )
 
 const (

@@ -6,11 +6,11 @@ package main
 
 import (
 	"strconv"
-	"github.com/mably/ppcd/blockchain"
-	"github.com/mably/ppcd/database"
-	"github.com/mably/btcjson"
-	"github.com/mably/btcwire"
-	"github.com/mably/btcws"
+	"github.com/ppcsuite/ppcd/blockchain"
+	"github.com/ppcsuite/ppcd/database"
+	"github.com/ppcsuite/btcjson"
+	"github.com/ppcsuite/btcwire"
+	"github.com/ppcsuite/btcws"
 )
 
 // getDifficultyRatio returns the latest PoW or PoS difficulty up to block sha.

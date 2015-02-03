@@ -7,7 +7,7 @@ package addrmgr
 import (
 	"time"
 
-	"github.com/mably/btcwire"
+	"github.com/ppcsuite/btcwire"
 )
 
 // knownAddress tracks information about a known network address that is used

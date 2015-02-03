@@ -8,9 +8,9 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/mably/btcnet"
-	"github.com/mably/ppcd/txscript"
-	"github.com/mably/btcutil"
+	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/ppcd/txscript"
+	"github.com/ppcsuite/btcutil"
 )
 
 // This example demonstrates creating a script which pays to a bitcoin address.

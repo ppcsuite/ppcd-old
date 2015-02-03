@@ -8,8 +8,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/mably/ppcd/database"
-	"github.com/mably/btcwire"
+	"github.com/ppcsuite/ppcd/database"
+	"github.com/ppcsuite/btcwire"
 )
 
 // we need to test for an empty database and make certain it returns the proper

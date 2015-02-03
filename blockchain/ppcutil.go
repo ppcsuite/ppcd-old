@@ -11,8 +11,8 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/mably/btcnet"
-	"github.com/mably/btcutil"
+	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/btcutil"
 )
 
 const (

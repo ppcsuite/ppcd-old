@@ -10,10 +10,10 @@ import (
 	"runtime"
 
 	"github.com/btcsuite/btclog"
-	"github.com/mably/ppcd/blockchain"
-	"github.com/mably/ppcd/database"
-	_ "github.com/mably/ppcd/database/ldb"
-	"github.com/mably/ppcd/limits"
+	"github.com/ppcsuite/ppcd/blockchain"
+	"github.com/ppcsuite/ppcd/database"
+	_ "github.com/ppcsuite/ppcd/database/ldb"
+	"github.com/ppcsuite/ppcd/limits"
 )
 
 const (

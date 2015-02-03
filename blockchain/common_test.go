@@ -13,13 +13,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/mably/ppcd/blockchain"
-	"github.com/mably/ppcd/database"
-	_ "github.com/mably/ppcd/database/ldb"
-	_ "github.com/mably/ppcd/database/memdb"
-	"github.com/mably/btcnet"
-	"github.com/mably/btcutil"
-    "github.com/mably/btcwire"
+	"github.com/ppcsuite/ppcd/blockchain"
+	"github.com/ppcsuite/ppcd/database"
+	_ "github.com/ppcsuite/ppcd/database/ldb"
+	_ "github.com/ppcsuite/ppcd/database/memdb"
+	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/btcutil"
+    "github.com/ppcsuite/btcwire"
 )
 
 // testDbType is the database backend type to use for the tests.
