@@ -5,18 +5,6 @@
 package blockchain_test
 
 import (
-<<<<<<< HEAD
-	"fmt"
-	"os"
-	"path/filepath"
-
-	"github.com/mably/ppcd/blockchain"
-	"github.com/mably/ppcd/database"
-	_ "github.com/mably/ppcd/database/ldb"
-	_ "github.com/mably/ppcd/database/memdb"
-	"github.com/mably/btcnet"
-	"github.com/mably/btcutil"
-=======
 	"compress/bzip2"
 	"encoding/binary"
 	"fmt"
@@ -25,14 +13,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/btcsuite/btcd/blockchain"
-	"github.com/btcsuite/btcd/database"
-	_ "github.com/btcsuite/btcd/database/ldb"
-	_ "github.com/btcsuite/btcd/database/memdb"
-	"github.com/btcsuite/btcnet"
-	"github.com/btcsuite/btcutil"
-	"github.com/btcsuite/btcwire"
->>>>>>> remotes/btcsuite/master
+	"github.com/mably/ppcd/blockchain"
+	"github.com/mably/ppcd/database"
+	_ "github.com/mably/ppcd/database/ldb"
+	_ "github.com/mably/ppcd/database/memdb"
+	"github.com/mably/btcnet"
+	"github.com/mably/btcutil"
+    "github.com/mably/btcwire"
 )
 
 // testDbType is the database backend type to use for the tests.
@@ -132,8 +119,6 @@ func chainSetup(dbName string) (*blockchain.BlockChain, func(), error) {
 	chain := blockchain.New(db, &btcnet.MainNetParams, nil)
 	return chain, teardown, nil
 }
-<<<<<<< HEAD
-=======
 
 // loadTxStore returns a transaction store loaded from a file.
 func loadTxStore(filename string) (blockchain.TxStore, error) {
@@ -239,4 +224,3 @@ func loadTxStore(filename string) (blockchain.TxStore, error) {
 
 	return txStore, nil
 }
->>>>>>> remotes/btcsuite/master

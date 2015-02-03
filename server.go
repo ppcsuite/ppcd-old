@@ -19,12 +19,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/mably/ppcd/blockchain"
-	"github.com/mably/ppcd/database"
 	"github.com/mably/btcjson"
 	"github.com/mably/btcnet"
+	"github.com/mably/btcutil"
 	"github.com/mably/btcwire"
 	"github.com/mably/ppcd/addrmgr"
+	"github.com/mably/ppcd/blockchain"
+	"github.com/mably/ppcd/database"
 )
 
 const (

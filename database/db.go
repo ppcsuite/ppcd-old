@@ -7,8 +7,8 @@ package database
 import (
 	"errors"
 
-	"github.com/btcsuite/btcutil"
-	"github.com/btcsuite/btcwire"
+	"github.com/mably/btcutil"
+	"github.com/mably/btcwire"
 	"golang.org/x/crypto/ripemd160"
 )
 

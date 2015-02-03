@@ -7,17 +7,10 @@ package blockchain
 import (
 	"fmt"
 
-<<<<<<< HEAD
 	"github.com/mably/btcnet"
 	"github.com/mably/ppcd/txscript"
 	"github.com/mably/btcutil"
 	"github.com/mably/btcwire"
-=======
-	"github.com/btcsuite/btcd/txscript"
-	"github.com/btcsuite/btcnet"
-	"github.com/btcsuite/btcutil"
-	"github.com/btcsuite/btcwire"
->>>>>>> remotes/btcsuite/master
 )
 
 // CheckpointConfirmations is the number of blocks before the end of the current
@@ -91,12 +84,9 @@ func (b *BlockChain) verifyCheckpoint(height int64, hash *btcwire.ShaHash) bool 
 // associated block.  It returns nil if a checkpoint can't be found (this should
 // really only happen for blocks before the first checkpoint).
 func (b *BlockChain) findPreviousCheckpoint() (*btcutil.Block, error) {
-<<<<<<< HEAD
 
 	defer timeTrack(now(), fmt.Sprintf("findPreviousCheckpoint"))
 
-=======
->>>>>>> remotes/btcsuite/master
 	if b.noCheckpoints || len(b.netParams.Checkpoints) == 0 {
 		return nil, nil
 	}
