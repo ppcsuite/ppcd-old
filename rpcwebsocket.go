@@ -21,10 +21,10 @@ import (
 	"github.com/btcsuite/websocket"
 	"github.com/ppcsuite/btcjson"
 	"github.com/ppcsuite/btcutil"
+	"github.com/ppcsuite/btcws"
 	"github.com/ppcsuite/ppcd/database"
 	"github.com/ppcsuite/ppcd/txscript"
 	"github.com/ppcsuite/ppcd/wire"
-	"github.com/ppcsuite/btcws"
 	"golang.org/x/crypto/ripemd160"
 )
 
@@ -593,12 +593,12 @@ func blockDetails(block *btcutil.Block, txIndex int) *btcws.BlockDetails {
 	}
 	blockSha, _ := block.Sha() // never errors
 	return &btcws.BlockDetails{
-		Height: int32(block.Height()),
-		Hash:   blockSha.String(),
-		Index:  txIndex,
-		Time:   block.MsgBlock().Header.Timestamp.Unix(),
-		Offset: block.Meta().TxOffsets[txIndex], // ppc:
-		StakeModifier: block.Meta().StakeModifier, // ppc:
+		Height:        int32(block.Height()),
+		Hash:          blockSha.String(),
+		Index:         txIndex,
+		Time:          block.MsgBlock().Header.Timestamp.Unix(),
+		Offset:        block.Meta().TxOffsets[txIndex], // ppc:
+		StakeModifier: block.Meta().StakeModifier,      // ppc:
 	}
 }
 

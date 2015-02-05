@@ -913,8 +913,8 @@ func (mp *txMemPool) maybeAcceptTransaction(tx *btcutil.Tx, isNew, rateLimit boo
 	for _, txD := range txStore {
 		if txD.Err == database.ErrTxShaMissing {
 			missingParents = append(missingParents, txD.Hash)
-			}
 		}
+	}
 	if len(missingParents) != 0 {
 		return missingParents, nil
 	}
@@ -1054,7 +1054,7 @@ func (mp *txMemPool) maybeAcceptTransaction(tx *btcutil.Tx, isNew, rateLimit boo
 // or not the transaction is an orphan.
 //
 // This function is safe for concurrent access.
-	// Protect concurrent access.
+// Protect concurrent access.
 //
 // This function is safe for concurrent access.
 func (mp *txMemPool) MaybeAcceptTransaction(tx *btcutil.Tx, isNew, rateLimit bool) ([]*wire.ShaHash, error) {

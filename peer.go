@@ -193,7 +193,7 @@ type peer struct {
 	lastPingTime       time.Time // Time we sent last ping.
 	lastPingMicros     int64     // Time for last ping to return.
 
-	msgSignatureCache  *ppcutil.Cache
+	msgSignatureCache *ppcutil.Cache
 }
 
 // String returns the peer's address and directionality as a human-readable
@@ -1292,8 +1292,8 @@ func (p *peer) readMessage() (wire.Message, []byte, error) {
 
 func (p *peer) checkMisbehaving(msg wire.Message, buf []byte) bool {
 	switch msg.(type) {
-		case *wire.MsgGetBlocks:
-			return p.checkMsgSignatureDuplicates(msg, buf, 5)
+	case *wire.MsgGetBlocks:
+		return p.checkMsgSignatureDuplicates(msg, buf, 5)
 	}
 	return false
 }

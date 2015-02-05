@@ -229,7 +229,7 @@ func createCoinbaseTx(coinbaseScript []byte, nextBlockHeight int64, addr btcutil
 		pkScript, err = scriptBuilder.AddOp(txscript.OP_TRUE).Script()
 		if err != nil {
 			return nil, err
-	}
+		}
 	}
 
 	tx := wire.NewMsgTx()

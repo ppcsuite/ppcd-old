@@ -13,7 +13,8 @@ import (
 
 	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/blockchain"
-	"github.com/ppcsuite/ppcd/wire")
+	"github.com/ppcsuite/ppcd/wire"
+)
 
 const (
 	// maxNonce is the maximum value a nonce can be in a block header.
