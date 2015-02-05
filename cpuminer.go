@@ -12,9 +12,8 @@ import (
 	"time"
 
 	"github.com/ppcsuite/btcutil"
-	"github.com/ppcsuite/btcwire"
 	"github.com/ppcsuite/ppcd/blockchain"
-)
+	"github.com/ppcsuite/ppcd/wire")
 
 const (
 	// maxNonce is the maximum value a nonce can be in a block header.
@@ -164,12 +163,12 @@ func (m *CPUMiner) submitBlock(block *btcutil.Block) bool {
 // This function will return early with false when conditions that trigger a
 // stale block such as a new block showing up or periodically when there are
 // new transactions and enough time has elapsed without finding a solution.
-func (m *CPUMiner) solveBlock(msgBlock *btcwire.MsgBlock, blockHeight int64,
+func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, blockHeight int64,
 	ticker *time.Ticker, quit chan struct{}) bool {
 
 	// Choose a random extra nonce offset for this block template and
 	// worker.
-	enOffset, err := btcwire.RandomUint64()
+	enOffset, err := wire.RandomUint64()
 	if err != nil {
 		minrLog.Errorf("Unexpected error while generating random "+
 			"extra nonce offset: %v", err)

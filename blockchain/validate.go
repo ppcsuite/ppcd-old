@@ -11,17 +11,17 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ppcsuite/ppcd/database"
 	"github.com/ppcsuite/btcnet"
-	"github.com/ppcsuite/ppcd/txscript"
 	"github.com/ppcsuite/btcutil"
-	"github.com/ppcsuite/btcwire"
+	"github.com/ppcsuite/ppcd/database"
+	"github.com/ppcsuite/ppcd/txscript"
+	"github.com/ppcsuite/ppcd/wire"
 )
 
 const (
 	// MaxSigOpsPerBlock is the maximum number of signature operations
 	// allowed for a block.  It is a fraction of the max block payload size.
-	MaxSigOpsPerBlock = btcwire.MaxBlockPayload / 50
+	MaxSigOpsPerBlock = wire.MaxBlockPayload / 50
 
 	// lockTimeThreshold is the number below which a lock time is
 	// interpreted to be a block number.  Since an average of one block
@@ -55,10 +55,10 @@ const (
 )
 
 var (
-	// zeroHash is the zero value for a btcwire.ShaHash and is defined as
+	// zeroHash is the zero value for a wire.ShaHash and is defined as
 	// a package level variable to avoid the need to create a new instance
 	// every time a check is needed.
-	zeroHash = &btcwire.ShaHash{}
+	zeroHash = &wire.ShaHash{}
 
 	// block91842Hash is one of the two nodes which violate the rules
 	// set forth in BIP0030.  It is defined as a package level variable to
@@ -73,7 +73,7 @@ var (
 
 // isNullOutpoint determines whether or not a previous transaction output point
 // is set.
-func isNullOutpoint(outpoint *btcwire.OutPoint) bool {
+func isNullOutpoint(outpoint *wire.OutPoint) bool {
 	if outpoint.Index == math.MaxUint32 && outpoint.Hash.IsEqual(zeroHash) {
 		return true
 	}
@@ -192,9 +192,9 @@ func CheckTransactionSanity(tx *btcutil.Tx) error {
 	// A transaction must not exceed the maximum allowed block payload when
 	// serialized.
 	serializedTxSize := tx.MsgTx().SerializeSize()
-	if serializedTxSize > btcwire.MaxBlockPayload {
+	if serializedTxSize > wire.MaxBlockPayload {
 		str := fmt.Sprintf("serialized transaction is too big - got "+
-			"%d, max %d", serializedTxSize, btcwire.MaxBlockPayload)
+			"%d, max %d", serializedTxSize, wire.MaxBlockPayload)
 		return ruleError(ErrTxTooBig, str)
 	}
 
@@ -238,7 +238,7 @@ func CheckTransactionSanity(tx *btcutil.Tx) error {
 	}
 
 	// Check for duplicate transaction inputs.
-	existingTxOut := make(map[btcwire.OutPoint]struct{})
+	existingTxOut := make(map[wire.OutPoint]struct{})
 	for _, txIn := range msgTx.TxIn {
 		if _, exists := existingTxOut[txIn.PreviousOutPoint]; exists {
 			return ruleError(ErrDuplicateTxInputs, "transaction "+
@@ -435,18 +435,18 @@ func checkBlockSanity(params *btcnet.Params, block *btcutil.Block, powLimit *big
 	}
 
 	// A block must not have more transactions than the max block payload.
-	if numTx > btcwire.MaxBlockPayload {
+	if numTx > wire.MaxBlockPayload {
 		str := fmt.Sprintf("block contains too many transactions - "+
-			"got %d, max %d", numTx, btcwire.MaxBlockPayload)
+			"got %d, max %d", numTx, wire.MaxBlockPayload)
 		return ruleError(ErrTooManyTransactions, str)
 	}
 
 	// A block must not exceed the maximum allowed block payload when
 	// serialized.
 	serializedSize := msgBlock.SerializeSize()
-	if serializedSize > btcwire.MaxBlockPayload {
+	if serializedSize > wire.MaxBlockPayload {
 		str := fmt.Sprintf("serialized block is too big - got %d, "+
-			"max %d", serializedSize, btcwire.MaxBlockPayload)
+			"max %d", serializedSize, wire.MaxBlockPayload)
 		return ruleError(ErrBlockTooBig, str)
 	}
 
@@ -526,7 +526,7 @@ func checkBlockSanity(params *btcnet.Params, block *btcutil.Block, powLimit *big
 	// Check for duplicate transactions.  This check will be fairly quick
 	// since the transaction hashes are already cached due to building the
 	// merkle tree above.
-	existingTxHashes := make(map[btcwire.ShaHash]struct{})
+	existingTxHashes := make(map[wire.ShaHash]struct{})
 	for _, tx := range transactions {
 		hash := tx.Sha()
 		if _, exists := existingTxHashes[*hash]; exists {
@@ -625,7 +625,7 @@ func isTransactionSpent(txD *TxData) bool {
 func (b *BlockChain) checkBIP0030(node *blockNode, block *btcutil.Block) error {
 	// Attempt to fetch duplicate transactions for all of the transactions
 	// in this block from the point of view of the parent node.
-	fetchSet := make(map[btcwire.ShaHash]struct{})
+	fetchSet := make(map[wire.ShaHash]struct{})
 	for _, tx := range block.Transactions() {
 		fetchSet[*tx.Sha()] = struct{}{}
 	}

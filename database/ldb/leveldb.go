@@ -14,9 +14,9 @@ import (
 	"github.com/btcsuite/btclog"
 	"github.com/btcsuite/goleveldb/leveldb"
 	"github.com/btcsuite/goleveldb/leveldb/opt"
-	"github.com/ppcsuite/ppcd/database"
 	"github.com/ppcsuite/btcutil"
-	"github.com/ppcsuite/btcwire"
+	"github.com/ppcsuite/ppcd/database"
+	"github.com/ppcsuite/ppcd/wire"
 )
 
 const (
@@ -28,7 +28,7 @@ const (
 var log = btclog.Disabled
 
 type tTxInsertData struct {
-	txsha   *btcwire.ShaHash
+	txsha   *wire.ShaHash
 	blockid int64
 	txoff   int
 	txlen   int
@@ -50,14 +50,14 @@ type LevelDb struct {
 	nextBlock int64
 
 	lastBlkShaCached bool
-	lastBlkSha       btcwire.ShaHash
+	lastBlkSha       wire.ShaHash
 	lastBlkIdx       int64
 
-	lastAddrIndexBlkSha btcwire.ShaHash
+	lastAddrIndexBlkSha wire.ShaHash
 	lastAddrIndexBlkIdx int64
 
-	txUpdateMap      map[btcwire.ShaHash]*txUpdateObj
-	txSpentUpdateMap map[btcwire.ShaHash]*spentTxUpdate
+	txUpdateMap      map[wire.ShaHash]*txUpdateObj
+	txSpentUpdateMap map[wire.ShaHash]*spentTxUpdate
 }
 
 var self = database.DriverDB{DbType: "leveldb", CreateDB: CreateDB, OpenDB: OpenDB}
@@ -101,7 +101,7 @@ func OpenDB(args ...interface{}) (database.Db, error) {
 	increment := int64(100000)
 	ldb := db.(*LevelDb)
 
-	var lastSha *btcwire.ShaHash
+	var lastSha *wire.ShaHash
 	// forward scan
 blockforward:
 	for {
@@ -117,7 +117,7 @@ blockforward:
 				//no blocks in db, odd but ok.
 				lastknownblock = -1
 				nextunknownblock = 0
-				var emptysha btcwire.ShaHash
+				var emptysha wire.ShaHash
 				lastSha = &emptysha
 			} else {
 				nextunknownblock = testblock
@@ -169,8 +169,8 @@ func openDB(dbpath string, create bool) (pbdb database.Db, err error) {
 		if err == nil {
 			db.lDb = tlDb
 
-			db.txUpdateMap = map[btcwire.ShaHash]*txUpdateObj{}
-			db.txSpentUpdateMap = make(map[btcwire.ShaHash]*spentTxUpdate)
+			db.txUpdateMap = map[wire.ShaHash]*txUpdateObj{}
+			db.txSpentUpdateMap = make(map[wire.ShaHash]*spentTxUpdate)
 
 			pbdb = &db
 		}
@@ -292,7 +292,7 @@ func (db *LevelDb) Close() error {
 
 // DropAfterBlockBySha will remove any blocks from the database after
 // the given block.
-func (db *LevelDb) DropAfterBlockBySha(sha *btcwire.ShaHash) (rerr error) {
+func (db *LevelDb) DropAfterBlockBySha(sha *wire.ShaHash) (rerr error) {
 	db.dbLock.Lock()
 	defer db.dbLock.Unlock()
 	defer func() {
@@ -424,16 +424,16 @@ func (db *LevelDb) InsertBlock(block *btcutil.Block) (height int64, rerr error) 
 		// http://blockexplorer.com/b/91812 dup in 91842
 		// http://blockexplorer.com/b/91722 dup in 91880
 		if newheight == 91812 {
-			dupsha, err := btcwire.NewShaHashFromStr("d5d27987d2a3dfc724e359870c6644b40e497bdc0589a033220fe15429d88599")
+			dupsha, err := wire.NewShaHashFromStr("d5d27987d2a3dfc724e359870c6644b40e497bdc0589a033220fe15429d88599")
 			if err != nil {
 				panic("invalid sha string in source")
 			}
 			if txsha.IsEqual(dupsha) {
 				// marking TxOut[0] as spent
-				po := btcwire.NewOutPoint(dupsha, 0)
-				txI := btcwire.NewTxIn(po, []byte("garbage"))
+				po := wire.NewOutPoint(dupsha, 0)
+				txI := wire.NewTxIn(po, []byte("garbage"))
 
-				var spendtx btcwire.MsgTx
+				var spendtx wire.MsgTx
 				spendtx.AddTxIn(txI)
 				err = db.doSpend(&spendtx)
 				if err != nil {
@@ -442,16 +442,16 @@ func (db *LevelDb) InsertBlock(block *btcutil.Block) (height int64, rerr error) 
 			}
 		}
 		if newheight == 91722 {
-			dupsha, err := btcwire.NewShaHashFromStr("e3bf3d07d4b0375638d5f1db5255fe07ba2c4cb067cd81b84ee974b6585fb468")
+			dupsha, err := wire.NewShaHashFromStr("e3bf3d07d4b0375638d5f1db5255fe07ba2c4cb067cd81b84ee974b6585fb468")
 			if err != nil {
 				panic("invalid sha string in source")
 			}
 			if txsha.IsEqual(dupsha) {
 				// marking TxOut[0] as spent
-				po := btcwire.NewOutPoint(dupsha, 0)
-				txI := btcwire.NewTxIn(po, []byte("garbage"))
+				po := wire.NewOutPoint(dupsha, 0)
+				txI := wire.NewTxIn(po, []byte("garbage"))
 
-				var spendtx btcwire.MsgTx
+				var spendtx wire.MsgTx
 				spendtx.AddTxIn(txI)
 				err = db.doSpend(&spendtx)
 				if err != nil {
@@ -471,7 +471,7 @@ func (db *LevelDb) InsertBlock(block *btcutil.Block) (height int64, rerr error) 
 
 // doSpend iterates all TxIn in a bitcoin transaction marking each associated
 // TxOut as spent.
-func (db *LevelDb) doSpend(tx *btcwire.MsgTx) error {
+func (db *LevelDb) doSpend(tx *wire.MsgTx) error {
 	for txinidx := range tx.TxIn {
 		txin := tx.TxIn[txinidx]
 
@@ -494,7 +494,7 @@ func (db *LevelDb) doSpend(tx *btcwire.MsgTx) error {
 
 // unSpend iterates all TxIn in a bitcoin transaction marking each associated
 // TxOut as unspent.
-func (db *LevelDb) unSpend(tx *btcwire.MsgTx) error {
+func (db *LevelDb) unSpend(tx *wire.MsgTx) error {
 	for txinidx := range tx.TxIn {
 		txin := tx.TxIn[txinidx]
 
@@ -513,15 +513,15 @@ func (db *LevelDb) unSpend(tx *btcwire.MsgTx) error {
 	return nil
 }
 
-func (db *LevelDb) setSpentData(sha *btcwire.ShaHash, idx uint32) error {
+func (db *LevelDb) setSpentData(sha *wire.ShaHash, idx uint32) error {
 	return db.setclearSpentData(sha, idx, true)
 }
 
-func (db *LevelDb) clearSpentData(sha *btcwire.ShaHash, idx uint32) error {
+func (db *LevelDb) clearSpentData(sha *wire.ShaHash, idx uint32) error {
 	return db.setclearSpentData(sha, idx, false)
 }
 
-func (db *LevelDb) setclearSpentData(txsha *btcwire.ShaHash, idx uint32, set bool) error {
+func (db *LevelDb) setclearSpentData(txsha *wire.ShaHash, idx uint32, set bool) error {
 	var txUo *txUpdateObj
 	var ok bool
 
@@ -636,18 +636,18 @@ func int64ToKey(keyint int64) []byte {
 	return []byte(key)
 }
 
-func shaBlkToKey(sha *btcwire.ShaHash) []byte {
+func shaBlkToKey(sha *wire.ShaHash) []byte {
 	shaB := sha.Bytes()
 	return shaB
 }
 
-func shaTxToKey(sha *btcwire.ShaHash) []byte {
+func shaTxToKey(sha *wire.ShaHash) []byte {
 	shaB := sha.Bytes()
 	shaB = append(shaB, "tx"...)
 	return shaB
 }
 
-func shaSpentTxToKey(sha *btcwire.ShaHash) []byte {
+func shaSpentTxToKey(sha *wire.ShaHash) []byte {
 	shaB := sha.Bytes()
 	shaB = append(shaB, "sx"...)
 	return shaB
@@ -698,8 +698,8 @@ func (db *LevelDb) processBatches() error {
 			log.Tracef("batch failed %v\n", err)
 			return err
 		}
-		db.txUpdateMap = map[btcwire.ShaHash]*txUpdateObj{}
-		db.txSpentUpdateMap = make(map[btcwire.ShaHash]*spentTxUpdate)
+		db.txUpdateMap = map[wire.ShaHash]*txUpdateObj{}
+		db.txSpentUpdateMap = make(map[wire.ShaHash]*spentTxUpdate)
 	}
 
 	return nil

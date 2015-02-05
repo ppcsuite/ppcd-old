@@ -8,11 +8,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ppcsuite/ppcd/database"
-	"github.com/ppcsuite/ppcd/database/memdb"
 	"github.com/ppcsuite/btcnet"
 	"github.com/ppcsuite/btcutil"
-	"github.com/ppcsuite/btcwire"
+	"github.com/ppcsuite/ppcd/database"
+	"github.com/ppcsuite/ppcd/database/memdb"
+	"github.com/ppcsuite/ppcd/wire"
 )
 
 // TestClosed ensure calling the interface functions on a closed database
@@ -67,7 +67,7 @@ func TestClosed(t *testing.T) {
 		t.Errorf("FetchTxBySha: unexpected error %v", err)
 	}
 
-	requestHashes := []*btcwire.ShaHash{genesisHash}
+	requestHashes := []*wire.ShaHash{genesisHash}
 	reply := db.FetchTxByShaList(requestHashes)
 	if len(reply) != len(requestHashes) {
 		t.Errorf("FetchUnSpentTxByShaList unexpected number of replies "+

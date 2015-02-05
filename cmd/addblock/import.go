@@ -11,14 +11,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/blockchain"
 	"github.com/ppcsuite/ppcd/database"
 	_ "github.com/ppcsuite/ppcd/database/ldb"
-	"github.com/ppcsuite/btcutil"
-	"github.com/ppcsuite/btcwire"
+	"github.com/ppcsuite/ppcd/wire"
 )
 
-var zeroHash = btcwire.ShaHash{}
+var zeroHash = wire.ShaHash{}
 
 // importResults houses the stats and result as an import operation.
 type importResults struct {
@@ -72,10 +72,10 @@ func (bi *blockImporter) readBlock() ([]byte, error) {
 	if err := binary.Read(bi.r, binary.LittleEndian, &blockLen); err != nil {
 		return nil, err
 	}
-	if blockLen > btcwire.MaxBlockPayload {
+	if blockLen > wire.MaxBlockPayload {
 		return nil, fmt.Errorf("block payload of %d bytes is larger "+
 			"than the max allowed %d bytes", blockLen,
-			btcwire.MaxBlockPayload)
+			wire.MaxBlockPayload)
 	}
 
 	serializedBlock := make([]byte, blockLen)

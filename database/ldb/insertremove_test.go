@@ -10,10 +10,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/database"
 	_ "github.com/ppcsuite/ppcd/database/ldb"
-	"github.com/ppcsuite/btcutil"
-	"github.com/ppcsuite/btcwire"
+	"github.com/ppcsuite/ppcd/wire"
 )
 
 var tstBlocks []*btcutil.Block
@@ -68,10 +68,10 @@ endtest:
 		block := blocks[height]
 		// look up inputs to this tx
 		mblock := block.MsgBlock()
-		var txneededList []*btcwire.ShaHash
-		var txlookupList []*btcwire.ShaHash
-		var txOutList []*btcwire.ShaHash
-		var txInList []*btcwire.OutPoint
+		var txneededList []*wire.ShaHash
+		var txlookupList []*wire.ShaHash
+		var txOutList []*wire.ShaHash
+		var txInList []*wire.OutPoint
 		for _, tx := range mblock.Transactions {
 			for _, txin := range tx.TxIn {
 				if txin.PreviousOutPoint.Index == uint32(4294967295) {
@@ -96,7 +96,7 @@ endtest:
 			txOutList = append(txOutList, &txshaname)
 		}
 
-		txneededmap := map[btcwire.ShaHash]*database.TxListReply{}
+		txneededmap := map[wire.ShaHash]*database.TxListReply{}
 		txlist := db.FetchUnSpentTxByShaList(txneededList)
 		for _, txe := range txlist {
 			if txe.Err != nil {
@@ -122,7 +122,7 @@ endtest:
 			break endtest
 		}
 
-		txlookupmap := map[btcwire.ShaHash]*database.TxListReply{}
+		txlookupmap := map[wire.ShaHash]*database.TxListReply{}
 		txlist = db.FetchTxByShaList(txlookupList)
 		for _, txe := range txlist {
 			if txe.Err != nil {
@@ -158,7 +158,7 @@ endtest:
 			break endtest
 		}
 
-		txlookupmap = map[btcwire.ShaHash]*database.TxListReply{}
+		txlookupmap = map[wire.ShaHash]*database.TxListReply{}
 		txlist = db.FetchUnSpentTxByShaList(txlookupList)
 		for _, txe := range txlist {
 			if txe.Err != nil {
@@ -180,7 +180,7 @@ endtest:
 			t.Errorf("failed to insert block %v err %v", height, err)
 			break endtest
 		}
-		txlookupmap = map[btcwire.ShaHash]*database.TxListReply{}
+		txlookupmap = map[wire.ShaHash]*database.TxListReply{}
 		txlist = db.FetchTxByShaList(txlookupList)
 		for _, txe := range txlist {
 			if txe.Err != nil {

@@ -7,10 +7,10 @@ package blockchain_test
 import (
 	"testing"
 
-	"github.com/ppcsuite/ppcd/blockchain"
 	"github.com/ppcsuite/btcnet"
 	"github.com/ppcsuite/btcutil"
-	"github.com/ppcsuite/btcwire"
+	"github.com/ppcsuite/ppcd/blockchain"
+	"github.com/ppcsuite/ppcd/wire"
 )
 
 // TestHaveBlock tests the HaveBlock API to ensure proper functionality.
@@ -100,7 +100,7 @@ func TODO_TestHaveBlock(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		hash, err := btcwire.NewShaHashFromStr(test.hash)
+		hash, err := wire.NewShaHashFromStr(test.hash)
 		if err != nil {
 			t.Errorf("NewShaHashFromStr: %v", err)
 			continue

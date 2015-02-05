@@ -2,9 +2,9 @@ package blockchain_test
 
 import (
 	"bytes"
-	"github.com/ppcsuite/ppcd/blockchain"
 	"github.com/ppcsuite/btcnet"
-	"github.com/ppcsuite/btcwire"
+	"github.com/ppcsuite/ppcd/blockchain"
+	"github.com/ppcsuite/ppcd/wire"
 	"testing"
 )
 
@@ -19,7 +19,7 @@ func TestCheckBlockSignature(t *testing.T) {
 		return
 	}
 	rbuf := bytes.NewReader(buf.Bytes())
-	block := new(btcwire.MsgBlock)
+	block := new(wire.MsgBlock)
 	err = block.Deserialize(rbuf)
 	if err != nil {
 		t.Error(err)

@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ppcsuite/ppcd/blockchain"
 	"github.com/ppcsuite/btcnet"
 	"github.com/ppcsuite/btcutil"
-	"github.com/ppcsuite/btcwire"
+	"github.com/ppcsuite/ppcd/blockchain"
+	"github.com/ppcsuite/ppcd/wire"
 )
 
 // TestCheckConnectBlock tests the CheckConnectBlock function to ensure it
@@ -67,10 +67,10 @@ func TestCheckBlockSanity(t *testing.T) {
 // and handled properly.
 func TestCheckSerializedHeight(t *testing.T) {
 	// Create an empty coinbase template to be used in the tests below.
-	coinbaseOutpoint := btcwire.NewOutPoint(&btcwire.ShaHash{}, math.MaxUint32)
-	coinbaseTx := btcwire.NewMsgTx()
+	coinbaseOutpoint := wire.NewOutPoint(&wire.ShaHash{}, math.MaxUint32)
+	coinbaseTx := wire.NewMsgTx()
 	coinbaseTx.Version = 2
-	coinbaseTx.AddTxIn(btcwire.NewTxIn(coinbaseOutpoint, nil))
+	coinbaseTx.AddTxIn(wire.NewTxIn(coinbaseOutpoint, nil))
 
 	// Expected rule errors.
 	missingHeightError := blockchain.RuleError{
@@ -132,16 +132,16 @@ func TestCheckSerializedHeight(t *testing.T) {
 // Block100000 defines block 100,000 of the block chain.  It is used to
 // test Block operations.
 // TODO(kac-) actually it's block #99998(PoW) because block 100k is PoS
-var Block100000 = btcwire.MsgBlock{
-	Header: btcwire.BlockHeader{
+var Block100000 = wire.MsgBlock{
+	Header: wire.BlockHeader{
 		Version: 1,
-		PrevBlock: btcwire.ShaHash([32]byte{ // Make go vet happy.
+		PrevBlock: wire.ShaHash([32]byte{ // Make go vet happy.
 			0x19, 0xa7, 0xd8, 0x3e, 0x44, 0x13, 0x25, 0x10,
 			0xb8, 0x91, 0x79, 0xda, 0xe5, 0x28, 0x89, 0x16,
 			0x8b, 0x73, 0x03, 0x78, 0xc7, 0xb4, 0xbc, 0xf2,
 			0x5c, 0xa8, 0x71, 0xa7, 0x9b, 0x78, 0xd8, 0x2e,
 		}), // 2ed8789ba771a85cf2bcb4c77803738b168928e5da7991b8102513443ed8a719
-		MerkleRoot: btcwire.ShaHash([32]byte{ // Make go vet happy.
+		MerkleRoot: wire.ShaHash([32]byte{ // Make go vet happy.
 			0xf3, 0x90, 0x05, 0x32, 0xa4, 0xfa, 0x02, 0x70,
 			0x9c, 0xf9, 0x35, 0x11, 0x26, 0xf6, 0xf9, 0x07,
 			0x2d, 0x9f, 0x97, 0xaf, 0x19, 0xb3, 0xa2, 0x55,
@@ -151,14 +151,14 @@ var Block100000 = btcwire.MsgBlock{
 		Bits:      422443218,                // 453281356
 		Nonce:     3272548896,               // 274148111
 	},
-	Transactions: []*btcwire.MsgTx{
+	Transactions: []*wire.MsgTx{
 		{
 			Version: 1,
 			Time:    time.Unix(1394105276, 0), // 2014-03-06 12:27:56 +0100 CET
-			TxIn: []*btcwire.TxIn{
+			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash:  btcwire.ShaHash{},
+					PreviousOutPoint: wire.OutPoint{
+						Hash:  wire.ShaHash{},
 						Index: 0xffffffff,
 					},
 					SignatureScript: []byte{
@@ -171,7 +171,7 @@ var Block100000 = btcwire.MsgBlock{
 					Sequence: 0,
 				},
 			},
-			TxOut: []*btcwire.TxOut{
+			TxOut: []*wire.TxOut{
 				{
 					Value: 101700000,
 					PkScript: []byte{
@@ -202,10 +202,10 @@ var Block100000 = btcwire.MsgBlock{
 		},
 		{
 			Version: 1,
-			TxIn: []*btcwire.TxIn{
+			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash: btcwire.ShaHash([32]byte{ // Make go vet happy.
+					PreviousOutPoint: wire.OutPoint{
+						Hash: wire.ShaHash([32]byte{ // Make go vet happy.
 							0x03, 0x2e, 0x38, 0xe9, 0xc0, 0xa8, 0x4c, 0x60,
 							0x46, 0xd6, 0x87, 0xd1, 0x05, 0x56, 0xdc, 0xac,
 							0xc4, 0x1d, 0x27, 0x5e, 0xc5, 0x5f, 0xc0, 0x07,
@@ -239,7 +239,7 @@ var Block100000 = btcwire.MsgBlock{
 					Sequence: 0xffffffff,
 				},
 			},
-			TxOut: []*btcwire.TxOut{
+			TxOut: []*wire.TxOut{
 				{
 					Value: 0x2123e300, // 556000000
 					PkScript: []byte{
@@ -271,10 +271,10 @@ var Block100000 = btcwire.MsgBlock{
 		},
 		{
 			Version: 1,
-			TxIn: []*btcwire.TxIn{
+			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash: btcwire.ShaHash([32]byte{ // Make go vet happy.
+					PreviousOutPoint: wire.OutPoint{
+						Hash: wire.ShaHash([32]byte{ // Make go vet happy.
 							0xc3, 0x3e, 0xbf, 0xf2, 0xa7, 0x09, 0xf1, 0x3d,
 							0x9f, 0x9a, 0x75, 0x69, 0xab, 0x16, 0xa3, 0x27,
 							0x86, 0xaf, 0x7d, 0x7e, 0x2d, 0xe0, 0x92, 0x65,
@@ -307,7 +307,7 @@ var Block100000 = btcwire.MsgBlock{
 					Sequence: 0xffffffff,
 				},
 			},
-			TxOut: []*btcwire.TxOut{
+			TxOut: []*wire.TxOut{
 				{
 					Value: 0xf4240, // 1000000
 					PkScript: []byte{
@@ -339,10 +339,10 @@ var Block100000 = btcwire.MsgBlock{
 		},
 		{
 			Version: 1,
-			TxIn: []*btcwire.TxIn{
+			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash: btcwire.ShaHash([32]byte{ // Make go vet happy.
+					PreviousOutPoint: wire.OutPoint{
+						Hash: wire.ShaHash([32]byte{ // Make go vet happy.
 							0x0b, 0x60, 0x72, 0xb3, 0x86, 0xd4, 0xa7, 0x73,
 							0x23, 0x52, 0x37, 0xf6, 0x4c, 0x11, 0x26, 0xac,
 							0x3b, 0x24, 0x0c, 0x84, 0xb9, 0x17, 0xa3, 0x90,
@@ -376,7 +376,7 @@ var Block100000 = btcwire.MsgBlock{
 					Sequence: 0xffffffff,
 				},
 			},
-			TxOut: []*btcwire.TxOut{
+			TxOut: []*wire.TxOut{
 				{
 					Value: 0xf4240, // 1000000
 					PkScript: []byte{

@@ -9,11 +9,11 @@ import (
 	"math/big"
 
 	"github.com/btcsuite/btcec"
-	"github.com/ppcsuite/ppcd/database"
 	"github.com/ppcsuite/btcnet"
-	"github.com/ppcsuite/ppcd/txscript"
 	"github.com/ppcsuite/btcutil"
-	"github.com/ppcsuite/btcwire"
+	"github.com/ppcsuite/ppcd/database"
+	"github.com/ppcsuite/ppcd/txscript"
+	"github.com/ppcsuite/ppcd/wire"
 )
 
 // Peercoin
@@ -50,7 +50,7 @@ const (
 
 // Stake TODO(?) golint
 type Stake struct {
-	outPoint btcwire.OutPoint
+	outPoint wire.OutPoint
 	time     int64
 }
 
@@ -72,7 +72,7 @@ var stakeSeen, stakeSeenOrphan = make(map[Stake]bool), make(map[Stake]bool)
 
 // getBlockNode try to obtain a node form the memory block chain and loads it
 // form the database in not found in memory.
-func (b *BlockChain) getBlockNode(hash *btcwire.ShaHash) (*blockNode, error) {
+func (b *BlockChain) getBlockNode(hash *wire.ShaHash) (*blockNode, error) {
 
 	// Return the existing previous block node if it's already there.
 	if bn, ok := b.index[*hash]; ok {
@@ -379,8 +379,8 @@ func IsCoinStake(tx *btcutil.Tx) bool {
 // for the passed block.  The work sum is updated accordingly when the node is
 // inserted into a chain.
 func ppcNewBlockNode(
-	blockHeader *btcwire.BlockHeader, blockSha *btcwire.ShaHash, height int64,
-	blockMeta *btcwire.Meta) *blockNode {
+	blockHeader *wire.BlockHeader, blockSha *wire.ShaHash, height int64,
+	blockMeta *wire.Meta) *blockNode {
 	// Make a copy of the hash so the node doesn't keep a reference to part
 	// of the full block/block header preventing it from being garbage
 	// collected.
@@ -407,12 +407,12 @@ func (block *blockNode) isProofOfStake() bool {
 }
 
 // ppc: two types of block: proof-of-work or proof-of-stake
-func isProofOfStake(meta *btcwire.Meta) bool {
+func isProofOfStake(meta *wire.Meta) bool {
 	return meta.Flags&FBlockProofOfStake != 0
 }
 
 // setProofOfStake
-func setProofOfStake(meta *btcwire.Meta, proofOfStake bool) {
+func setProofOfStake(meta *wire.Meta, proofOfStake bool) {
 	if proofOfStake {
 		meta.Flags |= FBlockProofOfStake
 	} else {
@@ -421,12 +421,12 @@ func setProofOfStake(meta *btcwire.Meta, proofOfStake bool) {
 }
 
 // isGeneratedStakeModifier
-func isGeneratedStakeModifier(meta *btcwire.Meta) bool {
+func isGeneratedStakeModifier(meta *wire.Meta) bool {
 	return meta.Flags&FBlockStakeModifier != 0
 }
 
 // setGeneratedStakeModifier
-func setGeneratedStakeModifier(meta *btcwire.Meta, generated bool) {
+func setGeneratedStakeModifier(meta *wire.Meta, generated bool) {
 	if generated {
 		meta.Flags |= FBlockStakeModifier
 	} else {
@@ -435,7 +435,7 @@ func setGeneratedStakeModifier(meta *btcwire.Meta, generated bool) {
 }
 
 // getMetaStakeEntropyBit
-func getMetaStakeEntropyBit(meta *btcwire.Meta) uint32 {
+func getMetaStakeEntropyBit(meta *wire.Meta) uint32 {
 	if meta.Flags&FBlockStakeEntropy != 0 {
 		return 1
 	}
@@ -443,7 +443,7 @@ func getMetaStakeEntropyBit(meta *btcwire.Meta) uint32 {
 }
 
 // setMetaStakeEntropyBit
-func setMetaStakeEntropyBit(meta *btcwire.Meta, entropyBit uint32) {
+func setMetaStakeEntropyBit(meta *wire.Meta, entropyBit uint32) {
 	if entropyBit == 0 {
 		meta.Flags &^= FBlockStakeEntropy
 	} else {
@@ -451,8 +451,8 @@ func setMetaStakeEntropyBit(meta *btcwire.Meta, entropyBit uint32) {
 	}
 }
 
-// BigToShaHash converts a big.Int into a btcwire.ShaHash.
-func BigToShaHash(value *big.Int) (*btcwire.ShaHash, error) {
+// BigToShaHash converts a big.Int into a wire.ShaHash.
+func BigToShaHash(value *big.Int) (*wire.ShaHash, error) {
 
 	buf := value.Bytes()
 
@@ -464,12 +464,12 @@ func BigToShaHash(value *big.Int) (*btcwire.ShaHash, error) {
 	// Make sure the byte slice is the right length by appending zeros to
 	// pad it out.
 	pbuf := buf
-	if btcwire.HashSize-blen > 0 {
-		pbuf = make([]byte, btcwire.HashSize)
+	if wire.HashSize-blen > 0 {
+		pbuf = make([]byte, wire.HashSize)
 		copy(pbuf, buf)
 	}
 
-	return btcwire.NewShaHash(pbuf)
+	return wire.NewShaHash(pbuf)
 }
 
 // PPCGetProofOfWorkReward is Peercoin's validate.go:CalcBlockSubsidy(...)
@@ -521,7 +521,7 @@ func GetMinFee(tx *btcutil.Tx) int64 {
 
 // CheckBlockSignature ppc: check block signature
 // https://github.com/ppcoin/ppcoin/blob/v0.4.0ppc/src/main.cpp#L2116
-func CheckBlockSignature(msgBlock *btcwire.MsgBlock,
+func CheckBlockSignature(msgBlock *wire.MsgBlock,
 	params *btcnet.Params) bool {
 	sha, err := msgBlock.BlockSha()
 	if err != nil {
@@ -530,7 +530,7 @@ func CheckBlockSignature(msgBlock *btcwire.MsgBlock,
 	if sha.IsEqual(params.GenesisHash) {
 		return len(msgBlock.Signature) == 0
 	}
-	var txOut *btcwire.TxOut
+	var txOut *wire.TxOut
 	if msgBlock.IsProofOfStake() {
 		txOut = msgBlock.Transactions[1].TxOut[1]
 	} else {
@@ -622,7 +622,7 @@ func ppcCheckTransactionInputs(tx *btcutil.Tx, txStore TxStore, blockChain *Bloc
 	return nil
 }
 
-func ppcCheckTransactionInput(tx *btcutil.Tx, txOut *btcwire.TxIn, originTx *TxData) error {
+func ppcCheckTransactionInput(tx *btcutil.Tx, txOut *wire.TxIn, originTx *TxData) error {
 	// https://github.com/ppcoin/ppcoin/blob/v0.4.0ppc/src/main.cpp#L1177
 	// ppc: check transaction timestamp
 	// if (txPrev.nTime > nTime)
@@ -746,8 +746,8 @@ func (b *BlockChain) ppcProcessBlock(block *btcutil.Block, phase processPhase) e
 }
 
 // GetLastBlockHeader ppc: find last block from db up to lastSha
-func GetLastBlockHeader(db database.Db, lastSha *btcwire.ShaHash, proofOfStake bool) (
-	header *btcwire.BlockHeader, meta *btcwire.Meta, err error) {
+func GetLastBlockHeader(db database.Db, lastSha *wire.ShaHash, proofOfStake bool) (
+	header *wire.BlockHeader, meta *wire.Meta, err error) {
 	sha := lastSha
 	for true {
 		header, meta, err = db.FetchBlockHeaderBySha(sha)
@@ -766,7 +766,7 @@ func GetLastBlockHeader(db database.Db, lastSha *btcwire.ShaHash, proofOfStake b
 }
 
 // GetKernelStakeModifier
-func (b *BlockChain) GetKernelStakeModifier(hash *btcwire.ShaHash, timeSource MedianTimeSource) (uint64, error) {
+func (b *BlockChain) GetKernelStakeModifier(hash *wire.ShaHash, timeSource MedianTimeSource) (uint64, error) {
 	stakeModifier, _, _, err := b.getKernelStakeModifier(hash, timeSource, false)
 	return stakeModifier, err
 }

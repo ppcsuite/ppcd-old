@@ -13,13 +13,13 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/blockchain"
 	"github.com/ppcsuite/ppcd/database"
 	_ "github.com/ppcsuite/ppcd/database/ldb"
 	_ "github.com/ppcsuite/ppcd/database/memdb"
-	"github.com/ppcsuite/btcnet"
-	"github.com/ppcsuite/btcutil"
-    "github.com/ppcsuite/btcwire"
+    "github.com/ppcsuite/ppcd/wire"
 )
 
 // testDbType is the database backend type to use for the tests.
@@ -161,14 +161,14 @@ func loadTxStore(filename string) (blockchain.TxStore, error) {
 			return nil, err
 		}
 		serializedTxLen := uintBuf
-		if serializedTxLen > btcwire.MaxBlockPayload {
+		if serializedTxLen > wire.MaxBlockPayload {
 			return nil, fmt.Errorf("Read serialized transaction "+
 				"length of %d is larger max allowed %d",
-				serializedTxLen, btcwire.MaxBlockPayload)
+				serializedTxLen, wire.MaxBlockPayload)
 		}
 
 		// Transaction.
-		var msgTx btcwire.MsgTx
+		var msgTx wire.MsgTx
 		err = msgTx.Deserialize(r)
 		if err != nil {
 			return nil, err

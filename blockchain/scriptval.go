@@ -9,15 +9,15 @@ import (
 	"math"
 	"runtime"
 
-	"github.com/ppcsuite/ppcd/txscript"
 	"github.com/ppcsuite/btcutil"
-	"github.com/ppcsuite/btcwire"
+	"github.com/ppcsuite/ppcd/txscript"
+	"github.com/ppcsuite/ppcd/wire"
 )
 
 // txValidateItem holds a transaction along with which input to validate.
 type txValidateItem struct {
 	txInIndex int
-	txIn      *btcwire.TxIn
+	txIn      *wire.TxIn
 	tx        *btcutil.Tx
 }
 
@@ -217,7 +217,6 @@ func ValidateTransactionScripts(tx *btcutil.Tx, txStore TxStore, flags txscript.
 	}
 
 	return nil
-
 }
 
 // checkBlockScripts executes and validates the scripts for all transactions in

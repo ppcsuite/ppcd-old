@@ -13,9 +13,8 @@ import (
 	"github.com/btcsuite/btcec"
 	"github.com/ppcsuite/btcnet"
 	"github.com/ppcsuite/btcutil"
-	"github.com/ppcsuite/btcwire"
 	"github.com/ppcsuite/ppcd/txscript"
-)
+	"github.com/ppcsuite/ppcd/wire")
 
 // builderScript is a convenience function which is used in the tests.  It
 // allows access to the script from a known good script built with the builder.
@@ -132,7 +131,7 @@ func TestStandardPushes(t *testing.T) {
 
 type txTest struct {
 	name          string
-	tx            *btcwire.MsgTx
+	tx            *wire.MsgTx
 	pkScript      []byte              // output script of previous tx
 	idx           int                 // tx idx to be run.
 	bip16         bool                // is bip16 active?
@@ -151,12 +150,12 @@ var txTests = []txTest{
 	// ppc: modified for peercoin
 	{
 		name: "CheckSig",
-		tx: &btcwire.MsgTx{
+		tx: &wire.MsgTx{
 			Version: 1,
-			TxIn: []*btcwire.TxIn{
+			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash: btcwire.ShaHash([32]byte{
+					PreviousOutPoint: wire.OutPoint{
+						Hash: wire.ShaHash([32]byte{
 							0xc9, 0x97, 0xa5, 0xe5,
 							0x6e, 0x10, 0x41, 0x02,
 							0xfa, 0x20, 0x9c, 0x6a,
@@ -190,7 +189,7 @@ var txTests = []txTest{
 					Sequence: 4294967295,
 				},
 			},
-			TxOut: []*btcwire.TxOut{
+			TxOut: []*wire.TxOut{
 				{
 					Value: 1000000000,
 					PkScript: []byte{
@@ -251,12 +250,12 @@ var txTests = []txTest{
 	// Previous test with the value of one output changed.
 	{
 		name: "CheckSig Failure",
-		tx: &btcwire.MsgTx{
+		tx: &wire.MsgTx{
 			Version: 1,
-			TxIn: []*btcwire.TxIn{
+			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash: btcwire.ShaHash([32]byte{
+					PreviousOutPoint: wire.OutPoint{
+						Hash: wire.ShaHash([32]byte{
 							0xc9, 0x97, 0xa5, 0xe5,
 							0x6e, 0x10, 0x41, 0x02,
 							0xfa, 0x20, 0x9c, 0x6a,
@@ -290,7 +289,7 @@ var txTests = []txTest{
 					Sequence: 4294967295,
 				},
 			},
-			TxOut: []*btcwire.TxOut{
+			TxOut: []*wire.TxOut{
 				{
 					Value: 1000000000,
 					PkScript: []byte{
@@ -357,12 +356,12 @@ var txTests = []txTest{
 	},
 	{
 		name: "CheckSig invalid signature",
-		tx: &btcwire.MsgTx{
+		tx: &wire.MsgTx{
 			Version: 1,
-			TxIn: []*btcwire.TxIn{
+			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash: btcwire.ShaHash([32]byte{
+					PreviousOutPoint: wire.OutPoint{
+						Hash: wire.ShaHash([32]byte{
 							0xc9, 0x97, 0xa5, 0xe5,
 							0x6e, 0x10, 0x41, 0x02,
 							0xfa, 0x20, 0x9c, 0x6a,
@@ -398,7 +397,7 @@ var txTests = []txTest{
 					Sequence: 4294967295,
 				},
 			},
-			TxOut: []*btcwire.TxOut{
+			TxOut: []*wire.TxOut{
 				{
 					Value: 1000000000,
 					PkScript: []byte{
@@ -465,12 +464,12 @@ var txTests = []txTest{
 	},
 	{
 		name: "CheckSig invalid pubkey",
-		tx: &btcwire.MsgTx{
+		tx: &wire.MsgTx{
 			Version: 1,
-			TxIn: []*btcwire.TxIn{
+			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash: btcwire.ShaHash([32]byte{
+					PreviousOutPoint: wire.OutPoint{
+						Hash: wire.ShaHash([32]byte{
 							0xc9, 0x97, 0xa5, 0xe5,
 							0x6e, 0x10, 0x41, 0x02,
 							0xfa, 0x20, 0x9c, 0x6a,
@@ -504,7 +503,7 @@ var txTests = []txTest{
 					Sequence: 4294967295,
 				},
 			},
-			TxOut: []*btcwire.TxOut{
+			TxOut: []*wire.TxOut{
 				{
 					Value: 1000000000,
 					PkScript: []byte{
@@ -575,12 +574,12 @@ var txTests = []txTest{
 	// ppc: modified for peercoin
 	{
 		name: "CheckSigHashNone",
-		tx: &btcwire.MsgTx{
+		tx: &wire.MsgTx{
 			Version: 1,
-			TxIn: []*btcwire.TxIn{
+			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash: btcwire.ShaHash([32]byte{
+					PreviousOutPoint: wire.OutPoint{
+						Hash: wire.ShaHash([32]byte{
 							0x5f, 0x38, 0x6c, 0x8a,
 							0x38, 0x42, 0xc9, 0xa9,
 							0xdc, 0xfa, 0x9b, 0x78,
@@ -627,7 +626,7 @@ var txTests = []txTest{
 					Sequence: 4294967295,
 				},
 			},
-			TxOut: []*btcwire.TxOut{
+			TxOut: []*wire.TxOut{
 				{
 					Value: 1000000,
 					PkScript: []byte{
@@ -682,12 +681,12 @@ var txTests = []txTest{
 	},
 	{
 		name: "Non-canonical signature: R value negative",
-		tx: &btcwire.MsgTx{
+		tx: &wire.MsgTx{
 			Version: 1,
-			TxIn: []*btcwire.TxIn{
+			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash: btcwire.ShaHash([32]byte{
+					PreviousOutPoint: wire.OutPoint{
+						Hash: wire.ShaHash([32]byte{
 							0xfe, 0x15, 0x62, 0xc4,
 							0x8b, 0x3a, 0xa6, 0x37,
 							0x3f, 0x42, 0xe9, 0x61,
@@ -734,8 +733,8 @@ var txTests = []txTest{
 					Sequence: 4294967295,
 				},
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash: btcwire.ShaHash([32]byte{
+					PreviousOutPoint: wire.OutPoint{
+						Hash: wire.ShaHash([32]byte{
 							0x2a, 0xc7, 0xee, 0xf8,
 							0xa9, 0x62, 0x2d, 0xda,
 							0xec, 0x18, 0x3b, 0xba,
@@ -782,7 +781,7 @@ var txTests = []txTest{
 					Sequence: 4294967295,
 				},
 			},
-			TxOut: []*btcwire.TxOut{
+			TxOut: []*wire.TxOut{
 				{
 					Value: 630320000,
 					PkScript: []byte{
@@ -857,12 +856,12 @@ var txTests = []txTest{
 	// ppc: modified for peercoin
 	{
 		name: "CheckSigHashAnyoneCanPay",
-		tx: &btcwire.MsgTx{
+		tx: &wire.MsgTx{
 			Version: 1,
-			TxIn: []*btcwire.TxIn{
+			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash: btcwire.ShaHash([32]byte{
+					PreviousOutPoint: wire.OutPoint{
+						Hash: wire.ShaHash([32]byte{
 							0xf6, 0x04, 0x4c, 0x0a,
 							0xd4, 0x85, 0xf6, 0x33,
 							0xb4, 0x1f, 0x97, 0xd0,
@@ -903,8 +902,8 @@ var txTests = []txTest{
 					Sequence: 4294967295,
 				},
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash: btcwire.ShaHash([32]byte{
+					PreviousOutPoint: wire.OutPoint{
+						Hash: wire.ShaHash([32]byte{
 							0x9c, 0x6a, 0xf0, 0xdf,
 							0x66, 0x69, 0xbc, 0xde,
 							0xd1, 0x9e, 0x31, 0x7e,
@@ -945,7 +944,7 @@ var txTests = []txTest{
 					Sequence: 4294967295,
 				},
 			},
-			TxOut: []*btcwire.TxOut{
+			TxOut: []*wire.TxOut{
 				{
 					Value: 300000,
 					PkScript: []byte{
@@ -989,12 +988,12 @@ var txTests = []txTest{
 	// ppc: modified for peercoin
 	{
 		name: "CheckMultiSig",
-		tx: &btcwire.MsgTx{
+		tx: &wire.MsgTx{
 			Version: 1,
-			TxIn: []*btcwire.TxIn{
+			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash: btcwire.ShaHash([32]byte{
+					PreviousOutPoint: wire.OutPoint{
+						Hash: wire.ShaHash([32]byte{
 							0x37, 0xb1, 0x7d, 0x76,
 							0x38, 0x51, 0xcd, 0x1a,
 							0xb0, 0x4a, 0x42, 0x44,
@@ -1031,8 +1030,8 @@ var txTests = []txTest{
 					Sequence: 4294967295,
 				},
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash: btcwire.ShaHash([32]byte{
+					PreviousOutPoint: wire.OutPoint{
+						Hash: wire.ShaHash([32]byte{
 							0x37, 0xb1, 0x7d, 0x76,
 							0x38, 0x51, 0xcd, 0x1a,
 							0xb0, 0x4a, 0x42, 0x44,
@@ -1078,7 +1077,7 @@ var txTests = []txTest{
 					Sequence: 4294967295,
 				},
 			},
-			TxOut: []*btcwire.TxOut{
+			TxOut: []*wire.TxOut{
 				{
 					Value: 4800000,
 					PkScript: []byte{
@@ -1112,12 +1111,12 @@ var txTests = []txTest{
 	// same as previous but with one byte changed to make signature fail
 	{
 		name: "CheckMultiSig fail",
-		tx: &btcwire.MsgTx{
+		tx: &wire.MsgTx{
 			Version: 1,
-			TxIn: []*btcwire.TxIn{
+			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash: btcwire.ShaHash([32]byte{
+					PreviousOutPoint: wire.OutPoint{
+						Hash: wire.ShaHash([32]byte{
 							0x37, 0xb1, 0x7d, 0x76,
 							0x38, 0x51, 0xcd, 0x1a,
 							0xb0, 0x4a, 0x42, 0x44,
@@ -1154,8 +1153,8 @@ var txTests = []txTest{
 					Sequence: 4294967295,
 				},
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash: btcwire.ShaHash([32]byte{
+					PreviousOutPoint: wire.OutPoint{
+						Hash: wire.ShaHash([32]byte{
 							0x37, 0xb1, 0x7d, 0x76,
 							0x38, 0x51, 0xcd, 0x1a,
 							0xb0, 0x4a, 0x42, 0x44,
@@ -1201,7 +1200,7 @@ var txTests = []txTest{
 					Sequence: 4294967295,
 				},
 			},
-			TxOut: []*btcwire.TxOut{
+			TxOut: []*wire.TxOut{
 				{
 					Value: 5800000,
 					PkScript: []byte{
@@ -1238,12 +1237,12 @@ var txTests = []txTest{
 	// multisig with zero required signatures
 	{
 		name: "CheckMultiSig zero required signatures",
-		tx: &btcwire.MsgTx{
+		tx: &wire.MsgTx{
 			Version: 1,
-			TxIn: []*btcwire.TxIn{
+			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash: btcwire.ShaHash([32]byte{
+					PreviousOutPoint: wire.OutPoint{
+						Hash: wire.ShaHash([32]byte{
 							0x37, 0xb1, 0x7d, 0x76,
 							0x38, 0x51, 0xcd, 0x1a,
 							0xb0, 0x4a, 0x42, 0x44,
@@ -1273,7 +1272,7 @@ var txTests = []txTest{
 					Sequence: 4294967295,
 				},
 			},
-			TxOut:    []*btcwire.TxOut{},
+			TxOut:    []*wire.TxOut{},
 			LockTime: 0,
 		},
 		pkScript: []byte{
@@ -1298,12 +1297,12 @@ var txTests = []txTest{
 	// First P2SH transaction in the blockchain
 	{
 		name: "P2SH",
-		tx: &btcwire.MsgTx{
+		tx: &wire.MsgTx{
 			Version: 1,
-			TxIn: []*btcwire.TxIn{
+			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash: btcwire.ShaHash([32]byte{
+					PreviousOutPoint: wire.OutPoint{
+						Hash: wire.ShaHash([32]byte{
 							0x6d, 0x58, 0xf8, 0xa3,
 							0xaa, 0x43, 0x0b, 0x84,
 							0x78, 0x52, 0x3a, 0x65,
@@ -1323,7 +1322,7 @@ var txTests = []txTest{
 					Sequence: 4294967295,
 				},
 			},
-			TxOut: []*btcwire.TxOut{
+			TxOut: []*wire.TxOut{
 				{
 					Value: 1000000,
 					PkScript: []byte{
@@ -1364,12 +1363,12 @@ var txTests = []txTest{
 	{
 		// sigscript changed so that pkscript hash will not match.
 		name: "P2SH - bad hash",
-		tx: &btcwire.MsgTx{
+		tx: &wire.MsgTx{
 			Version: 1,
-			TxIn: []*btcwire.TxIn{
+			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash: btcwire.ShaHash([32]byte{
+					PreviousOutPoint: wire.OutPoint{
+						Hash: wire.ShaHash([32]byte{
 							0x6d, 0x58, 0xf8, 0xa3,
 							0xaa, 0x43, 0x0b, 0x84,
 							0x78, 0x52, 0x3a, 0x65,
@@ -1389,7 +1388,7 @@ var txTests = []txTest{
 					Sequence: 4294967295,
 				},
 			},
-			TxOut: []*btcwire.TxOut{
+			TxOut: []*wire.TxOut{
 				{
 					Value: 1000000,
 					PkScript: []byte{
@@ -1429,12 +1428,12 @@ var txTests = []txTest{
 	{
 		// sigscript changed so that pkscript hash will not match.
 		name: "P2SH - doesn't parse",
-		tx: &btcwire.MsgTx{
+		tx: &wire.MsgTx{
 			Version: 1,
-			TxIn: []*btcwire.TxIn{
+			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash: btcwire.ShaHash([32]byte{
+					PreviousOutPoint: wire.OutPoint{
+						Hash: wire.ShaHash([32]byte{
 							0x6d, 0x58, 0xf8, 0xa3,
 							0xaa, 0x43, 0x0b, 0x84,
 							0x78, 0x52, 0x3a, 0x65,
@@ -1454,7 +1453,7 @@ var txTests = []txTest{
 					Sequence: 4294967295,
 				},
 			},
-			TxOut: []*btcwire.TxOut{
+			TxOut: []*wire.TxOut{
 				{
 					Value: 1000000,
 					PkScript: []byte{
@@ -1488,12 +1487,12 @@ var txTests = []txTest{
 	{
 		// sigscript changed so to be non pushonly.
 		name: "P2SH - non pushonly",
-		tx: &btcwire.MsgTx{
+		tx: &wire.MsgTx{
 			Version: 1,
-			TxIn: []*btcwire.TxIn{
+			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash: btcwire.ShaHash([32]byte{
+					PreviousOutPoint: wire.OutPoint{
+						Hash: wire.ShaHash([32]byte{
 							0x6d, 0x58, 0xf8, 0xa3,
 							0xaa, 0x43, 0x0b, 0x84,
 							0x78, 0x52, 0x3a, 0x65,
@@ -1517,7 +1516,7 @@ var txTests = []txTest{
 					Sequence: 4294967295,
 				},
 			},
-			TxOut: []*btcwire.TxOut{
+			TxOut: []*wire.TxOut{
 				{
 					Value: 1000000,
 					PkScript: []byte{
@@ -1552,12 +1551,12 @@ var txTests = []txTest{
 	{
 		// sigscript changed so to be non pushonly.
 		name: "empty pkScript",
-		tx: &btcwire.MsgTx{
+		tx: &wire.MsgTx{
 			Version: 1,
-			TxIn: []*btcwire.TxIn{
+			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash: btcwire.ShaHash([32]byte{
+					PreviousOutPoint: wire.OutPoint{
+						Hash: wire.ShaHash([32]byte{
 							0x6d, 0x58, 0xf8, 0xa3,
 							0xaa, 0x43, 0x0b, 0x84,
 							0x78, 0x52, 0x3a, 0x65,
@@ -1577,7 +1576,7 @@ var txTests = []txTest{
 					Sequence: 4294967295,
 				},
 			},
-			TxOut: []*btcwire.TxOut{
+			TxOut: []*wire.TxOut{
 				{
 					Value: 1000000,
 					PkScript: []byte{
@@ -2414,12 +2413,12 @@ func TestBadPC(t *testing.T) {
 		},
 	}
 	// tx with almost empty scripts.
-	tx := &btcwire.MsgTx{
+	tx := &wire.MsgTx{
 		Version: 1,
-		TxIn: []*btcwire.TxIn{
+		TxIn: []*wire.TxIn{
 			{
-				PreviousOutPoint: btcwire.OutPoint{
-					Hash: btcwire.ShaHash([32]byte{
+				PreviousOutPoint: wire.OutPoint{
+					Hash: wire.ShaHash([32]byte{
 						0xc9, 0x97, 0xa5, 0xe5,
 						0x6e, 0x10, 0x41, 0x02,
 						0xfa, 0x20, 0x9c, 0x6a,
@@ -2435,7 +2434,7 @@ func TestBadPC(t *testing.T) {
 				Sequence:        4294967295,
 			},
 		},
-		TxOut: []*btcwire.TxOut{
+		TxOut: []*wire.TxOut{
 			{
 				Value:    1000000000,
 				PkScript: []byte{},
@@ -2475,12 +2474,12 @@ func TestCheckErrorCondition(t *testing.T) {
 	t.Parallel()
 
 	// tx with almost empty scripts.
-	tx := &btcwire.MsgTx{
+	tx := &wire.MsgTx{
 		Version: 1,
-		TxIn: []*btcwire.TxIn{
+		TxIn: []*wire.TxIn{
 			{
-				PreviousOutPoint: btcwire.OutPoint{
-					Hash: btcwire.ShaHash([32]byte{
+				PreviousOutPoint: wire.OutPoint{
+					Hash: wire.ShaHash([32]byte{
 						0xc9, 0x97, 0xa5, 0xe5,
 						0x6e, 0x10, 0x41, 0x02,
 						0xfa, 0x20, 0x9c, 0x6a,
@@ -2496,7 +2495,7 @@ func TestCheckErrorCondition(t *testing.T) {
 				Sequence:        4294967295,
 			},
 		},
-		TxOut: []*btcwire.TxOut{
+		TxOut: []*wire.TxOut{
 			{
 				Value:    1000000000,
 				PkScript: []byte{},
@@ -2567,13 +2566,13 @@ type TstSigScript struct {
 }
 
 type TstInput struct {
-	txout              *btcwire.TxOut
+	txout              *wire.TxOut
 	sigscriptGenerates bool
 	inputValidates     bool
 	indexOutOfRange    bool
 }
 
-var coinbaseOutPoint = &btcwire.OutPoint{
+var coinbaseOutPoint = &wire.OutPoint{
 	Index: (1 << 32) - 1,
 }
 
@@ -2614,7 +2613,7 @@ var SigScriptTests = []TstSigScript{
 		name: "one input uncompressed",
 		inputs: []TstInput{
 			{
-				txout:              btcwire.NewTxOut(coinbaseVal, uncompressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal, uncompressedPkScript),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -2628,13 +2627,13 @@ var SigScriptTests = []TstSigScript{
 		name: "two inputs uncompressed",
 		inputs: []TstInput{
 			{
-				txout:              btcwire.NewTxOut(coinbaseVal, uncompressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal, uncompressedPkScript),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
 			},
 			{
-				txout:              btcwire.NewTxOut(coinbaseVal+fee, uncompressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal+fee, uncompressedPkScript),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -2648,7 +2647,7 @@ var SigScriptTests = []TstSigScript{
 		name: "one input compressed",
 		inputs: []TstInput{
 			{
-				txout:              btcwire.NewTxOut(coinbaseVal, compressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal, compressedPkScript),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -2662,13 +2661,13 @@ var SigScriptTests = []TstSigScript{
 		name: "two inputs compressed",
 		inputs: []TstInput{
 			{
-				txout:              btcwire.NewTxOut(coinbaseVal, compressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal, compressedPkScript),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
 			},
 			{
-				txout:              btcwire.NewTxOut(coinbaseVal+fee, compressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal+fee, compressedPkScript),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -2682,7 +2681,7 @@ var SigScriptTests = []TstSigScript{
 		name: "hashType SigHashNone",
 		inputs: []TstInput{
 			{
-				txout:              btcwire.NewTxOut(coinbaseVal, uncompressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal, uncompressedPkScript),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -2696,7 +2695,7 @@ var SigScriptTests = []TstSigScript{
 		name: "hashType SigHashSingle",
 		inputs: []TstInput{
 			{
-				txout:              btcwire.NewTxOut(coinbaseVal, uncompressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal, uncompressedPkScript),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -2710,7 +2709,7 @@ var SigScriptTests = []TstSigScript{
 		name: "hashType SigHashAnyoneCanPay",
 		inputs: []TstInput{
 			{
-				txout:              btcwire.NewTxOut(coinbaseVal, uncompressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal, uncompressedPkScript),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -2724,7 +2723,7 @@ var SigScriptTests = []TstSigScript{
 		name: "hashType non-standard",
 		inputs: []TstInput{
 			{
-				txout:              btcwire.NewTxOut(coinbaseVal, uncompressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal, uncompressedPkScript),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -2738,7 +2737,7 @@ var SigScriptTests = []TstSigScript{
 		name: "invalid compression",
 		inputs: []TstInput{
 			{
-				txout:              btcwire.NewTxOut(coinbaseVal, uncompressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal, uncompressedPkScript),
 				sigscriptGenerates: true,
 				inputValidates:     false,
 				indexOutOfRange:    false,
@@ -2752,7 +2751,7 @@ var SigScriptTests = []TstSigScript{
 		name: "short PkScript",
 		inputs: []TstInput{
 			{
-				txout:              btcwire.NewTxOut(coinbaseVal, shortPkScript),
+				txout:              wire.NewTxOut(coinbaseVal, shortPkScript),
 				sigscriptGenerates: false,
 				indexOutOfRange:    false,
 			},
@@ -2765,13 +2764,13 @@ var SigScriptTests = []TstSigScript{
 		name: "valid script at wrong index",
 		inputs: []TstInput{
 			{
-				txout:              btcwire.NewTxOut(coinbaseVal, uncompressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal, uncompressedPkScript),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
 			},
 			{
-				txout:              btcwire.NewTxOut(coinbaseVal+fee, uncompressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal+fee, uncompressedPkScript),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -2785,13 +2784,13 @@ var SigScriptTests = []TstSigScript{
 		name: "index out of range",
 		inputs: []TstInput{
 			{
-				txout:              btcwire.NewTxOut(coinbaseVal, uncompressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal, uncompressedPkScript),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
 			},
 			{
-				txout:              btcwire.NewTxOut(coinbaseVal+fee, uncompressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal+fee, uncompressedPkScript),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -2815,13 +2814,13 @@ func TestSignatureScript(t *testing.T) {
 
 nexttest:
 	for i := range SigScriptTests {
-		tx := btcwire.NewMsgTx()
+		tx := wire.NewMsgTx()
 
-		output := btcwire.NewTxOut(500, []byte{txscript.OP_RETURN})
+		output := wire.NewTxOut(500, []byte{txscript.OP_RETURN})
 		tx.AddTxOut(output)
 
 		for _ = range SigScriptTests[i].inputs {
-			txin := btcwire.NewTxIn(coinbaseOutPoint, nil)
+			txin := wire.NewTxIn(coinbaseOutPoint, nil)
 			tx.AddTxIn(txin)
 		}
 
@@ -3279,7 +3278,7 @@ func TestMultiSigScript(t *testing.T) {
 	}
 }
 
-func signAndCheck(msg string, tx *btcwire.MsgTx, idx int, pkScript []byte,
+func signAndCheck(msg string, tx *wire.MsgTx, idx int, pkScript []byte,
 	hashType txscript.SigHashType, kdb txscript.KeyDB, sdb txscript.ScriptDB,
 	previousScript []byte) error {
 
@@ -3293,7 +3292,7 @@ func signAndCheck(msg string, tx *btcwire.MsgTx, idx int, pkScript []byte,
 	return checkScripts(msg, tx, idx, sigScript, pkScript)
 }
 
-func checkScripts(msg string, tx *btcwire.MsgTx, idx int,
+func checkScripts(msg string, tx *wire.MsgTx, idx int,
 	sigScript, pkScript []byte) error {
 	engine, err := txscript.NewScript(sigScript, pkScript, idx, tx,
 		txscript.ScriptBip16|
@@ -3366,39 +3365,39 @@ func TestSignTxOutput(t *testing.T) {
 		txscript.SigHashNone | txscript.SigHashAnyOneCanPay,
 		txscript.SigHashSingle | txscript.SigHashAnyOneCanPay,
 	}
-	tx := &btcwire.MsgTx{
+	tx := &wire.MsgTx{
 		Version: 1,
-		TxIn: []*btcwire.TxIn{
-			&btcwire.TxIn{
-				PreviousOutPoint: btcwire.OutPoint{
-					Hash:  btcwire.ShaHash{},
+		TxIn: []*wire.TxIn{
+			&wire.TxIn{
+				PreviousOutPoint: wire.OutPoint{
+					Hash:  wire.ShaHash{},
 					Index: 0,
 				},
 				Sequence: 4294967295,
 			},
-			&btcwire.TxIn{
-				PreviousOutPoint: btcwire.OutPoint{
-					Hash:  btcwire.ShaHash{},
+			&wire.TxIn{
+				PreviousOutPoint: wire.OutPoint{
+					Hash:  wire.ShaHash{},
 					Index: 1,
 				},
 				Sequence: 4294967295,
 			},
-			&btcwire.TxIn{
-				PreviousOutPoint: btcwire.OutPoint{
-					Hash:  btcwire.ShaHash{},
+			&wire.TxIn{
+				PreviousOutPoint: wire.OutPoint{
+					Hash:  wire.ShaHash{},
 					Index: 2,
 				},
 				Sequence: 4294967295,
 			},
 		},
-		TxOut: []*btcwire.TxOut{
-			&btcwire.TxOut{
+		TxOut: []*wire.TxOut{
+			&wire.TxOut{
 				Value: 1,
 			},
-			&btcwire.TxOut{
+			&wire.TxOut{
 				Value: 2,
 			},
-			&btcwire.TxOut{
+			&wire.TxOut{
 				Value: 3,
 			},
 		},

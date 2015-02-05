@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/ppcsuite/btcutil"
-	"github.com/ppcsuite/btcwire"
+	"github.com/ppcsuite/ppcd/wire"
 )
 
 // BehaviorFlags is a bitmask defining tweaks to the normal behavior when
@@ -38,7 +38,7 @@ const (
 
 // blockExists determines whether a block with the given hash exists either in
 // the main chain or any side chains.
-func (b *BlockChain) blockExists(hash *btcwire.ShaHash) (bool, error) {
+func (b *BlockChain) blockExists(hash *wire.ShaHash) (bool, error) {
 	// Check memory chain first (could be main chain or side chain blocks).
 	if _, ok := b.index[*hash]; ok {
 		return true, nil
@@ -55,14 +55,14 @@ func (b *BlockChain) blockExists(hash *btcwire.ShaHash) (bool, error) {
 //
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to maybeAcceptBlock.
-func (b *BlockChain) processOrphans(hash *btcwire.ShaHash, timeSource MedianTimeSource, flags BehaviorFlags) error {
+func (b *BlockChain) processOrphans(hash *wire.ShaHash, timeSource MedianTimeSource, flags BehaviorFlags) error {
 
 	defer timeTrack(now(), fmt.Sprintf("processOrphans(%v)", hash))
 
 	// Start with processing at least the passed hash.  Leave a little room
 	// for additional orphan blocks that need to be processed without
 	// needing to grow the array in the common case.
-	processHashes := make([]*btcwire.ShaHash, 0, 10)
+	processHashes := make([]*wire.ShaHash, 0, 10)
 	processHashes = append(processHashes, hash)
 	for len(processHashes) > 0 {
 		// Pop the first hash to process from the slice.

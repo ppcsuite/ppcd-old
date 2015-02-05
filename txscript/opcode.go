@@ -16,7 +16,7 @@ import (
 	"golang.org/x/crypto/ripemd160"
 	"github.com/btcsuite/btcec"
 	"github.com/btcsuite/fastsha256"
-	"github.com/ppcsuite/btcwire"
+	"github.com/ppcsuite/ppcd/wire"
 )
 
 // An opcode defines the information related to a txscript opcode.
@@ -1745,7 +1745,7 @@ func opcodeHash256(op *parsedOpcode, s *Script) error {
 		return err
 	}
 
-	s.dstack.PushByteArray(btcwire.DoubleSha256(buf))
+	s.dstack.PushByteArray(wire.DoubleSha256(buf))
 	return nil
 }
 

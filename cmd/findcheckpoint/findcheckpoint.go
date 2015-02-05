@@ -9,11 +9,11 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ppcsuite/btcnet"
 	"github.com/ppcsuite/ppcd/blockchain"
 	"github.com/ppcsuite/ppcd/database"
 	_ "github.com/ppcsuite/ppcd/database/ldb"
-	"github.com/ppcsuite/btcnet"
-	"github.com/ppcsuite/btcwire"
+	"github.com/ppcsuite/ppcd/wire"
 )
 
 const blockDbNamePrefix = "blocks"
@@ -44,7 +44,7 @@ func loadBlockDB() (database.Db, error) {
 // candidates at the last checkpoint that is already hard coded into btcchain
 // since there is no point in finding candidates before already existing
 // checkpoints.
-func findCandidates(db database.Db, latestHash *btcwire.ShaHash) ([]*btcnet.Checkpoint, error) {
+func findCandidates(db database.Db, latestHash *wire.ShaHash) ([]*btcnet.Checkpoint, error) {
 	// Start with the latest block of the main chain.
 	block, err := db.FetchBlockBySha(latestHash)
 	if err != nil {

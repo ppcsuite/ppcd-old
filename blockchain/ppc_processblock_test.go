@@ -6,12 +6,12 @@ import (
 	"compress/bzip2"
 	"encoding/binary"
 	"github.com/btcsuite/btclog"
+	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/blockchain"
 	"github.com/ppcsuite/ppcd/database"
 	_ "github.com/ppcsuite/ppcd/database/memdb"
-	"github.com/ppcsuite/btcnet"
-	"github.com/ppcsuite/btcutil"
-	"github.com/ppcsuite/btcwire"
+	"github.com/ppcsuite/ppcd/wire"
 	"io"
 	"math"
 	"os"
@@ -96,9 +96,9 @@ func _loadBlocksMax(t *testing.T, file string, maxHeight int64, skip int64) (blo
 			t.Errorf("failed to load network type, err %v", err)
 			break
 		}
-		if rintbuf != uint32(btcwire.MainNet) {
+		if rintbuf != uint32(wire.MainNet) {
 			t.Errorf("Block doesn't match network: %v expects %v(%v)",
-				rintbuf, btcwire.MainNet, uint32(btcwire.MainNet))
+				rintbuf, wire.MainNet, uint32(wire.MainNet))
 			break
 		}
 		err = binary.Read(dr, binary.LittleEndian, &rintbuf)

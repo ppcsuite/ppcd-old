@@ -14,17 +14,17 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/database"
 	_ "github.com/ppcsuite/ppcd/database/ldb"
 	_ "github.com/ppcsuite/ppcd/database/memdb"
-	"github.com/ppcsuite/btcnet"
-	"github.com/ppcsuite/btcutil"
-	"github.com/ppcsuite/btcwire"
+	"github.com/ppcsuite/ppcd/wire"
 )
 
 var (
 	// network is the expected bitcoin network in the test block data.
-	network = btcwire.MainNet
+	network = wire.MainNet
 
 	// savedBlocks is used to store blocks loaded from the blockDataFile
 	// so multiple invocations to loadBlocks from the various test functions
@@ -36,7 +36,7 @@ var (
 	blockDataFile = filepath.Join("testdata", "blocks1-1536.bz2")
 )
 
-var zeroHash = btcwire.ShaHash{}
+var zeroHash = wire.ShaHash{}
 
 // testDbRoot is the root directory used to create all test databases.
 const testDbRoot = "testdbs"

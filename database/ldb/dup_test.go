@@ -10,9 +10,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ppcsuite/ppcd/database"
 	"github.com/ppcsuite/btcutil"
-	"github.com/ppcsuite/btcwire"
+	"github.com/ppcsuite/ppcd/database"
+	"github.com/ppcsuite/ppcd/wire"
 )
 
 func Test_dupTx(t *testing.T) {
@@ -43,7 +43,7 @@ func Test_dupTx(t *testing.T) {
 		return
 	}
 
-	var lastSha *btcwire.ShaHash
+	var lastSha *wire.ShaHash
 
 	// Populate with the fisrt 256 blocks, so we have blocks to 'mess with'
 	err = nil
@@ -53,7 +53,7 @@ out:
 
 		// except for NoVerify which does not allow lookups check inputs
 		mblock := block.MsgBlock()
-		var txneededList []*btcwire.ShaHash
+		var txneededList []*wire.ShaHash
 		for _, tx := range mblock.Transactions {
 			for _, txin := range tx.TxIn {
 				if txin.PreviousOutPoint.Index == uint32(4294967295) {
@@ -114,21 +114,21 @@ out:
 	// these block are not verified, so there are a bunch of garbage fields
 	// in the 'generated' block.
 
-	var bh btcwire.BlockHeader
+	var bh wire.BlockHeader
 
 	bh.Version = 2
 	bh.PrevBlock = *lastSha
 	// Bits, Nonce are not filled in
 
-	mblk := btcwire.NewMsgBlock(&bh)
+	mblk := wire.NewMsgBlock(&bh)
 
-	hash, _ := btcwire.NewShaHashFromStr("24f80244964eb3b6ce3af70498515e916c774aa35b72beb0061e89252e6fada5")
+	hash, _ := wire.NewShaHashFromStr("24f80244964eb3b6ce3af70498515e916c774aa35b72beb0061e89252e6fada5")
 
-	po := btcwire.NewOutPoint(hash, 0)
-	txI := btcwire.NewTxIn(po, []byte("garbage"))
-	txO := btcwire.NewTxOut(50000000, []byte("garbageout"))
+	po := wire.NewOutPoint(hash, 0)
+	txI := wire.NewTxIn(po, []byte("garbage"))
+	txO := wire.NewTxOut(50000000, []byte("garbageout"))
 
-	var tx btcwire.MsgTx
+	var tx wire.MsgTx
 	tx.AddTxIn(txI)
 	tx.AddTxOut(txO)
 
@@ -136,7 +136,7 @@ out:
 
 	blk := btcutil.NewBlock(mblk)
 
-	fetchList := []*btcwire.ShaHash{hash}
+	fetchList := []*wire.ShaHash{hash}
 	listReply := db.FetchUnSpentTxByShaList(fetchList)
 	for _, lr := range listReply {
 		if lr.Err != nil {

@@ -6,15 +6,16 @@ package main
 
 import (
 	"strconv"
+
+	"github.com/ppcsuite/btcjson"
+	"github.com/ppcsuite/btcws"
 	"github.com/ppcsuite/ppcd/blockchain"
 	"github.com/ppcsuite/ppcd/database"
-	"github.com/ppcsuite/btcjson"
-	"github.com/ppcsuite/btcwire"
-	"github.com/ppcsuite/btcws"
+	"github.com/ppcsuite/ppcd/wire"
 )
 
 // getDifficultyRatio returns the latest PoW or PoS difficulty up to block sha.
-func ppcGetDifficultyRatio(db database.Db, sha *btcwire.ShaHash, proofOfStake bool) (float64, error) {
+func ppcGetDifficultyRatio(db database.Db, sha *wire.ShaHash, proofOfStake bool) (float64, error) {
 	bh, _, err := blockchain.GetLastBlockHeader(db, sha, proofOfStake)
 	if err != nil {
 		return 0, err
@@ -52,7 +53,7 @@ func ppcHandleGetDifficulty(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan stru
 // ppcHandleGetKernelStakeModifier implements the getkernelstakeModifier command.
 func ppcHandleGetKernelStakeModifier(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*btcws.GetKernelStakeModifierCmd)
-	sha, err := btcwire.NewShaHashFromStr(c.Hash)
+	sha, err := wire.NewShaHashFromStr(c.Hash)
 	if err != nil {
 		rpcsLog.Errorf("Error generating sha: %v", err)
 		return nil, btcjson.ErrBlockNotFound

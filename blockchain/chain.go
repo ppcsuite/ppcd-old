@@ -13,10 +13,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ppcsuite/ppcd/database"
 	"github.com/ppcsuite/btcnet"
 	"github.com/ppcsuite/btcutil"
-	"github.com/ppcsuite/btcwire"
+	"github.com/ppcsuite/ppcd/database"
+	"github.com/ppcsuite/ppcd/wire"
 )
 
 const (
@@ -49,13 +49,13 @@ type blockNode struct {
 	children []*blockNode
 
 	// hash is the double sha 256 of the block.
-	hash *btcwire.ShaHash
+	hash *wire.ShaHash
 
 	// parentHash is the double sha 256 of the parent block.  This is kept
 	// here over simply relying on parent.hash directly since block nodes
 	// are sparse and the parent node might not be in memory when its hash
 	// is needed.
-	parentHash *btcwire.ShaHash
+	parentHash *wire.ShaHash
 
 	// height is the position in the block chain.
 	height int64
@@ -75,14 +75,14 @@ type blockNode struct {
 	timestamp time.Time
 
 	// Peercoin specific
-	meta *btcwire.Meta
+	meta *wire.Meta
 }
 
 // newBlockNode returns a new block node for the given block header.  It is
 // completely disconnected from the chain and the workSum value is just the work
 // for the passed block.  The work sum is updated accordingly when the node is
 // inserted into a chain.
-func newBlockNode(blockHeader *btcwire.BlockHeader, blockSha *btcwire.ShaHash, height int64) *blockNode {
+func newBlockNode(blockHeader *wire.BlockHeader, blockSha *wire.ShaHash, height int64) *blockNode {
 	// Make a copy of the hash so the node doesn't keep a reference to part
 	// of the full block/block header preventing it from being garbage
 	// collected.
@@ -153,13 +153,13 @@ type BlockChain struct {
 	notifications       NotificationCallback
 	root                *blockNode
 	bestChain           *blockNode
-	index               map[btcwire.ShaHash]*blockNode
-	depNodes            map[btcwire.ShaHash][]*blockNode
-	orphans             map[btcwire.ShaHash]*orphanBlock
-	prevOrphans         map[btcwire.ShaHash][]*orphanBlock
+	index               map[wire.ShaHash]*blockNode
+	depNodes            map[wire.ShaHash][]*blockNode
+	orphans             map[wire.ShaHash]*orphanBlock
+	prevOrphans         map[wire.ShaHash][]*orphanBlock
 	oldestOrphan        *orphanBlock
 	orphanLock          sync.RWMutex
-	blockCache          map[btcwire.ShaHash]*btcutil.Block
+	blockCache          map[wire.ShaHash]*btcutil.Block
 	noVerify            bool
 	noCheckpoints       bool
 	nextCheckpoint      *btcnet.Checkpoint
@@ -180,7 +180,7 @@ func (b *BlockChain) DisableVerify(disable bool) {
 // be like part of the main chain, on a side chain, or in the orphan pool.
 //
 // This function is NOT safe for concurrent access.
-func (b *BlockChain) HaveBlock(hash *btcwire.ShaHash) (bool, error) {
+func (b *BlockChain) HaveBlock(hash *wire.ShaHash) (bool, error) {
 	exists, err := b.blockExists(hash)
 	if err != nil {
 		return false, err
@@ -198,7 +198,7 @@ func (b *BlockChain) HaveBlock(hash *btcwire.ShaHash) (bool, error) {
 // duplicate orphans and react accordingly.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) IsKnownOrphan(hash *btcwire.ShaHash) bool {
+func (b *BlockChain) IsKnownOrphan(hash *wire.ShaHash) bool {
 	// Protect concurrent access.  Using a read lock only so multiple
 	// readers can query without blocking each other.
 	b.orphanLock.RLock()
@@ -215,7 +215,7 @@ func (b *BlockChain) IsKnownOrphan(hash *btcwire.ShaHash) bool {
 // map of orphan blocks.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) GetOrphanRoot(hash *btcwire.ShaHash) *btcwire.ShaHash {
+func (b *BlockChain) GetOrphanRoot(hash *wire.ShaHash) *wire.ShaHash {
 	// Protect concurrent access.  Using a read lock only so multiple
 	// readers can query without blocking each other.
 	b.orphanLock.RLock()
@@ -404,7 +404,7 @@ func (b *BlockChain) GenerateInitialIndex() error {
 // creates a block node from it, and updates the memory block chain accordingly.
 // It is used mainly to dynamically load previous blocks from database as they
 // are needed to avoid needing to put the entire block chain in memory.
-func (b *BlockChain) loadBlockNode(hash *btcwire.ShaHash) (*blockNode, error) {
+func (b *BlockChain) loadBlockNode(hash *wire.ShaHash) (*blockNode, error) {
 	// Load the block header and height from the db.
 	defer timeTrack(now(), fmt.Sprintf("loadBlockNode(%v)", hash))
 
@@ -1114,11 +1114,11 @@ func New(db database.Db, params *btcnet.Params, c NotificationCallback) *BlockCh
 		notifications:       c,
 		root:                nil,
 		bestChain:           nil,
-		index:               make(map[btcwire.ShaHash]*blockNode),
-		depNodes:            make(map[btcwire.ShaHash][]*blockNode),
-		orphans:             make(map[btcwire.ShaHash]*orphanBlock),
-		prevOrphans:         make(map[btcwire.ShaHash][]*orphanBlock),
-		blockCache:          make(map[btcwire.ShaHash]*btcutil.Block),
+		index:               make(map[wire.ShaHash]*blockNode),
+		depNodes:            make(map[wire.ShaHash][]*blockNode),
+		orphans:             make(map[wire.ShaHash]*orphanBlock),
+		prevOrphans:         make(map[wire.ShaHash][]*orphanBlock),
+		blockCache:          make(map[wire.ShaHash]*btcutil.Block),
 	}
 	return &b
 }
