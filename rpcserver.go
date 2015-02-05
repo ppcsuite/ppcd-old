@@ -544,7 +544,7 @@ func newRPCServer(listenAddrs []string, s *server) (*rpcServer, error) {
 	}
 	rpc.ntfnMgr = newWsNotificationManager(&rpc)
 
-	// check for existence of cert file and key file
+	// Setup TLS if not disabled.
 	listenFunc := net.Listen
 	if !cfg.DisableTLS {
 		// Generate the TLS cert and key file if both don't already
@@ -565,12 +565,12 @@ func newRPCServer(listenAddrs []string, s *server) (*rpcServer, error) {
 			MinVersion:   tls.VersionTLS12,
 	}
 
-	// TODO(oga) this code is similar to that in server, should be
+		// Change the standard net.Listen function to the tls one.
 		listenFunc = func(net string, laddr string) (net.Listener, error) {
 			return tls.Listen(net, laddr, &tlsConfig)
 		}
 	}
-	// factored into something shared.
+
 	// TODO(oga) this code is similar to that in server, should be
 	// factored into something shared.
 	ipv4ListenAddrs, ipv6ListenAddrs, _, err := parseListeners(listenAddrs)
@@ -974,7 +974,7 @@ func handleDecodeRawTransaction(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan 
 	}
 	txSha, _ := mtx.TxSha()
 
-
+	// Create and return the result.
 	txReply := btcjson.TxRawDecodeResult{
 		Txid:     txSha.String(),
 		Version:  mtx.Version,
