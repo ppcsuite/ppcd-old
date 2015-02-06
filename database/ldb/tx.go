@@ -9,11 +9,11 @@ import (
 	"encoding/binary"
 	"errors"
 
+	"github.com/btcsuite/goleveldb/leveldb"
+	"github.com/btcsuite/goleveldb/leveldb/util"
 	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/database"
 	"github.com/ppcsuite/ppcd/wire"
-	"github.com/btcsuite/goleveldb/leveldb"
-	"github.com/btcsuite/goleveldb/leveldb/util"
 
 	"golang.org/x/crypto/ripemd160"
 )

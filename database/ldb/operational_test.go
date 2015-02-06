@@ -15,11 +15,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/btcutil"
+	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/ppcd/database"
 	"github.com/ppcsuite/ppcd/wire"
-    "golang.org/x/crypto/ripemd160"
+	"golang.org/x/crypto/ripemd160"
 )
 
 var network = wire.MainNet
