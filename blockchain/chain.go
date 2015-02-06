@@ -148,7 +148,7 @@ func removeChildNode(children []*blockNode, node *blockNode) []*blockNode {
 // selection with reorganization.
 type BlockChain struct {
 	db                  database.Db
-	netParams           *chaincfg.Params
+	chainParams         *chaincfg.Params
 	checkpointsByHeight map[int64]*chaincfg.Checkpoint
 	notifications       NotificationCallback
 	root                *blockNode
@@ -517,7 +517,7 @@ func (b *BlockChain) getPrevNodeFromNode(node *blockNode) (*blockNode, error) {
 	}
 
 	// Genesis block.
-	if node.hash.IsEqual(b.netParams.GenesisHash) {
+	if node.hash.IsEqual(b.chainParams.GenesisHash) {
 		return nil, nil
 	}
 
@@ -650,7 +650,7 @@ func (b *BlockChain) isMajorityVersion(minVer int32, startNode *blockNode, numRe
 func (b *BlockChain) calcPastMedianTime(startNode *blockNode) (time.Time, error) {
 	// Genesis block.
 	if startNode == nil {
-		return b.netParams.GenesisBlock.Header.Timestamp, nil
+		return b.chainParams.GenesisBlock.Header.Timestamp, nil
 	}
 
 	// Create a slice of the previous few block timestamps used to calculate
@@ -1109,7 +1109,7 @@ func New(db database.Db, params *chaincfg.Params, c NotificationCallback) *Block
 
 	b := BlockChain{
 		db:                  db,
-		netParams:           params,
+		chainParams:         params,
 		checkpointsByHeight: checkpointsByHeight,
 		notifications:       c,
 		root:                nil,

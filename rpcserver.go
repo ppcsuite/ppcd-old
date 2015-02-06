@@ -30,10 +30,10 @@ import (
 	"github.com/btcsuite/fastsha256"
 	"github.com/btcsuite/websocket"
 	"github.com/ppcsuite/btcjson"
-	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/btcws"
 	"github.com/ppcsuite/ppcd/blockchain"
+	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/ppcd/database"
 	"github.com/ppcsuite/ppcd/txscript"
 	"github.com/ppcsuite/ppcd/wire"
@@ -118,46 +118,47 @@ type commandHandler func(*rpcServer, btcjson.Cmd, <-chan struct{}) (interface{},
 // a dependancy loop.
 var rpcHandlers map[string]commandHandler
 var rpcHandlersBeforeInit = map[string]commandHandler{
-	"addnode":              handleAddNode,
-	"createrawtransaction": handleCreateRawTransaction,
-	"debuglevel":           handleDebugLevel,
-	"decoderawtransaction": handleDecodeRawTransaction,
-	"decodescript":         handleDecodeScript,
-	"estimatefee":          handleUnimplemented,
-	"estimatepriority":     handleUnimplemented,
-	"getaddednodeinfo":     handleGetAddedNodeInfo,
-	"getbestblock":         handleGetBestBlock,
-	"getbestblockhash":     handleGetBestBlockHash,
-	"getblock":             handleGetBlock,
-	"getblockchaininfo":    handleUnimplemented,
-	"getblockcount":        handleGetBlockCount,
-	"getblockhash":         handleGetBlockHash,
-	"getblocktemplate":     handleGetBlockTemplate,
-	"getchaintips":         handleUnimplemented,
-	"getconnectioncount":   handleGetConnectionCount,
-	"getcurrentnet":        handleGetCurrentNet,
-	"getdifficulty":        ppcHandleGetDifficulty, // ppc: get both PoS and PoW difficulties
-	"getgenerate":          handleGetGenerate,
-	"gethashespersec":      handleGetHashesPerSec,
-	"getinfo":              handleGetInfo,
-	"getmininginfo":        handleGetMiningInfo,
-	"getnettotals":         handleGetNetTotals,
-	"getnetworkhashps":     handleGetNetworkHashPS,
-	"getnetworkinfo":       handleUnimplemented,
-	"getpeerinfo":          handleGetPeerInfo,
-	"getrawmempool":        handleGetRawMempool,
-	"getrawtransaction":    handleGetRawTransaction,
-	"gettxout":             handleGetTxOut,
-	"getwork":              handleGetWork,
-	"help":                 handleHelp,
-	"ping":                 handlePing,
-	"sendrawtransaction":   handleSendRawTransaction,
-	"setgenerate":          handleSetGenerate,
-	"stop":                 handleStop,
-	"submitblock":          handleSubmitBlock,
-	"validateaddress":      handleValidateAddress,
-	"verifychain":          handleVerifyChain,
-	"verifymessage":        handleVerifyMessage,
+	"addnode":               handleAddNode,
+	"createrawtransaction":  handleCreateRawTransaction,
+	"debuglevel":            handleDebugLevel,
+	"decoderawtransaction":  handleDecodeRawTransaction,
+	"decodescript":          handleDecodeScript,
+	"estimatefee":           handleUnimplemented,
+	"estimatepriority":      handleUnimplemented,
+	"getaddednodeinfo":      handleGetAddedNodeInfo,
+	"getbestblock":          handleGetBestBlock,
+	"getbestblockhash":      handleGetBestBlockHash,
+	"getblock":              handleGetBlock,
+	"getblockchaininfo":     handleUnimplemented,
+	"getblockcount":         handleGetBlockCount,
+	"getblockhash":          handleGetBlockHash,
+	"getblocktemplate":      handleGetBlockTemplate,
+	"getchaintips":          handleUnimplemented,
+	"getconnectioncount":    handleGetConnectionCount,
+	"getcurrentnet":         handleGetCurrentNet,
+	"getdifficulty":         ppcHandleGetDifficulty, // ppc: get both PoS and PoW difficulties
+	"getgenerate":           handleGetGenerate,
+	"gethashespersec":       handleGetHashesPerSec,
+	"getinfo":               handleGetInfo,
+	"getmininginfo":         handleGetMiningInfo,
+	"getnettotals":          handleGetNetTotals,
+	"getnetworkhashps":      handleGetNetworkHashPS,
+	"getnetworkinfo":        handleUnimplemented,
+	"getpeerinfo":           handleGetPeerInfo,
+	"getrawmempool":         handleGetRawMempool,
+	"getrawtransaction":     handleGetRawTransaction,
+	"gettxout":              handleGetTxOut,
+	"getwork":               handleGetWork,
+	"help":                  handleHelp,
+	"ping":                  handlePing,
+	"searchrawtransactions": handleSearchRawTransactions,
+	"sendrawtransaction":    handleSendRawTransaction,
+	"setgenerate":           handleSetGenerate,
+	"stop":                  handleStop,
+	"submitblock":           handleSubmitBlock,
+	"validateaddress":       handleValidateAddress,
+	"verifychain":           handleVerifyChain,
+	"verifymessage":         handleVerifyMessage,
 
 	"getkernelstakemodifier": ppcHandleGetKernelStakeModifier, // ppc:
 	"getnextrequiredtarget":  ppcHandleGetNextRequiredTarget,  // ppc:
@@ -801,7 +802,7 @@ func handleCreateRawTransaction(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan 
 		default:
 			return nil, btcjson.ErrInvalidAddressOrKey
 		}
-		if !addr.IsForNet(s.server.netParams) {
+		if !addr.IsForNet(s.server.chainParams) {
 			return nil, btcjson.Error{
 				Code: btcjson.ErrInvalidAddressOrKey.Code,
 				Message: fmt.Sprintf("%s: %q",
@@ -880,7 +881,7 @@ func createVinList(mtx *wire.MsgTx) []btcjson.Vin {
 
 // createVoutList returns a slice of JSON objects for the outputs of the passed
 // transaction.
-func createVoutList(mtx *wire.MsgTx, net *chaincfg.Params) []btcjson.Vout {
+func createVoutList(mtx *wire.MsgTx, chainParams *chaincfg.Params) []btcjson.Vout {
 	voutList := make([]btcjson.Vout, len(mtx.TxOut))
 	for i, v := range mtx.TxOut {
 		voutList[i].N = uint32(i)
@@ -895,7 +896,8 @@ func createVoutList(mtx *wire.MsgTx, net *chaincfg.Params) []btcjson.Vout {
 		// Ignore the error here since an error means the script
 		// couldn't parse and there is no additional information about
 		// it anyways.
-		scriptClass, addrs, reqSigs, _ := txscript.ExtractPkScriptAddrs(v.PkScript, net)
+		scriptClass, addrs, reqSigs, _ := txscript.ExtractPkScriptAddrs(
+			v.PkScript, chainParams)
 		voutList[i].ScriptPubKey.Type = scriptClass.String()
 		voutList[i].ScriptPubKey.ReqSigs = int32(reqSigs)
 
@@ -914,7 +916,7 @@ func createVoutList(mtx *wire.MsgTx, net *chaincfg.Params) []btcjson.Vout {
 
 // createTxRawResult converts the passed transaction and associated parameters
 // to a raw transaction JSON object.
-func createTxRawResult(net *chaincfg.Params, txSha string, mtx *wire.MsgTx,
+func createTxRawResult(chainParams *chaincfg.Params, txSha string, mtx *wire.MsgTx,
 	blk *btcutil.Block, maxidx int64,
 	blksha *wire.ShaHash) (*btcjson.TxRawResult, error) {
 
@@ -926,7 +928,7 @@ func createTxRawResult(net *chaincfg.Params, txSha string, mtx *wire.MsgTx,
 	txReply := &btcjson.TxRawResult{
 		Hex:      mtxHex,
 		Txid:     txSha,
-		Vout:     createVoutList(mtx, net),
+		Vout:     createVoutList(mtx, chainParams),
 		Vin:      createVinList(mtx),
 		Version:  mtx.Version,
 		LockTime: mtx.LockTime,
@@ -980,7 +982,7 @@ func handleDecodeRawTransaction(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan 
 		Version:  mtx.Version,
 		Locktime: mtx.LockTime,
 		Vin:      createVinList(&mtx),
-		Vout:     createVoutList(&mtx, s.server.netParams),
+		Vout:     createVoutList(&mtx, s.server.chainParams),
 	}
 	return txReply, nil
 }
@@ -1010,15 +1012,15 @@ func handleDecodeScript(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan struct{}
 	// Get information about the script.
 	// Ignore the error here since an error means the script couldn't parse
 	// and there is no additinal information about it anyways.
-	net := s.server.netParams
-	scriptClass, addrs, reqSigs, _ := txscript.ExtractPkScriptAddrs(script, net)
+	scriptClass, addrs, reqSigs, _ := txscript.ExtractPkScriptAddrs(script,
+		s.server.chainParams)
 	addresses := make([]string, len(addrs))
 	for i, addr := range addrs {
 		addresses[i] = addr.EncodeAddress()
 	}
 
 	// Convert the script itself to a pay-to-script-hash address.
-	p2sh, err := btcutil.NewAddressScriptHash(script, net)
+	p2sh, err := btcutil.NewAddressScriptHash(script, s.server.chainParams)
 	if err != nil {
 		return nil, btcjson.Error{
 			Code:    btcjson.ErrInternal.Code,
@@ -1218,7 +1220,7 @@ func handleGetBlock(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan struct{}) (i
 			txSha := tx.Sha().String()
 			mtx := tx.MsgTx()
 
-			rawTxn, err := createTxRawResult(s.server.netParams,
+			rawTxn, err := createTxRawResult(s.server.chainParams,
 				txSha, mtx, blk, maxidx, sha)
 			if err != nil {
 				rpcsLog.Errorf("Cannot create TxRawResult for "+
@@ -2061,7 +2063,7 @@ func handleGetConnectionCount(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan st
 
 // handleGetCurrentNet implements the getcurrentnet command.
 func handleGetCurrentNet(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan struct{}) (interface{}, error) {
-	return s.server.netParams.Net, nil
+	return s.server.chainParams.Net, nil
 }
 
 // handleGetDifficulty implements the getdifficulty command.
@@ -2415,7 +2417,7 @@ func handleGetRawTransaction(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan str
 		}
 	}
 
-	rawTxn, err := createTxRawResult(s.server.netParams, c.Txid, mtx,
+	rawTxn, err := createTxRawResult(s.server.chainParams, c.Txid, mtx,
 		blk, maxidx, blksha)
 	if err != nil {
 		rpcsLog.Errorf("Cannot create TxRawResult for txSha=%s: %v", txSha, err)
@@ -2538,8 +2540,8 @@ func handleGetTxOut(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan struct{}) (i
 	// Get further info about the script.
 	// Ignore the error here since an error means the script couldn't parse
 	// and there is no additional information about it anyways.
-	net := s.server.netParams
-	scriptClass, addrs, reqSigs, _ := txscript.ExtractPkScriptAddrs(script, net)
+	scriptClass, addrs, reqSigs, _ := txscript.ExtractPkScriptAddrs(script,
+		s.server.chainParams)
 	addresses := make([]string, len(addrs))
 	for i, addr := range addrs {
 		addresses[i] = addr.EncodeAddress()
@@ -2959,6 +2961,122 @@ func handlePing(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan struct{}) (inter
 	s.server.BroadcastMessage(wire.NewMsgPing(nonce))
 
 	return nil, nil
+}
+
+// handleSearchRawTransaction implements the searchrawtransactions command.
+func handleSearchRawTransactions(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan struct{}) (interface{}, error) {
+	if !cfg.AddrIndex {
+		return nil, btcjson.Error{
+			Code:    btcjson.ErrMisc.Code,
+			Message: "addrindex is not currently enabled",
+		}
+	}
+	if !s.server.addrIndexer.IsCaughtUp() {
+		return nil, btcjson.Error{
+			Code: btcjson.ErrMisc.Code,
+			Message: "Address index has not yet caught up to the current " +
+				"best height",
+		}
+	}
+
+	c := cmd.(*btcjson.SearchRawTransactionsCmd)
+
+	// Attempt to decode the supplied address.
+	addr, err := btcutil.DecodeAddress(c.Address, s.server.chainParams)
+	if err != nil {
+		return nil, btcjson.Error{
+			Code: btcjson.ErrInvalidAddressOrKey.Code,
+			Message: fmt.Sprintf("%s: %v",
+				btcjson.ErrInvalidAddressOrKey.Message, err),
+		}
+	}
+
+	var addressTxs []*database.TxListReply
+
+	// First check the mempool for relevent transactions.
+	memPoolTxs, err := s.server.txMemPool.FilterTransactionsByAddress(addr)
+	if err == nil && len(memPoolTxs) != 0 {
+		for _, tx := range memPoolTxs {
+			txReply := &database.TxListReply{Tx: tx.MsgTx(), Sha: tx.Sha()}
+			addressTxs = append(addressTxs, txReply)
+		}
+	}
+
+	if len(addressTxs) >= c.Count {
+		// Tx's in the mempool exceed the requested number of tx's.
+		// Slice off any possible overflow.
+		addressTxs = addressTxs[:c.Count]
+	} else {
+		// Otherwise, we'll also take a look into the database.
+		dbTxs, err := s.server.db.FetchTxsForAddr(addr, c.Skip,
+			c.Count-len(addressTxs))
+		if err == nil && len(dbTxs) != 0 {
+			for _, txReply := range dbTxs {
+				addressTxs = append(addressTxs, txReply)
+			}
+		}
+	}
+
+	// If neither source yielded any results, then the address has never
+	// been used.
+	if len(addressTxs) == 0 {
+		return nil, btcjson.ErrNoTxInfo
+	}
+
+	// When not in verbose mode, simply return a list of serialized txs.
+	if c.Verbose == 0 {
+		serializedTxs := make([]string, len(addressTxs), len(addressTxs))
+		for i, txReply := range addressTxs {
+			serializedTxs[i], err = messageToHex(txReply.Tx)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		return serializedTxs, nil
+	}
+
+	// Otherwise, we'll need to populate raw tx results.
+	// Grab the current best height for tx confirmation calculation.
+	_, maxidx, err := s.server.db.NewestSha()
+	if err != nil {
+		rpcsLog.Errorf("Cannot get newest sha: %v", err)
+		return nil, btcjson.ErrBlockNotFound
+	}
+
+	rawTxns := make([]btcjson.TxRawResult, len(addressTxs), len(addressTxs))
+	for i, txReply := range addressTxs {
+		txSha := txReply.Sha.String()
+		mtx := txReply.Tx
+
+		// Transactions grabbed from the mempool aren't yet
+		// within a block. So we conditionally fetch a txs
+		// embedded block here. This will be reflected in the
+		// final JSON output (mempool won't have confirmations).
+		var blk *btcutil.Block
+		if txReply.BlkSha != nil {
+			blk, err = s.server.db.FetchBlockBySha(txReply.BlkSha)
+			if err != nil {
+				rpcsLog.Errorf("Error fetching sha: %v", err)
+				return nil, btcjson.ErrBlockNotFound
+			}
+		}
+
+		var blkSha *wire.ShaHash
+		if blk != nil {
+			blkSha, _ = blk.Sha()
+		}
+
+		rawTxn, err := createTxRawResult(s.server.chainParams,
+			txSha, mtx, blk, maxidx, blkSha)
+		if err != nil {
+			rpcsLog.Errorf("Cannot create TxRawResult for "+
+				"transaction %s: %v", txSha, err)
+			return nil, err
+		}
+		rawTxns[i] = *rawTxn
+	}
+	return rawTxns, nil
 }
 
 // handleSendRawTransaction implements the sendrawtransaction command.

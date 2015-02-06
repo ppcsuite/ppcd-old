@@ -1,6 +1,4 @@
-// Package chaincfg defines the network parameters for the three standard Bitcoin
-// networks and provides the ability for callers to define their own custom
-// Bitcoin networks.
+// // Package chaincfg defines chain configuration parameters.
 //
 // In addition to the main Bitcoin network, which is intended for the transfer
 // of monetary value, there also exists two currently active standard networks:

@@ -146,7 +146,7 @@ type outMsg struct {
 // to push messages to the peer.  Internally they use QueueMessage.
 type peer struct {
 	server             *server
-	chaincfg             wire.BitcoinNet
+	chaincfg           wire.BitcoinNet
 	started            int32
 	connected          int32
 	disconnect         int32 // only to be used atomically
@@ -1455,8 +1455,8 @@ out:
 					// command in the header if at least
 					// that much of the message was valid,
 					// but that is not currently exposed by
-					// wire, so just used malformed for
-					// the command.
+					// wire, so just used malformed for the
+					// command.
 					p.PushRejectMsg("malformed",
 						wire.RejectMalformed, errMsg,
 						nil, true)
@@ -1937,7 +1937,7 @@ func newPeerBase(s *server, inbound bool) *peer {
 	p := peer{
 		server:          s,
 		protocolVersion: maxProtocolVersion,
-		chaincfg:          s.netParams.Net,
+		btcnet:          s.chainParams.Net,
 		services:        wire.SFNodeNetwork,
 		inbound:         inbound,
 		knownAddresses:  make(map[string]struct{}),

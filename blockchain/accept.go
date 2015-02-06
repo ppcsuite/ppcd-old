@@ -115,8 +115,8 @@ func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, timeSource MedianTim
 		// upgraded.  This is part of BIP0034.
 		if blockHeader.Version < 2 {
 			if b.isMajorityVersion(2, prevNode,
-				b.netParams.BlockV1RejectNumRequired,
-				b.netParams.BlockV1RejectNumToCheck) {
+				b.chainParams.BlockV1RejectNumRequired,
+				b.chainParams.BlockV1RejectNumToCheck) {
 
 				str := "new blocks with version %d are no " +
 					"longer valid"
@@ -131,8 +131,8 @@ func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, timeSource MedianTim
 		// part of BIP0034.
 		if blockHeader.Version >= serializedHeightVersion {
 			if b.isMajorityVersion(serializedHeightVersion, prevNode,
-				b.netParams.CoinbaseBlockHeightNumRequired,
-				b.netParams.CoinbaseBlockHeightNumToCheck) {
+				b.chainParams.CoinbaseBlockHeightNumRequired,
+				b.chainParams.CoinbaseBlockHeightNumToCheck) {
 
 				expectedHeight := int64(0)
 				if prevNode != nil {

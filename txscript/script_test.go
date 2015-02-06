@@ -2962,7 +2962,7 @@ func (b *bogusAddress) ScriptAddress() []byte {
 }
 
 // IsForNet lies blatantly to satisfy the btcutil.Address interface.
-func (b *bogusAddress) IsForNet(net *chaincfg.Params) bool {
+func (b *bogusAddress) IsForNet(chainParams *chaincfg.Params) bool {
 	return true // why not?
 }
 

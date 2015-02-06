@@ -76,11 +76,11 @@ var simNetParams = params{
 // A proper upgrade to move the data and log directories for this network to
 // "testnet3" is planned for the future, at which point this function can be
 // removed and the network parameter's name used instead.
-func netName(netParams *params) string {
-	switch netParams.Net {
+func netName(chainParams *params) string {
+	switch chainParams.Net {
 	case wire.TestNet3:
 		return "testnet"
 	default:
-		return netParams.Name
+		return chainParams.Name
 	}
 }

@@ -20,10 +20,10 @@ import (
 	"time"
 
 	"github.com/ppcsuite/btcjson"
-	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/addrmgr"
 	"github.com/ppcsuite/ppcd/blockchain"
+	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/ppcd/database"
 	"github.com/ppcsuite/ppcd/wire"
 )
@@ -75,7 +75,7 @@ type relayMsg struct {
 type server struct {
 	nonce                uint64
 	listeners            []net.Listener
-	netParams            *chaincfg.Params
+	chainParams          *chaincfg.Params
 	started              int32      // atomic
 	shutdown             int32      // atomic
 	shutdownSched        int32      // atomic
@@ -85,6 +85,7 @@ type server struct {
 	addrManager          *addrmgr.AddrManager
 	rpcServer            *rpcServer
 	blockManager         *blockManager
+	addrIndexer          *addrIndexer
 	txMemPool            *txMemPool
 	cpuMiner             *CPUMiner
 	modifyRebroadcastInv chan interface{}
@@ -706,6 +707,9 @@ out:
 		}
 	}
 
+	if cfg.AddrIndex {
+		s.addrIndexer.Stop()
+	}
 	s.blockManager.Stop()
 	s.addrManager.Stop()
 	s.wg.Done()
@@ -910,6 +914,10 @@ func (s *server) Start() {
 	if cfg.Generate {
 		s.cpuMiner.Start()
 	}
+
+	if cfg.AddrIndex {
+		s.addrIndexer.Start()
+	}
 }
 
 // Stop gracefully shuts down the server by stopping and disconnecting all
@@ -1088,9 +1096,9 @@ out:
 }
 
 // newServer returns a new btcd server configured to listen on addr for the
-// bitcoin network type specified by netParams.  Use start to begin accepting
+// bitcoin network type specified by chainParams.  Use start to begin accepting
 // connections from peers.
-func newServer(listenAddrs []string, db database.Db, netParams *chaincfg.Params) (*server, error) {
+func newServer(listenAddrs []string, db database.Db, chainParams *chaincfg.Params) (*server, error) {
 	nonce, err := wire.RandomUint64()
 	if err != nil {
 		return nil, err
@@ -1226,7 +1234,7 @@ func newServer(listenAddrs []string, db database.Db, netParams *chaincfg.Params)
 	s := server{
 		nonce:                nonce,
 		listeners:            listeners,
-		netParams:            netParams,
+		chainParams:          chainParams,
 		addrManager:          amgr,
 		newPeers:             make(chan *peer, cfg.MaxPeers),
 		donePeers:            make(chan *peer, cfg.MaxPeers),
@@ -1248,6 +1256,14 @@ func newServer(listenAddrs []string, db database.Db, netParams *chaincfg.Params)
 	s.blockManager = bm
 	s.txMemPool = newTxMemPool(&s)
 	s.cpuMiner = newCPUMiner(&s)
+
+	if cfg.AddrIndex {
+		ai, err := newAddrIndexer(&s)
+		if err != nil {
+			return nil, err
+		}
+		s.addrIndexer = ai
+	}
 
 	if !cfg.DisableRPC {
 		s.rpcServer, err = newRPCServer(cfg.RPCListeners, &s)

@@ -19,7 +19,7 @@ import (
 	"github.com/ppcsuite/ppcd/database"
 	_ "github.com/ppcsuite/ppcd/database/ldb"
 	_ "github.com/ppcsuite/ppcd/database/memdb"
-    "github.com/ppcsuite/ppcd/wire"
+	"github.com/ppcsuite/ppcd/wire"
 )
 
 // testDbType is the database backend type to use for the tests.

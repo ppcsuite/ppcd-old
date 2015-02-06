@@ -1,19 +1,17 @@
 chaincfg
-======
+========
 
-[![Build Status](https://travis-ci.org/mably/chaincfg.png?branch=master)]
-(https://travis-ci.org/mably/chaincfg) [![Coverage Status]
-(https://coveralls.io/repos/mably/chaincfg/badge.png?branch=master)]
-(https://coveralls.io/r/mably/chaincfg?branch=master)
+[![Build Status](https://travis-ci.org/ppcsuite/ppcd.png?branch=master)]
+(https://travis-ci.org/ppcsuite/ppcd) [![Coverage Status]
+(https://coveralls.io/repos/ppcsuite/ppcd/badge.png?branch=master)]
+(https://coveralls.io/r/ppcsuite/ppcd?branch=master)
 [![tip for next commit](http://peer4commit.com/projects/130.svg)](http://peer4commit.com/projects/130)
 
-Package chaincfg defines the network parameters for the three standard Bitcoin 
-networks and provides the ability for callers to define their own custom 
+Package chaincfg defines chain configuration parameters for the three standard
+Bitcoin networks and provides the ability for callers to define their own custom
 Bitcoin networks.
 
-This package is one of the core packages from btcd, an alternative full-node
-implementation of Bitcoin which is under active development by Conformal.
-Although it was primarily written for btcd, this package has intentionally been
+Although this package was primarily written for btcd, it has intentionally been
 designed so it can be used as a standalone package for any projects needing to
 use parameters for the standard Bitcoin networks or for projects needing to
 define their own network.
@@ -28,7 +26,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mably/chaincfg"
+	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/mably/btcutil"
 )
 
@@ -59,21 +57,21 @@ func main() {
 
 ## Documentation
 
-[![GoDoc](https://godoc.org/github.com/mably/chaincfg?status.png)]
-(http://godoc.org/github.com/mably/chaincfg)
+[![GoDoc](https://godoc.org/github.com/ppcsuite/ppcd/chaincfg?status.png)]
+(http://godoc.org/github.com/ppcsuite/ppcd/chaincfg)
 
 Full `go doc` style documentation for the project can be viewed online without
 installing this package by using the GoDoc site
-[here](http://godoc.org/github.com/mably/chaincfg).
+[here](http://godoc.org/github.com/ppcsuite/ppcd/chaincfg).
 
 You can also view the documentation locally once the package is installed with
 the `godoc` tool by running `godoc -http=":6060"` and pointing your browser to
-http://localhost:6060/pkg/github.com/mably/chaincfg
+http://localhost:6060/pkg/github.com/ppcsuite/ppcd/chaincfg
 
 ## Installation
 
 ```bash
-$ go get github.com/mably/chaincfg
+$ go get github.com/ppcsuite/ppcd/chaincfg
 ```
 
 ## GPG Verification Key
