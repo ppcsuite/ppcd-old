@@ -114,7 +114,7 @@ func TestMessage(t *testing.T) {
 	for i, test := range tests {
 		// Encode to wire format.
 		var buf bytes.Buffer
-		nw, err := wire.WriteMessageN(&buf, test.in, test.pver, test.chaincfg)
+		nw, err := wire.WriteMessageN(&buf, test.in, test.pver, test.btcnet)
 		if err != nil {
 			t.Errorf("WriteMessage #%d error %v", i, err)
 			continue
