@@ -137,7 +137,7 @@ btcdb          ae25e28d7e5e815043e5422d106c7c7f36738dd8
 btcec          cea5e44f2d87c7a5a8d38d948995d375d37431a2
 btcjson        82e79619a5fee4c841f1309b9bfad1263e005d84
 btclog         9caaed73fd7b082945434ed8567ff685ebf2ea06
-btcnet         536c1e3c298cd868e83f0158d9f56e5849468692
+chaincfg         536c1e3c298cd868e83f0158d9f56e5849468692
 btcscript      27e1ad758bb0a88347436011624e2d7ad459f0fb
 btcutil        bff18e5a9305b1f54f900e30c7090d5a19e149d0
 btcwire        a4978ba4c8a272c8a0dd710f5ddc797967113dba
@@ -156,7 +156,7 @@ btcdb        2a688a70b2aa4456fc8f01a03039a96fa4be2626
 btcec        4ca0daacc139d145eab60124a16192265da27acb
 btcjson      1caddd4a37d2e85c65e36065bdd47cf946e9e4c1
 btclog       7e65e0a3e1fe7b3b579f00ebdabc7b75159ff116
-btcnet       3bbe8ff0ca63f8ce94982f7624f825f84ac10b0a
+chaincfg       3bbe8ff0ca63f8ce94982f7624f825f84ac10b0a
 btcscript    2803ea17c2a7ec5b806b9085c2a7949cee5355f1
 btcutil      2539ca986029f25880b91460d3f4be4e961b33e9
 btcwire      8733b9c8df9fd1c6a563cc06cecb301610b87fe5

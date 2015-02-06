@@ -11,7 +11,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/btcutil"
 )
 
@@ -97,7 +97,7 @@ func isProtocolV03(b *BlockChain, nTime int64) bool {
 }
 
 // isProtocolV03FromParams
-func isProtocolV03FromParams(params *btcnet.Params, nTime int64) bool {
+func isProtocolV03FromParams(params *chaincfg.Params, nTime int64) bool {
 	var switchTime int64
 	if params.Name == "testnet3" {
 		switchTime = nProtocolV03TestSwitchTime

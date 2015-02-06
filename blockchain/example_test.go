@@ -11,7 +11,7 @@ import (
 	"github.com/ppcsuite/ppcd/blockchain"
 	"github.com/ppcsuite/ppcd/database"
 	_ "github.com/ppcsuite/ppcd/database/memdb"
-	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/btcutil"
 )
 
@@ -35,7 +35,7 @@ func ExampleBlockChain_ProcessBlock() {
 	// Insert the main network genesis block.  This is part of the initial
 	// database setup.  Like above, this typically would not be needed when
 	// opening an existing database.
-	genesisBlock := btcutil.NewBlock(btcnet.MainNetParams.GenesisBlock)
+	genesisBlock := btcutil.NewBlock(chaincfg.MainNetParams.GenesisBlock)
 	_, err = db.InsertBlock(genesisBlock)
 	if err != nil {
 		fmt.Printf("Failed to insert genesis block: %v\n", err)
@@ -44,7 +44,7 @@ func ExampleBlockChain_ProcessBlock() {
 
 	// Create a new BlockChain instance using the underlying database for
 	// the main bitcoin network and ignore notifications.
-	chain := blockchain.New(db, &btcnet.MainNetParams, nil)
+	chain := blockchain.New(db, &chaincfg.MainNetParams, nil)
 
 	// Create a new median time source that is required by the upcoming
 	// call to ProcessBlock.  Ordinarily this would also add time values

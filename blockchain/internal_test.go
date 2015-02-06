@@ -19,7 +19,7 @@ import (
 	"github.com/ppcsuite/btcutil"
 )
 
-/* Peercoin - now it's btcnet.Params parameter
+/* Peercoin - now it's chaincfg.Params parameter
 
 // TstSetCoinbaseMaturity makes the ability to set the coinbase maturity
 // available to the test package.

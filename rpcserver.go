@@ -30,7 +30,7 @@ import (
 	"github.com/btcsuite/fastsha256"
 	"github.com/btcsuite/websocket"
 	"github.com/ppcsuite/btcjson"
-	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/btcws"
 	"github.com/ppcsuite/ppcd/blockchain"
@@ -880,7 +880,7 @@ func createVinList(mtx *wire.MsgTx) []btcjson.Vin {
 
 // createVoutList returns a slice of JSON objects for the outputs of the passed
 // transaction.
-func createVoutList(mtx *wire.MsgTx, net *btcnet.Params) []btcjson.Vout {
+func createVoutList(mtx *wire.MsgTx, net *chaincfg.Params) []btcjson.Vout {
 	voutList := make([]btcjson.Vout, len(mtx.TxOut))
 	for i, v := range mtx.TxOut {
 		voutList[i].N = uint32(i)
@@ -914,7 +914,7 @@ func createVoutList(mtx *wire.MsgTx, net *btcnet.Params) []btcjson.Vout {
 
 // createTxRawResult converts the passed transaction and associated parameters
 // to a raw transaction JSON object.
-func createTxRawResult(net *btcnet.Params, txSha string, mtx *wire.MsgTx,
+func createTxRawResult(net *chaincfg.Params, txSha string, mtx *wire.MsgTx,
 	blk *btcutil.Block, maxidx int64,
 	blksha *wire.ShaHash) (*btcjson.TxRawResult, error) {
 

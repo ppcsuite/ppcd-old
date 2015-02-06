@@ -7,7 +7,7 @@ package blockchain
 import (
 	"fmt"
 
-	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/txscript"
 	"github.com/ppcsuite/ppcd/wire"
@@ -36,7 +36,7 @@ func (b *BlockChain) DisableCheckpoints(disable bool) {
 // Checkpoints returns a slice of checkpoints (regardless of whether they are
 // already known).  When checkpoints are disabled or there are no checkpoints
 // for the active network, it will return nil.
-func (b *BlockChain) Checkpoints() []btcnet.Checkpoint {
+func (b *BlockChain) Checkpoints() []chaincfg.Checkpoint {
 	if b.noCheckpoints || len(b.netParams.Checkpoints) == 0 {
 		return nil
 	}
@@ -47,7 +47,7 @@ func (b *BlockChain) Checkpoints() []btcnet.Checkpoint {
 // LatestCheckpoint returns the most recent checkpoint (regardless of whether it
 // is already known).  When checkpoints are disabled or there are no checkpoints
 // for the active network, it will return nil.
-func (b *BlockChain) LatestCheckpoint() *btcnet.Checkpoint {
+func (b *BlockChain) LatestCheckpoint() *chaincfg.Checkpoint {
 	if b.noCheckpoints || len(b.netParams.Checkpoints) == 0 {
 		return nil
 	}

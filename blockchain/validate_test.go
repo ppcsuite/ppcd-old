@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/blockchain"
 	"github.com/ppcsuite/ppcd/wire"
@@ -34,7 +34,7 @@ func TestCheckConnectBlock(t *testing.T) {
 
 	// The genesis block should fail to connect since it's already
 	// inserted.
-	genesisBlock := btcnet.MainNetParams.GenesisBlock
+	genesisBlock := chaincfg.MainNetParams.GenesisBlock
 	err = chain.CheckConnectBlock(btcutil.NewBlock(genesisBlock))
 	if err == nil {
 		t.Errorf("CheckConnectBlock: Did not received expected error")
@@ -44,10 +44,10 @@ func TestCheckConnectBlock(t *testing.T) {
 // TestCheckBlockSanity tests the CheckBlockSanity function to ensure it works
 // as expected.
 func TestCheckBlockSanity(t *testing.T) {
-	powLimit := btcnet.MainNetParams.PowLimit
+	powLimit := chaincfg.MainNetParams.PowLimit
 	block := btcutil.NewBlock(&Block100000)
 	timeSource := blockchain.NewMedianTime()
-	err := blockchain.CheckBlockSanity(&btcnet.MainNetParams, block, powLimit, timeSource)
+	err := blockchain.CheckBlockSanity(&chaincfg.MainNetParams, block, powLimit, timeSource)
 	if err != nil {
 		t.Errorf("CheckBlockSanity: %v", err)
 	}
@@ -56,7 +56,7 @@ func TestCheckBlockSanity(t *testing.T) {
 	// second fails.
 	timestamp := block.MsgBlock().Header.Timestamp
 	block.MsgBlock().Header.Timestamp = timestamp.Add(time.Nanosecond)
-	err = blockchain.CheckBlockSanity(&btcnet.MainNetParams, block, powLimit, timeSource)
+	err = blockchain.CheckBlockSanity(&chaincfg.MainNetParams, block, powLimit, timeSource)
 	if err == nil {
 		t.Errorf("CheckBlockSanity: error is nil when it shouldn't be")
 	}

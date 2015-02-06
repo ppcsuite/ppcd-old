@@ -13,7 +13,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/blockchain"
 	"github.com/ppcsuite/ppcd/database"
@@ -180,7 +180,7 @@ type blockManager struct {
 	headersFirstMode bool
 	headerList       *list.List
 	startHeader      *list.Element
-	nextCheckpoint   *btcnet.Checkpoint
+	nextCheckpoint   *chaincfg.Checkpoint
 }
 
 // resetHeaderState sets the headers-first mode state to values appropriate for
@@ -221,7 +221,7 @@ func (b *blockManager) updateChainState(newestHash *wire.ShaHash, newestHeight i
 // It returns nil when there is not one either because the height is already
 // later than the final checkpoint or some other reason such as disabled
 // checkpoints.
-func (b *blockManager) findNextHeaderCheckpoint(height int64) *btcnet.Checkpoint {
+func (b *blockManager) findNextHeaderCheckpoint(height int64) *chaincfg.Checkpoint {
 	// There is no next checkpoint if checkpoints are disabled or there are
 	// none for this current network.
 	if cfg.DisableCheckpoints {

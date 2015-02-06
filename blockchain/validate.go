@@ -11,7 +11,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/database"
 	"github.com/ppcsuite/ppcd/txscript"
@@ -163,7 +163,7 @@ func isBIP0030Node(node *blockNode) bool {
 //
 // At the target block generation rate for the main network, this is
 // approximately every 4 years.
-func CalcBlockSubsidy(height int64, netParams *btcnet.Params) int64 {
+func CalcBlockSubsidy(height int64, netParams *chaincfg.Params) int64 {
 	if netParams.SubsidyHalvingInterval == 0 {
 		return baseSubsidy
 	}
@@ -421,7 +421,7 @@ func CountP2SHSigOps(tx *btcutil.Tx, isCoinBaseTx bool, txStore TxStore) (int, e
 //
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkProofOfWork.
-func checkBlockSanity(params *btcnet.Params, block *btcutil.Block, powLimit *big.Int, timeSource MedianTimeSource,
+func checkBlockSanity(params *chaincfg.Params, block *btcutil.Block, powLimit *big.Int, timeSource MedianTimeSource,
 	flags BehaviorFlags) error {
 
 	defer timeTrack(now(), fmt.Sprintf("checkBlockSanity(%v)", slice(block.Sha())[0]))
@@ -564,7 +564,7 @@ func checkBlockSanity(params *btcnet.Params, block *btcutil.Block, powLimit *big
 
 // CheckBlockSanity performs some preliminary checks on a block to ensure it is
 // sane before continuing with block processing.  These checks are context free.
-func CheckBlockSanity(params *btcnet.Params, block *btcutil.Block, powLimit *big.Int, timeSource MedianTimeSource) error {
+func CheckBlockSanity(params *chaincfg.Params, block *btcutil.Block, powLimit *big.Int, timeSource MedianTimeSource) error {
 	return checkBlockSanity(params, block, powLimit, timeSource, BFNone)
 }
 

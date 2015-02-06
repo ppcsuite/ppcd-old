@@ -13,7 +13,7 @@ import (
 	"math/big"
 	"sort"
 
-	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/txscript"
 	"github.com/ppcsuite/ppcd/wire"
@@ -777,7 +777,7 @@ func (b *BlockChain) checkCoinStakeTimestamp(
 	return ((nTimeTx <= nTimeBlock) && (nTimeBlock <= nTimeTx+MaxClockDrift))
 }
 
-func checkCoinStakeTimestamp(params *btcnet.Params,
+func checkCoinStakeTimestamp(params *chaincfg.Params,
 	nTimeBlock int64, nTimeTx int64) bool {
 
 	if isProtocolV03FromParams(params, nTimeTx) { // v0.3 protocol

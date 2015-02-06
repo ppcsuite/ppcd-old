@@ -2,14 +2,14 @@ package blockchain_test
 
 import (
 	"bytes"
-	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/ppcd/blockchain"
 	"github.com/ppcsuite/ppcd/wire"
 	"testing"
 )
 
 func TestCheckBlockSignature(t *testing.T) {
-	if !blockchain.CheckBlockSignature(&Block100000, &btcnet.MainNetParams) {
+	if !blockchain.CheckBlockSignature(&Block100000, &chaincfg.MainNetParams) {
 		t.Error("bad block signature, valid expected")
 	}
 	var buf bytes.Buffer
@@ -26,7 +26,7 @@ func TestCheckBlockSignature(t *testing.T) {
 		return
 	}
 	block.Signature[5] ^= 0xff
-	if blockchain.CheckBlockSignature(block, &btcnet.MainNetParams) {
+	if blockchain.CheckBlockSignature(block, &chaincfg.MainNetParams) {
 		t.Error("good block signature, invalid expected")
 	}
 }

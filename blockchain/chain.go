@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/database"
 	"github.com/ppcsuite/ppcd/wire"
@@ -148,8 +148,8 @@ func removeChildNode(children []*blockNode, node *blockNode) []*blockNode {
 // selection with reorganization.
 type BlockChain struct {
 	db                  database.Db
-	netParams           *btcnet.Params
-	checkpointsByHeight map[int64]*btcnet.Checkpoint
+	netParams           *chaincfg.Params
+	checkpointsByHeight map[int64]*chaincfg.Checkpoint
 	notifications       NotificationCallback
 	root                *blockNode
 	bestChain           *blockNode
@@ -162,7 +162,7 @@ type BlockChain struct {
 	blockCache          map[wire.ShaHash]*btcutil.Block
 	noVerify            bool
 	noCheckpoints       bool
-	nextCheckpoint      *btcnet.Checkpoint
+	nextCheckpoint      *chaincfg.Checkpoint
 	checkpointBlock     *btcutil.Block
 }
 
@@ -1096,11 +1096,11 @@ func (b *BlockChain) IsCurrent(timeSource MedianTimeSource) bool {
 // Notification and NotificationType for details on the types and contents of
 // notifications.  The provided callback can be nil if the caller is not
 // interested in receiving notifications.
-func New(db database.Db, params *btcnet.Params, c NotificationCallback) *BlockChain {
+func New(db database.Db, params *chaincfg.Params, c NotificationCallback) *BlockChain {
 	// Generate a checkpoint by height map from the provided checkpoints.
-	var checkpointsByHeight map[int64]*btcnet.Checkpoint
+	var checkpointsByHeight map[int64]*chaincfg.Checkpoint
 	if len(params.Checkpoints) > 0 {
-		checkpointsByHeight = make(map[int64]*btcnet.Checkpoint)
+		checkpointsByHeight = make(map[int64]*chaincfg.Checkpoint)
 		for i := range params.Checkpoints {
 			checkpoint := &params.Checkpoints[i]
 			checkpointsByHeight[checkpoint.Height] = checkpoint

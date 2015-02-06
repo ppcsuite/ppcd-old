@@ -8,7 +8,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/ppcd/txscript"
 	"github.com/ppcsuite/btcutil"
 )
@@ -22,7 +22,7 @@ func ExamplePayToAddrScript() {
 	// the address type.  It is also required for the upcoming call to
 	// PayToAddrScript.
 	addressStr := "PAGzgNtTFFX2gJ3B33f2J6DXeA2uzHv1vG"
-	address, err := btcutil.DecodeAddress(addressStr, &btcnet.MainNetParams)
+	address, err := btcutil.DecodeAddress(addressStr, &chaincfg.MainNetParams)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -61,7 +61,7 @@ func ExampleExtractPkScriptAddrs() {
 
 	// Extract and print details from the script.
 	scriptClass, addresses, reqSigs, err := txscript.ExtractPkScriptAddrs(
-		script, &btcnet.MainNetParams)
+		script, &chaincfg.MainNetParams)
 	if err != nil {
 		fmt.Println(err)
 		return

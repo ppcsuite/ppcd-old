@@ -9,7 +9,7 @@ import (
 	"math/big"
 
 	"github.com/btcsuite/btcec"
-	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/database"
 	"github.com/ppcsuite/ppcd/txscript"
@@ -475,7 +475,7 @@ func BigToShaHash(value *big.Int) (*wire.ShaHash, error) {
 // PPCGetProofOfWorkReward is Peercoin's validate.go:CalcBlockSubsidy(...)
 // counterpart.
 // https://github.com/ppcoin/ppcoin/blob/v0.4.0ppc/src/main.cpp#L829
-func PPCGetProofOfWorkReward(nBits uint32, netParams *btcnet.Params) (subsidy int64) {
+func PPCGetProofOfWorkReward(nBits uint32, netParams *chaincfg.Params) (subsidy int64) {
 	bigTwo := new(big.Int).SetInt64(2)
 	bnSubsidyLimit := new(big.Int).SetInt64(MaxMintProofOfWork)
 	bnTarget := CompactToBig(nBits)
@@ -522,7 +522,7 @@ func GetMinFee(tx *btcutil.Tx) int64 {
 // CheckBlockSignature ppc: check block signature
 // https://github.com/ppcoin/ppcoin/blob/v0.4.0ppc/src/main.cpp#L2116
 func CheckBlockSignature(msgBlock *wire.MsgBlock,
-	params *btcnet.Params) bool {
+	params *chaincfg.Params) bool {
 	sha, err := msgBlock.BlockSha()
 	if err != nil {
 		return false
@@ -637,7 +637,7 @@ func ppcCheckTransactionInput(tx *btcutil.Tx, txOut *wire.TxIn, originTx *TxData
 // Peercoin additional context free block checks.
 // Basing on CBlock::CheckBlock().
 // https://github.com/ppcoin/ppcoin/blob/v0.4.0ppc/src/main.cpp#L1829
-func ppcCheckBlockSanity(params *btcnet.Params, block *btcutil.Block) error {
+func ppcCheckBlockSanity(params *chaincfg.Params, block *btcutil.Block) error {
 	msgBlock := block.MsgBlock()
 	// https://github.com/ppcoin/ppcoin/blob/v0.4.0ppc/src/main.cpp#L1853
 	// ppc: only the second transaction can be the optional coinstake

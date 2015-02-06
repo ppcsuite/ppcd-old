@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"github.com/ppcsuite/ppcd/database"
 	_ "github.com/ppcsuite/ppcd/database/memdb"
-	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/btcutil"
 )
 
@@ -36,7 +36,7 @@ func ExampleCreateDB() {
 	defer db.Close()
 
 	// Insert the main network genesis block.
-	genesis := btcutil.NewBlock(btcnet.MainNetParams.GenesisBlock)
+	genesis := btcutil.NewBlock(chaincfg.MainNetParams.GenesisBlock)
 	newHeight, err := db.InsertBlock(genesis)
 	if err != nil {
 		fmt.Println(err)
@@ -57,7 +57,7 @@ func exampleLoadDB() (database.Db, error) {
 	}
 
 	// Insert the main network genesis block.
-	genesis := btcutil.NewBlock(btcnet.MainNetParams.GenesisBlock)
+	genesis := btcutil.NewBlock(chaincfg.MainNetParams.GenesisBlock)
 	_, err = db.InsertBlock(genesis)
 	if err != nil {
 		return nil, err

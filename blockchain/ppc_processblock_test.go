@@ -6,7 +6,7 @@ import (
 	"compress/bzip2"
 	"encoding/binary"
 	"github.com/btcsuite/btclog"
-	"github.com/ppcsuite/btcnet"
+	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/blockchain"
 	"github.com/ppcsuite/ppcd/database"
@@ -20,7 +20,7 @@ import (
 )
 
 func TestPPCProcessBlocks(t *testing.T) {
-	activeNetParams := btcnet.MainNetParams
+	activeNetParams := chaincfg.MainNetParams
 	dbbc, err := database.CreateDB("memdb")
 	genesis := btcutil.NewBlockWithMetas(
 		activeNetParams.GenesisBlock, activeNetParams.GenesisMeta)
@@ -77,7 +77,7 @@ func _loadBlocksMax(t *testing.T, file string, maxHeight int64, skip int64) (blo
 	}()
 
 	// Set the first block as the genesis block.
-	//genesis := btcutil.NewBlock(btcnet.MainNetParams.GenesisBlock)
+	//genesis := btcutil.NewBlock(chaincfg.MainNetParams.GenesisBlock)
 	//blocks = append(blocks, genesis)
 
 	var count int64 = 0

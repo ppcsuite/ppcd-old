@@ -193,7 +193,7 @@ func discardInput(r io.Reader, n uint32) {
 // WriteMessageN writes a bitcoin Message to w including the necessary header
 // information and returns the number of bytes written.    This function is the
 // same as WriteMessage except it also returns the number of bytes written.
-func WriteMessageN(w io.Writer, msg Message, pver uint32, btcnet BitcoinNet) (int, error) {
+func WriteMessageN(w io.Writer, msg Message, pver uint32, chaincfg BitcoinNet) (int, error) {
 	totalBytes := 0
 
 	// Enforce max command size.
@@ -234,7 +234,7 @@ func WriteMessageN(w io.Writer, msg Message, pver uint32, btcnet BitcoinNet) (in
 
 	// Create header for the message.
 	hdr := messageHeader{}
-	hdr.magic = btcnet
+	hdr.magic = chaincfg
 	hdr.command = cmd
 	hdr.length = uint32(lenp)
 	copy(hdr.checksum[:], DoubleSha256(payload)[0:4])
@@ -269,8 +269,8 @@ func WriteMessageN(w io.Writer, msg Message, pver uint32, btcnet BitcoinNet) (in
 // doesn't return the number of bytes written.  This function is mainly provided
 // for backwards compatibility with the original API, but it's also useful for
 // callers that don't care about byte counts.
-func WriteMessage(w io.Writer, msg Message, pver uint32, btcnet BitcoinNet) error {
-	_, err := WriteMessageN(w, msg, pver, btcnet)
+func WriteMessage(w io.Writer, msg Message, pver uint32, chaincfg BitcoinNet) error {
+	_, err := WriteMessageN(w, msg, pver, chaincfg)
 	return err
 }
 
@@ -279,7 +279,7 @@ func WriteMessage(w io.Writer, msg Message, pver uint32, btcnet BitcoinNet) erro
 // bytes read in addition to the parsed Message and raw bytes which comprise the
 // message.  This function is the same as ReadMessage except it also returns the
 // number of bytes read.
-func ReadMessageN(r io.Reader, pver uint32, btcnet BitcoinNet) (int, Message, []byte, error) {
+func ReadMessageN(r io.Reader, pver uint32, chaincfg BitcoinNet) (int, Message, []byte, error) {
 	totalBytes := 0
 	n, hdr, err := readMessageHeader(r)
 	if err != nil {
@@ -298,7 +298,7 @@ func ReadMessageN(r io.Reader, pver uint32, btcnet BitcoinNet) (int, Message, []
 	}
 
 	// Check for messages from the wrong bitcoin network.
-	if hdr.magic != btcnet {
+	if hdr.magic != chaincfg {
 		discardInput(r, hdr.length)
 		str := fmt.Sprintf("message from other network [%v]", hdr.magic)
 		return totalBytes, nil, nil, messageError("ReadMessage", str)
@@ -367,7 +367,7 @@ func ReadMessageN(r io.Reader, pver uint32, btcnet BitcoinNet) (int, Message, []
 // from ReadMessageN in that it doesn't return the number of bytes read.  This
 // function is mainly provided for backwards compatibility with the original
 // API, but it's also useful for callers that don't care about byte counts.
-func ReadMessage(r io.Reader, pver uint32, btcnet BitcoinNet) (Message, []byte, error) {
-	_, msg, buf, err := ReadMessageN(r, pver, btcnet)
+func ReadMessage(r io.Reader, pver uint32, chaincfg BitcoinNet) (Message, []byte, error) {
+	_, msg, buf, err := ReadMessageN(r, pver, chaincfg)
 	return msg, buf, err
 }
