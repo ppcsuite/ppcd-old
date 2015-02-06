@@ -860,7 +860,7 @@ package main
 
 import (
 	"github.com/btcsuite/btcrpcclient"
-	"github.com/btcsuite/btcutil"
+	"github.com/ppcsuite/btcutil"
 	"io/ioutil"
 	"log"
 	"path/filepath"
@@ -920,7 +920,7 @@ package main
 
 import (
 	"github.com/btcsuite/btcrpcclient"
-	"github.com/btcsuite/btcutil"
+	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/wire"
 	"io/ioutil"
 	"log"
@@ -1010,7 +1010,7 @@ package main
 
 import (
 	"github.com/btcsuite/btcrpcclient"
-	"github.com/btcsuite/btcutil"
+	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/wire"
 	"io/ioutil"
 	"log"

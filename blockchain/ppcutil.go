@@ -88,7 +88,7 @@ func getStakeModifierCSHexString(stakeModifierCS uint32) string {
 // isProtocolV03
 func isProtocolV03(b *BlockChain, nTime int64) bool {
 	var switchTime int64
-	if b.netParams.Name == "testnet3" {
+	if b.chainParams.Name == "testnet3" {
 		switchTime = nProtocolV03TestSwitchTime
 	} else {
 		switchTime = nProtocolV03SwitchTime
@@ -110,7 +110,7 @@ func isProtocolV03FromParams(params *chaincfg.Params, nTime int64) bool {
 // isProtocolV04
 func isProtocolV04(b *BlockChain, nTime int64) bool {
 	var v04SwitchTime int64
-	if b.netParams.Name == "testnet3" {
+	if b.chainParams.Name == "testnet3" {
 		v04SwitchTime = nProtocolV04TestSwitchTime
 	} else {
 		v04SwitchTime = nProtocolV04SwitchTime

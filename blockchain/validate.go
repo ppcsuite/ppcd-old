@@ -698,12 +698,12 @@ func CheckTransactionInputs(tx *btcutil.Tx, txHeight int64, txStore TxStore,
 		if IsCoinBase(originTx.Tx) {
 			originHeight := originTx.BlockHeight
 			blocksSincePrev := txHeight - originHeight
-			if blocksSincePrev < blockChain.netParams.CoinbaseMaturity {
+			if blocksSincePrev < blockChain.chainParams.CoinbaseMaturity {
 				str := fmt.Sprintf("tried to spend coinbase "+
 					"transaction %v from height %v at "+
 					"height %v before required maturity "+
 					"of %v blocks", txInHash, originHeight,
-					txHeight, blockChain.netParams.CoinbaseMaturity)
+					txHeight, blockChain.chainParams.CoinbaseMaturity)
 				return 0, ruleError(ErrImmatureSpend, str)
 			}
 		}
@@ -936,21 +936,13 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block) er
 		for _, txOut := range transactions[0].MsgTx().TxOut {
 			totalSatoshiOut += txOut.Value
 		}
-		expectedSatoshiOut := PPCGetProofOfWorkReward(node.bits, b.netParams)
+		expectedSatoshiOut := PPCGetProofOfWorkReward(node.bits, b.chainParams)
 		if totalSatoshiOut > expectedSatoshiOut {
 			str := fmt.Sprintf("coinbase transaction for block pays %v "+
 				"which is more than expected value of %v",
 				totalSatoshiOut, expectedSatoshiOut)
 			return ruleError(ErrBadCoinbaseValue, str)
 		}
-	}
-	expectedSatoshiOut := CalcBlockSubsidy(node.height, b.chainParams) +
-		totalFees
-	if totalSatoshiOut > expectedSatoshiOut {
-		str := fmt.Sprintf("coinbase transaction for block pays %v "+
-			"which is more than expected value of %v",
-			totalSatoshiOut, expectedSatoshiOut)
-		return ruleError(ErrBadCoinbaseValue, str)
 	}
 
 	// Don't run scripts if this node is before the latest known good

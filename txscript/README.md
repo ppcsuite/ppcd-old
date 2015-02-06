@@ -40,13 +40,13 @@ $ go get github.com/ppcsuite/ppcd/txscript
 ## Examples
 
 * [Standard Pay-to-pubkey-hash Script]
-  (http://godoc.org/github.com/btcsuite/btcd/txscript#example-PayToAddrScript)  
+  (http://godoc.org/github.com/ppcsuite/ppcd/txscript#example-PayToAddrScript)  
   Demonstrates creating a script which pays to a bitcoin address.  It also
   prints the created script hex and uses the DisasmString function to display
   the disassembled script.
 
 * [Extracting Details from Standard Scripts]
-  (http://godoc.org/github.com/btcsuite/btcd/txscript#example-ExtractPkScriptAddrs)  
+  (http://godoc.org/github.com/ppcsuite/ppcd/txscript#example-ExtractPkScriptAddrs)  
   Demonstrates extracting information from a standard public key script.
 
 ## GPG Verification Key

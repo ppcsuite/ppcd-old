@@ -106,7 +106,7 @@ func (b *BlockChain) getLastStakeModifier(pindex *blockNode) (
 // Get selection interval section (in seconds)
 func getStakeModifierSelectionIntervalSection(b *BlockChain, nSection int) int64 {
 	//assert (nSection >= 0 && nSection < 64)
-	return (b.netParams.ModifierInterval * 63 / (63 + ((63 - int64(nSection)) * (nModifierIntervalRatio - 1))))
+	return (b.chainParams.ModifierInterval * 63 / (63 + ((63 - int64(nSection)) * (nModifierIntervalRatio - 1))))
 }
 
 // Get stake modifier selection interval (in seconds)
@@ -246,13 +246,13 @@ func (b *BlockChain) computeNextStakeModifier(pindexCurrent *btcutil.Block) (
 
 	log.Debugf("computeNextStakeModifier: prev modifier=%d time=%s epoch=%d\n", nStakeModifier, dateTimeStrFormat(nModifierTime), uint(nModifierTime))
 
-	if (nModifierTime / b.netParams.ModifierInterval) >= (pindexPrev.timestamp.Unix() / b.netParams.ModifierInterval) {
+	if (nModifierTime / b.chainParams.ModifierInterval) >= (pindexPrev.timestamp.Unix() / b.chainParams.ModifierInterval) {
 		log.Debugf("computeNextStakeModifier: no new interval keep current modifier: pindexPrev nHeight=%d nTime=%d", pindexPrev.height, pindexPrev.timestamp.Unix())
 		return
 	}
 
 	pindexCurrentHeader := pindexCurrent.MsgBlock().Header
-	if (nModifierTime / b.netParams.ModifierInterval) >= (pindexCurrentHeader.Timestamp.Unix() / b.netParams.ModifierInterval) {
+	if (nModifierTime / b.chainParams.ModifierInterval) >= (pindexCurrentHeader.Timestamp.Unix() / b.chainParams.ModifierInterval) {
 		// v0.4+ requires current block timestamp also be in a different modifier interval
 		if isProtocolV04(b, pindexCurrentHeader.Timestamp.Unix()) {
 			log.Debugf("computeNextStakeModifier: (v0.4+) no new interval keep current modifier: pindexCurrent nHeight=%d nTime=%d", pindexCurrent.Height(), pindexCurrentHeader.Timestamp.Unix())
@@ -273,7 +273,7 @@ func (b *BlockChain) computeNextStakeModifier(pindexCurrent *btcutil.Block) (
 	var vSortedByTimestamp []blockTimeHash // golint suggestion
 	//vSortedByTimestamp.reserve(64 * nModifierInterval / STAKE_TARGET_SPACING)
 	nSelectionInterval := getStakeModifierSelectionInterval(b)
-	nSelectionIntervalStart := (pindexPrev.timestamp.Unix()/b.netParams.ModifierInterval)*b.netParams.ModifierInterval - nSelectionInterval
+	nSelectionIntervalStart := (pindexPrev.timestamp.Unix()/b.chainParams.ModifierInterval)*b.chainParams.ModifierInterval - nSelectionInterval
 	log.Debugf("computeNextStakeModifier: nSelectionInterval = %d, nSelectionIntervalStart = %s[%d]", nSelectionInterval, dateTimeStrFormat(nSelectionIntervalStart), nSelectionIntervalStart)
 	pindex := pindexPrev
 	for pindex != nil && (pindex.timestamp.Unix() >= nSelectionIntervalStart) {
@@ -435,7 +435,7 @@ func (b *BlockChain) getKernelStakeModifier(
 	for nStakeModifierTime < (blockFromTimestamp + nStakeModifierSelectionInterval) {
 		if blockHeight >= b.bestChain.height { // reached best block; may happen if node is behind on block chain
 			blockTimestamp := block.Timestamp.Unix()
-			if fPrintProofOfStake || (blockTimestamp+b.netParams.StakeMinAge-nStakeModifierSelectionInterval > timeSource.AdjustedTime().Unix()) {
+			if fPrintProofOfStake || (blockTimestamp+b.chainParams.StakeMinAge-nStakeModifierSelectionInterval > timeSource.AdjustedTime().Unix()) {
 				err = fmt.Errorf("GetKernelStakeModifier() : reached best block %v at height %v from block %v",
 					btcutil.Slice(blockSha)[0], blockHeight, hashBlockFrom)
 				return
@@ -500,7 +500,7 @@ func (b *BlockChain) checkStakeKernelHash(
 	}
 
 	nTimeBlockFrom := blockFrom.MsgBlock().Header.Timestamp.Unix()
-	if nTimeBlockFrom+b.netParams.StakeMinAge > nTimeTx { // Min age requirement
+	if nTimeBlockFrom+b.chainParams.StakeMinAge > nTimeTx { // Min age requirement
 		err = errors.New("checkStakeKernelHash() : min age violation")
 		return
 	}
@@ -514,7 +514,7 @@ func (b *BlockChain) checkStakeKernelHash(
 	// to secure the network when proof-of-stake difficulty is low
 	var timeReduction int64
 	if isProtocolV03(b, nTimeTx) {
-		timeReduction = b.netParams.StakeMinAge
+		timeReduction = b.chainParams.StakeMinAge
 	} else {
 		timeReduction = 0
 	}
@@ -850,10 +850,10 @@ func (b *BlockChain) getStakeModifierChecksum(
 // called from (main.cpp)
 func (b *BlockChain) checkStakeModifierCheckpoints(
 	nHeight int64, nStakeModifierChecksum uint32) bool {
-	if b.netParams.Name == "testnet3" {
+	if b.chainParams.Name == "testnet3" {
 		return true // Testnet has no checkpoints
 	}
-	if checkpoint, ok := b.netParams.StakeModifierCheckpoints[nHeight]; ok {
+	if checkpoint, ok := b.chainParams.StakeModifierCheckpoints[nHeight]; ok {
 		return nStakeModifierChecksum == checkpoint
 	}
 	return true

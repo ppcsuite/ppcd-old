@@ -110,7 +110,7 @@ func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, timeSource MedianTim
 		return ruleError(ErrForkTooOld, str)
 	}
 
-	if !fastAdd && b.netParams.Net != wire.TestNet3 {
+	if !fastAdd && b.chainParams.Net != wire.TestNet3 {
 		// Reject version 1 blocks once a majority of the network has
 		// upgraded.  This is part of BIP0034.
 		if blockHeader.Version < 2 {

@@ -146,7 +146,7 @@ type outMsg struct {
 // to push messages to the peer.  Internally they use QueueMessage.
 type peer struct {
 	server             *server
-	chaincfg           wire.BitcoinNet
+	btcnet             wire.BitcoinNet
 	started            int32
 	connected          int32
 	disconnect         int32 // only to be used atomically
@@ -1146,7 +1146,7 @@ func (p *peer) pushAddrMsg(addresses []*wire.NetAddress) error {
 			continue
 		}
 
-		// Add the address to the message.
+		// If the maxAddrs limit has been reached, randomize the list
 		// with the remaining addresses.
 		if numAdded == wire.MaxAddrPerMsg {
 			msg.AddrList[r.Intn(wire.MaxAddrPerMsg)] = na
@@ -1162,7 +1162,7 @@ func (p *peer) pushAddrMsg(addresses []*wire.NetAddress) error {
 	}
 	if numAdded > 0 {
 		for _, na := range msg.AddrList {
-
+			// Add address to known addresses for this peer.
 			p.knownAddresses[addrmgr.NetAddressKey(na)] = struct{}{}
 		}
 
@@ -1260,7 +1260,7 @@ func (p *peer) handlePongMsg(msg *wire.MsgPong) {
 // readMessage reads the next bitcoin message from the peer with logging.
 func (p *peer) readMessage() (wire.Message, []byte, error) {
 	n, msg, buf, err := wire.ReadMessageN(p.conn, p.ProtocolVersion(),
-		p.chaincfg)
+		p.btcnet)
 	p.StatsMtx.Lock()
 	p.bytesReceived += uint64(n)
 	p.StatsMtx.Unlock()
@@ -1359,7 +1359,7 @@ func (p *peer) writeMessage(msg wire.Message) {
 	peerLog.Tracef("%v", newLogClosure(func() string {
 		var buf bytes.Buffer
 		err := wire.WriteMessage(&buf, msg, p.ProtocolVersion(),
-			p.chaincfg)
+			p.btcnet)
 		if err != nil {
 			return err.Error()
 		}
@@ -1368,7 +1368,7 @@ func (p *peer) writeMessage(msg wire.Message) {
 
 	// Write the message to the peer.
 	n, err := wire.WriteMessageN(p.conn, msg, p.ProtocolVersion(),
-		p.chaincfg)
+		p.btcnet)
 	p.StatsMtx.Lock()
 	p.bytesSent += uint64(n)
 	p.StatsMtx.Unlock()
@@ -1515,7 +1515,7 @@ out:
 			p.handlePongMsg(msg)
 
 		case *wire.MsgAlert:
-
+			// Intentionally ignore alert messages.
 			//
 			// The reference client currently bans peers that send
 			// alerts not signed with its key.  We could verify

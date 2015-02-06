@@ -65,7 +65,7 @@ details on how to install on the supported operating systems.
 <a name="WindowsInstallation" />
 **2.1.1 Windows Installation**<br />
 
-* Install the MSI available at: https://github.com/btcsuite/btcd/releases
+* Install the MSI available at: https://github.com/ppcsuite/ppcd/releases
 * Launch btcd from the Start Menu
 
 <a name="PosixInstallation" />
@@ -73,14 +73,14 @@ details on how to install on the supported operating systems.
 
 * Install Go according to the installation instructions here: http://golang.org/doc/install
 * Run the following command to ensure your Go version is at least version 1.2: `$ go version`
-* Run the following command to obtain btcd, its dependencies, and install it: `$ go get github.com/btcsuite/btcd/...`<br />
-  * To upgrade, run the following command: `$ go get -u github.com/btcsuite/btcd/...`
+* Run the following command to obtain btcd, its dependencies, and install it: `$ go get github.com/ppcsuite/ppcd/...`<br />
+  * To upgrade, run the following command: `$ go get -u github.com/ppcsuite/ppcd/...`
 * Run btcd: `$ btcd`
 
 <a name="Configuration" />
 **2.2 Configuration**<br />
 
-btcd has a number of [configuration](http://godoc.org/github.com/btcsuite/btcd)
+btcd has a number of [configuration](http://godoc.org/github.com/ppcsuite/ppcd)
 options, which can be viewed by running: `$ btcd --help`.
 
 <a name="BtcctlConfig" />
@@ -148,14 +148,14 @@ configuration necessary, however, there is an optional method to use a
 
 <a name="BootstrapDat" />
 **3.1.1 bootstrap.dat**<br />
-* [Using bootstrap.dat](https://github.com/btcsuite/btcd/tree/master/docs/using_bootstrap_dat.md)
+* [Using bootstrap.dat](https://github.com/ppcsuite/ppcd/tree/master/docs/using_bootstrap_dat.md)
 
 <a name="NetworkConfig" />
 **3.1.2 Network Configuration**<br />
-* [What Ports Are Used by Default?](https://github.com/btcsuite/btcd/tree/master/docs/default_ports.md)
-* [How To Listen on Specific Interfaces](https://github.com/btcsuite/btcd/tree/master/docs/configure_peer_server_listen_interfaces.md)
-* [How To Configure RPC Server to Listen on Specific Interfaces](https://github.com/btcsuite/btcd/tree/master/docs/configure_rpc_server_listen_interfaces.md)
-* [Configuring btcd with Tor](https://github.com/btcsuite/btcd/tree/master/docs/configuring_tor.md)
+* [What Ports Are Used by Default?](https://github.com/ppcsuite/ppcd/tree/master/docs/default_ports.md)
+* [How To Listen on Specific Interfaces](https://github.com/ppcsuite/ppcd/tree/master/docs/configure_peer_server_listen_interfaces.md)
+* [How To Configure RPC Server to Listen on Specific Interfaces](https://github.com/ppcsuite/ppcd/tree/master/docs/configure_rpc_server_listen_interfaces.md)
+* [Configuring btcd with Tor](https://github.com/ppcsuite/ppcd/tree/master/docs/configuring_tor.md)
 
 <a name="Wallet" />
 **3.1 Wallet**<br />
@@ -182,10 +182,10 @@ information.
 ### 5. Developer Resources
 
 <a name="ContributionGuidelines" />
-* [Code Contribution Guidelines](https://github.com/btcsuite/btcd/tree/master/docs/code_contribution_guidelines.md)
+* [Code Contribution Guidelines](https://github.com/ppcsuite/ppcd/tree/master/docs/code_contribution_guidelines.md)
 <a name="JSONRPCReference" />
-* [JSON-RPC Reference](https://github.com/btcsuite/btcd/tree/master/docs/json_rpc_api.md)
-    * [RPC Examples](https://github.com/btcsuite/btcd/tree/master/docs/json_rpc_api.md#ExampleCode)
+* [JSON-RPC Reference](https://github.com/ppcsuite/ppcd/tree/master/docs/json_rpc_api.md)
+    * [RPC Examples](https://github.com/ppcsuite/ppcd/tree/master/docs/json_rpc_api.md#ExampleCode)
 <a name="GoPackages" />
 * Conformal Bitcoin-related Go Packages:
     * [btcrpcclient](https://github.com/btcsuite/btcrpcclient) - Implements a
@@ -195,15 +195,15 @@ information.
     * [btcws](https://github.com/btcsuite/btcws) - Custom types for btcd
 	  websocket extension commands (registers the extension commands with
 	  [btcjson](https://github.com/btcsuite/btcjson))
-    * [wire](https://github.com/btcsuite/btcd/tree/master/wire) - Implements the
+    * [wire](https://github.com/ppcsuite/ppcd/tree/master/wire) - Implements the
 	  Bitcoin wire protocol
-    * [blockchain](https://github.com/btcsuite/btcd/blockchain) - Implements
+    * [blockchain](https://github.com/ppcsuite/ppcd/blockchain) - Implements
 	  Bitcoin block handling and chain selection rules
-    * [txscript](https://github.com/btcsuite/btcd/tree/master/txscript) -
+    * [txscript](https://github.com/ppcsuite/ppcd/tree/master/txscript) -
 	  Implements the Bitcoin transaction scripting language
     * [btcec](https://github.com/btcsuite/btcec) - Implements support for the
 	  elliptic curve cryptographic functions needed for the Bitcoin scripts
-    * [database](https://github.com/btcsuite/btcd/tree/master/database) -
+    * [database](https://github.com/ppcsuite/ppcd/tree/master/database) -
 	  Provides a database interface for the Bitcoin block chain
-    * [btcutil](https://github.com/btcsuite/btcutil) - Provides Bitcoin-specific
+    * [btcutil](https://github.com/ppcsuite/btcutil) - Provides Bitcoin-specific
 	  convenience functions and types

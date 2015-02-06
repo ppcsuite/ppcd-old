@@ -127,19 +127,19 @@ func (b *BlockChain) getLastBlockIndex(last *blockNode, proofOfStake bool) (bloc
 func (b *BlockChain) ppcCalcNextRequiredDifficulty(lastNode *blockNode, proofOfStake bool) (uint32, error) {
 
 	if lastNode == nil {
-		return b.netParams.PowLimitBits, nil // genesis block
+		return b.chainParams.PowLimitBits, nil // genesis block
 	}
 
 	defer timeTrack(now(), fmt.Sprintf("ppcCalcNextRequiredDifficulty(%v)", lastNode.hash))
 
 	prev := b.getLastBlockIndex(lastNode, proofOfStake)
-	if prev.hash.IsEqual(b.netParams.GenesisHash) {
-		return b.netParams.InitialHashTargetBits, nil // first block
+	if prev.hash.IsEqual(b.chainParams.GenesisHash) {
+		return b.chainParams.InitialHashTargetBits, nil // first block
 	}
 	prevParent, _ := b.getPrevNodeFromNode(prev)
 	prevPrev := b.getLastBlockIndex(prevParent, proofOfStake)
-	if prevPrev.hash.IsEqual(b.netParams.GenesisHash) {
-		return b.netParams.InitialHashTargetBits, nil // second block
+	if prevPrev.hash.IsEqual(b.chainParams.GenesisHash) {
+		return b.chainParams.InitialHashTargetBits, nil // second block
 	}
 
 	actualSpacing := prev.timestamp.Unix() - prevPrev.timestamp.Unix()
@@ -160,8 +160,8 @@ func (b *BlockChain) ppcCalcNextRequiredDifficulty(lastNode *blockNode, proofOfS
 	newTarget.Mul(newTarget, tmp)
 	newTarget.Div(newTarget, new(big.Int).Mul(intervalPlusOne, targetSpacingBig))
 
-	if newTarget.Cmp(b.netParams.PowLimit) > 0 {
-		newTarget = b.netParams.PowLimit
+	if newTarget.Cmp(b.chainParams.PowLimit) > 0 {
+		newTarget = b.chainParams.PowLimit
 	}
 
 	return BigToCompact(newTarget), nil
@@ -179,8 +179,8 @@ func (b *BlockChain) PPCCalcNextRequiredDifficulty(proofOfStake bool) (uint32, e
 // SetCoinbaseMaturity sets required coinbase maturity and return old one
 // Required for tests
 func (b *BlockChain) SetCoinbaseMaturity(coinbaseMaturity int64) (old int64) {
-	old = b.netParams.CoinbaseMaturity
-	b.netParams.CoinbaseMaturity = coinbaseMaturity
+	old = b.chainParams.CoinbaseMaturity
+	b.chainParams.CoinbaseMaturity = coinbaseMaturity
 	return
 }
 
@@ -312,7 +312,7 @@ func (b *BlockChain) getCoinAgeTx(tx *btcutil.Tx, txStore TxStore) (uint64, erro
 			err = fmt.Errorf("CheckProofOfStake() : read block failed") // unable to read block of previous transaction
 			return 0, err
 		}
-		if txPrevBlock.MsgBlock().Header.Timestamp.Unix()+b.netParams.StakeMinAge > nTime {
+		if txPrevBlock.MsgBlock().Header.Timestamp.Unix()+b.chainParams.StakeMinAge > nTime {
 			continue // only count coins meeting min age requirement
 		}
 

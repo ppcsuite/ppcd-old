@@ -35,7 +35,7 @@ active development.
 
 #### Build from Source
 
-https://github.com/btcsuite/btcd/releases
+https://github.com/ppcsuite/ppcd/releases
 
 #### Linux/BSD/MacOSX/POSIX - Build from Source
 

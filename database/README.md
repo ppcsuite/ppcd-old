@@ -16,7 +16,7 @@ and that entity will be btcd.
 When a client wants programmatic access to the data provided by btcd, they'll
 likely want to use the [btcrpcclient](https://github.com/btcsuite/btcrpcclient)
 package which makes use of the [JSON-RPC API]
-(https://github.com/btcsuite/btcd/tree/master/docs/json_rpc_api.md).
+(https://github.com/ppcsuite/ppcd/tree/master/docs/json_rpc_api.md).
 
 ## Documentation
 
