@@ -1,10 +1,10 @@
 wire
 ====
 
-[![Build Status](https://travis-ci.org/ppcsuite/ppcd/wire.png?branch=master)]
-(https://travis-ci.org/ppcsuite/ppcd/wire) [![Coverage Status]
-(https://coveralls.io/repos/ppcsuite/ppcd/wire/badge.png?branch=master)]
-(https://coveralls.io/r/ppcsuite/ppcd/wire?branch=master)
+[![Build Status](https://travis-ci.org/ppcsuite/ppcd.png?branch=master)]
+(https://travis-ci.org/ppcsuite/ppcd) [![Coverage Status]
+(https://coveralls.io/repos/ppcsuite/ppcd/badge.png?branch=master)]
+(https://coveralls.io/r/ppcsuite/ppcd?branch=master)
 [![tip for next commit](http://peer4commit.com/projects/130.svg)](http://peer4commit.com/projects/130)
 
 Package wire implements the bitcoin wire protocol.  A comprehensive suite of
