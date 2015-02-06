@@ -13,8 +13,8 @@ import (
 	"hash"
 	"math/big"
 
-	"github.com/btcsuite/btcec"
 	"github.com/btcsuite/fastsha256"
+	"github.com/ppcsuite/ppcd/btcec"
 	"github.com/ppcsuite/ppcd/wire"
 	"golang.org/x/crypto/ripemd160"
 )
