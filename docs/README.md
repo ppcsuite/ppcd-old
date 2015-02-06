@@ -201,7 +201,7 @@ information.
 	  Bitcoin block handling and chain selection rules
     * [txscript](https://github.com/ppcsuite/ppcd/tree/master/txscript) -
 	  Implements the Bitcoin transaction scripting language
-    * [btcec](https://github.com/btcsuite/btcec) - Implements support for the
+    * [btcec](https://github.com/ppcsuite/ppcd/btcec) - Implements support for the
 	  elliptic curve cryptographic functions needed for the Bitcoin scripts
     * [database](https://github.com/ppcsuite/ppcd/tree/master/database) -
 	  Provides a database interface for the Bitcoin block chain
