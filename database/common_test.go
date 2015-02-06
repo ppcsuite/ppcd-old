@@ -140,7 +140,9 @@ func setupDB(dbType, dbName string) (database.Db, func(), error) {
 
 	// Insert the main network genesis block.  This is part of the initial
 	// database setup.
-	genesisBlock := btcutil.NewBlock(chaincfg.MainNetParams.GenesisBlock)
+	genesisBlock := btcutil.NewBlockWithMetas(
+		chaincfg.MainNetParams.GenesisBlock,
+		chaincfg.MainNetParams.GenesisMeta) // ppc:
 	_, err = db.InsertBlock(genesisBlock)
 	if err != nil {
 		teardown()
