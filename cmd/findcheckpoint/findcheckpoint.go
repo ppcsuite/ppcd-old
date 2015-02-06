@@ -9,8 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/ppcd/blockchain"
+	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/ppcd/database"
 	_ "github.com/ppcsuite/ppcd/database/ldb"
 	"github.com/ppcsuite/ppcd/wire"

@@ -14,8 +14,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/btcutil"
+	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/ppcd/database"
 	_ "github.com/ppcsuite/ppcd/database/ldb"
 	_ "github.com/ppcsuite/ppcd/database/memdb"

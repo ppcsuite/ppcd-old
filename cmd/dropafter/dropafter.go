@@ -13,8 +13,8 @@ import (
 
 	"github.com/btcsuite/btclog"
 	flags "github.com/btcsuite/go-flags"
-	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/btcutil"
+	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/ppcd/database"
 	_ "github.com/ppcsuite/ppcd/database/ldb"
 	"github.com/ppcsuite/ppcd/wire"

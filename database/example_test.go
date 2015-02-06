@@ -6,10 +6,10 @@ package database_test
 
 import (
 	"fmt"
+	"github.com/ppcsuite/btcutil"
+	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/ppcd/database"
 	_ "github.com/ppcsuite/ppcd/database/memdb"
-	"github.com/ppcsuite/ppcd/chaincfg"
-	"github.com/ppcsuite/btcutil"
 )
 
 // This example demonstrates creating a new database and inserting the genesis

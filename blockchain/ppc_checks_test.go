@@ -2,8 +2,8 @@ package blockchain_test
 
 import (
 	"bytes"
-	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/ppcd/blockchain"
+	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/ppcd/wire"
 	"testing"
 )

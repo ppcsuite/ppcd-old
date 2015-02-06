@@ -9,8 +9,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ppcsuite/ppcd/wire"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/ppcsuite/ppcd/wire"
 )
 
 // TestFilterCLearLatest tests the MsgFilterClear API against the latest

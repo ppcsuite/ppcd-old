@@ -59,7 +59,7 @@ func TestReorganization(t *testing.T) {
 	// Peercoin
 	// blockchain.TstSetCoinbaseMaturity(1)
 	originalMaturity := chain.SetCoinbaseMaturity(1)
-	defer func(){
+	defer func() {
 		chain.SetCoinbaseMaturity(originalMaturity)
 	}()
 

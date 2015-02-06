@@ -207,6 +207,7 @@ func IsRFC6145(na *wire.NetAddress) bool {
 func IsRFC6598(na *wire.NetAddress) bool {
 	return rfc6598Net.Contains(na.IP)
 }
+
 // IPv4: It is either a zero or all bits set address.
 // IPv6: It is either a zero or RFC3849 documentation address.
 // considered invalid under the following circumstances:

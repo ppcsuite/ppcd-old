@@ -20,7 +20,7 @@ type Meta struct {
 	ChainTrust            big.Int
 	Mint                  int64
 	MoneySupply           int64
-	TxOffsets			  []uint32
+	TxOffsets             []uint32
 }
 
 func (m *Meta) Serialize(w io.Writer) error {
@@ -167,5 +167,5 @@ func (m *Meta) GetSerializedSize() int {
 		8 + // Mint int64
 		8 + // MoneySupply int64
 		4 + // TxOffsets array size uint32
-		4 * len(m.TxOffsets) // TxOffsets uint32 array
+		4*len(m.TxOffsets) // TxOffsets uint32 array
 }

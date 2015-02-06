@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ppcsuite/ppcd/wire"
 	"github.com/ppcsuite/ppcd/addrmgr"
+	"github.com/ppcsuite/ppcd/wire"
 )
 
 // TestIPTypes ensures the various functions which determine the type of an IP

@@ -7,9 +7,9 @@ package blockchain_test
 import (
 	"testing"
 
-	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/blockchain"
+	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/ppcd/wire"
 )
 
@@ -50,7 +50,7 @@ func TODO_TestHaveBlock(t *testing.T) {
 	// Peercoin
 	// blockchain.TstSetCoinbaseMaturity(1)
 	originalMaturity := chain.SetCoinbaseMaturity(1)
-	defer func(){
+	defer func() {
 		chain.SetCoinbaseMaturity(originalMaturity)
 	}()
 

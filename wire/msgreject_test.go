@@ -10,8 +10,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ppcsuite/ppcd/wire"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/ppcsuite/ppcd/wire"
 )
 
 // TestRejectCodeStringer tests the stringized output for the reject code type.

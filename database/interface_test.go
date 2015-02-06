@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/ppcsuite/ppcd/database"
 	"github.com/ppcsuite/btcutil"
+	"github.com/ppcsuite/ppcd/database"
 	"github.com/ppcsuite/ppcd/wire"
 )
 
@@ -627,30 +627,30 @@ func testInterface(t *testing.T, dbType string) {
 
 	// TODO(davec): Add tests for error conditions:
 	/*
-	   - Don't allow duplicate blocks
-	   - Don't allow insertion of block that contains a transaction that
-	     already exists unless the previous one is fully spent
-	   - Don't allow block that has a duplicate transaction in itself
-	   - Don't allow block which contains a tx that references a missing tx
-	   - Don't allow block which contains a tx that references another tx
-	     that comes after it in the same block
+		- Don't allow duplicate blocks
+		- Don't allow insertion of block that contains a transaction that
+			already exists unless the previous one is fully spent
+		- Don't allow block that has a duplicate transaction in itself
+		- Don't allow block which contains a tx that references a missing tx
+		- Don't allow block which contains a tx that references another tx
+			that comes after it in the same block
 	*/
 
 	// TODO(davec): Add tests for the following functions:
 	/*
-	   - Close()
-	   - DropAfterBlockBySha(*wire.ShaHash) (err error)
-	   x ExistsSha(sha *wire.ShaHash) (exists bool)
-	   x FetchBlockBySha(sha *wire.ShaHash) (blk *btcutil.Block, err error)
-	   x FetchBlockShaByHeight(height int64) (sha *wire.ShaHash, err error)
-	   - FetchHeightRange(startHeight, endHeight int64) (rshalist []wire.ShaHash, err error)
-	   x ExistsTxSha(sha *wire.ShaHash) (exists bool)
-	   x FetchTxBySha(txsha *wire.ShaHash) ([]*TxListReply, error)
-	   x FetchTxByShaList(txShaList []*wire.ShaHash) []*TxListReply
-	   x FetchUnSpentTxByShaList(txShaList []*wire.ShaHash) []*TxListReply
-	   x InsertBlock(block *btcutil.Block) (height int64, err error)
-	   x NewestSha() (sha *wire.ShaHash, height int64, err error)
-	   - RollbackClose()
-	   - Sync()
+		- Close()
+		- DropAfterBlockBySha(*wire.ShaHash) (err error)
+		x ExistsSha(sha *wire.ShaHash) (exists bool)
+		x FetchBlockBySha(sha *wire.ShaHash) (blk *btcutil.Block, err error)
+		x FetchBlockShaByHeight(height int64) (sha *wire.ShaHash, err error)
+		- FetchHeightRange(startHeight, endHeight int64) (rshalist []wire.ShaHash, err error)
+		x ExistsTxSha(sha *wire.ShaHash) (exists bool)
+		x FetchTxBySha(txsha *wire.ShaHash) ([]*TxListReply, error)
+		x FetchTxByShaList(txShaList []*wire.ShaHash) []*TxListReply
+		x FetchUnSpentTxByShaList(txShaList []*wire.ShaHash) []*TxListReply
+		x InsertBlock(block *btcutil.Block) (height int64, err error)
+		x NewestSha() (sha *wire.ShaHash, height int64, err error)
+		- RollbackClose()
+		- Sync()
 	*/
 }

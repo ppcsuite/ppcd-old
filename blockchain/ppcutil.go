@@ -11,8 +11,8 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/btcutil"
+	"github.com/ppcsuite/ppcd/chaincfg"
 )
 
 const (
