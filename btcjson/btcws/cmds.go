@@ -627,8 +627,8 @@ func (cmd *RecoverAddressesCmd) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// OutPoint describes a transaction outpoint that will be marshalled to and
-// from JSON.
+// RenameAccountCmd is a type handling custom marshaling and
+// unmarshaling of renameaccount JSON websocket extension
 // commands.
 type RenameAccountCmd struct {
 	id         interface{}
@@ -1271,8 +1271,8 @@ func (cmd *CreateEncryptedWalletCmd) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// WalletIsLockedCmd is a type handling custom marshaling and
-// unmarshaling of walletislocked JSON websocket extension commands.
+// CreateNewAccountCmd is a type handling custom
+// marshaling and unmarshaling of createnewaccount
 // JSON websocket extension commands.
 type CreateNewAccountCmd struct {
 	id      interface{}
