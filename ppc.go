@@ -7,9 +7,9 @@ package main
 import (
 	"strconv"
 
-	"github.com/ppcsuite/btcjson"
-	"github.com/ppcsuite/btcws"
 	"github.com/ppcsuite/ppcd/blockchain"
+	"github.com/ppcsuite/ppcd/btcjson"
+	"github.com/ppcsuite/ppcd/btcjson/btcws"
 	"github.com/ppcsuite/ppcd/database"
 	"github.com/ppcsuite/ppcd/wire"
 )

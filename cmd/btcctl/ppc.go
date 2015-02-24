@@ -3,8 +3,8 @@ package main
 import (
 	"strconv"
 
-	"github.com/ppcsuite/btcjson"
-	"github.com/ppcsuite/btcws"
+	"github.com/ppcsuite/ppcd/btcjson"
+	"github.com/ppcsuite/ppcd/btcjson/btcws"
 )
 
 // makeGetKernelStakeModifier generates the cmd structure for getkernelstakemodifier commands.

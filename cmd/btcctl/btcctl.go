@@ -12,9 +12,9 @@ import (
 
 	flags "github.com/btcsuite/go-flags"
 	"github.com/davecgh/go-spew/spew"
-	"github.com/ppcsuite/btcjson"
 	"github.com/ppcsuite/btcutil"
-	"github.com/ppcsuite/btcws"
+	"github.com/ppcsuite/ppcd/btcjson"
+	"github.com/ppcsuite/ppcd/btcjson/btcws"
 )
 
 // conversionHandler is a handler that is used to convert parameters from the

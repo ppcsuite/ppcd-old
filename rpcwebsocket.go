@@ -19,9 +19,9 @@ import (
 
 	"github.com/btcsuite/fastsha256"
 	"github.com/btcsuite/websocket"
-	"github.com/ppcsuite/btcjson"
 	"github.com/ppcsuite/btcutil"
-	"github.com/ppcsuite/btcws"
+	"github.com/ppcsuite/ppcd/btcjson"
+	"github.com/ppcsuite/ppcd/btcjson/btcws"
 	"github.com/ppcsuite/ppcd/database"
 	"github.com/ppcsuite/ppcd/txscript"
 	"github.com/ppcsuite/ppcd/wire"
