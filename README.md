@@ -29,7 +29,7 @@ active development.
 
 ## Requirements
 
-[Go](http://golang.org) 1.2 or newer.
+[Go](http://golang.org) 1.3 or newer.
 
 ## Installation
 
@@ -40,10 +40,14 @@ https://github.com/ppcsuite/ppcd/releases
 #### Linux/BSD/MacOSX/POSIX - Build from Source
 
 - Install Go according to the installation instructions here:
-http://golang.org/doc/install
+  http://golang.org/doc/install
 
 - Run the following command to obtain btcd, all dependencies, and install it:
 ```$ go get github.com/ppcsuite/ppcd/...```
+
+```bash
+$ go get github.com/ppcsuite/ppcd/...
+```
 
 - btcd (and utilities) will now be installed in either ```$GOROOT/bin``` or
 ```$GOPATH/bin``` depending on your configuration.  If you did not already
@@ -60,6 +64,10 @@ Install a newer MSI
 
 - Run the following command to update btcd, all dependencies, and install it:
 ```$ go get -u -v github.com/ppcsuite/ppcd/...```
+
+```bash
+$ go get -u -v github.com/ppcsuite/ppcd/...
+```
 
 ## Getting Started
 

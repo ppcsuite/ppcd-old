@@ -1,29 +1,33 @@
 btcjson
 =======
 
-[![Build Status](https://travis-ci.org/ppcsuite/ppcd/btcjson.png?branch=master)]
-(https://travis-ci.org/ppcsuite/ppcd/btcjson)
-[![tip for next commit](http://peer4commit.com/projects/130.svg)](http://peer4commit.com/projects/130)
+[![Build Status](https://travis-ci.org/ppcsuite/ppcd.png?branch=master)]
+(https://travis-ci.org/ppcsuite/ppcd) [![ISC License]
+(http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
 
-Package btcjson implements the bitcoin JSON-RPC API.  There is a test
-suite which is aiming to reach 100% code coverage.  See
-`test_coverage.txt` for the current coverage (using gocov).  On a
-UNIX-like OS, the script `cov_report.sh` can be used to generate the
-report.  Package btcjson is licensed under the liberal ISC license.
+Package btcjson implements concrete types for marshalling to and from the
+bitcoin JSON-RPC API.  A comprehensive suite of tests is provided to ensure
+proper functionality.  Package btcjson is licensed under the copyfree ISC
+license.
 
-This package is one of the core packages from btcd, an alternative full-node
-implementation of bitcoin which is under active development by Conformal.
-Although it was primarily written for btcd, this package has intentionally been
+Although this package was primarily written for btcd, it has intentionally been
 designed so it can be used as a standalone package for any projects needing to
-communicate with a bitcoin client using the json rpc interface.
-[BlockSafari](http://blocksafari.com) is one such program that uses
-btcjson to communicate with btcd (or bitcoind to help test btcd).
+marshal to and from bitcoin JSON-RPC requests and responses.
+
+Note that although it's possible to use this package directly to implement an
+RPC client, it is not recommended since it is only intended as an infrastructure
+package.  Instead, RPC clients should use the
+[btcrpcclient](https://github.com/btcsuite/btcrpcclient) package which provides
+a full blown RPC client with many features such as automatic connection
+management, websocket support, automatic notification re-registration on
+reconnect, and conversion from the raw underlying RPC types (strings, floats,
+ints, etc) to higher-level types with many nice and useful properties.
 
 ## JSON RPC
 
-Bitcoin provides an extensive API call list to control bitcoind or
-bitcoin-qt through json-rpc.  These can be used to get information
-from the client or to cause the client to perform some action.
+Bitcoin provides an extensive API call list to control the chain and wallet
+servers through JSON-RPC.  These can be used to get information from the server
+or to cause the server to perform some action.
 
 The general form of the commands are:
 
@@ -31,19 +35,34 @@ The general form of the commands are:
 	{"jsonrpc": "1.0", "id":"test", "method": "getinfo", "params": []}
 ```
 
-btcjson provides code to easily create these commands from go (as some
-of the commands can be fairly complex), to send the commands to a
-running bitcoin rpc server, and to handle the replies (putting them in
-useful Go data structures).
+btcjson provides code to easily create these commands from go (as some of the
+commands can be fairly complex), to send the commands to a running bitcoin RPC
+server, and to handle the replies (putting them in useful Go data structures).
 
 ## Sample Use
 
 ```Go
-	msg, err := btcjson.CreateMessage("getinfo")
-	reply, err := btcjson.RpcCommand(user, password, server, msg)
+	// Create a new command.
+	cmd, err := btcjson.NewGetBlockCountCmd()
+	if err != nil {
+		// Handle error
+	}
+
+	// Marshal the command to a JSON-RPC formatted byte slice.
+	marshalled, err := btcjson.MarshalCmd(id, cmd)
+	if err != nil {
+		// Handle error
+	}
+
+	// At this point marshalled contains the raw bytes that are ready to send
+	// to the RPC server to issue the command.
+	fmt.Printf("%s\n", marshalled)
 ```
 
 ## Documentation
+
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)]
+(http://godoc.org/github.com/ppcsuite/ppcd/btcjson)
 
 Full `go doc` style documentation for the project can be viewed online without
 installing this package by using the GoDoc site
@@ -59,10 +78,27 @@ http://localhost:6060/pkg/github.com/ppcsuite/ppcd/btcjson
 $ go get github.com/ppcsuite/ppcd/btcjson
 ```
 
-## TODO
+## GPG Verification Key
 
-- Increase test coverage to 100%.
+All official release tags are signed by Conformal so users can ensure the code
+has not been tampered with and is coming from Conformal.  To verify the
+signature perform the following:
+
+- Download the public key from the Conformal website at
+  https://opensource.conformal.com/GIT-GPG-KEY-conformal.txt
+
+- Import the public key into your GPG keyring:
+  ```bash
+  gpg --import GIT-GPG-KEY-conformal.txt
+  ```
+
+- Verify the release tag with the following command where `TAG_NAME` is a
+  placeholder for the specific tag:
+  ```bash
+  git tag -v TAG_NAME
+  ```
 
 ## License
 
-Package btcjson is licensed under the liberal ISC License.
+Package btcjson is licensed under the [copyfree](http://copyfree.org) ISC
+License.

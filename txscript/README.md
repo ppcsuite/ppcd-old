@@ -49,6 +49,10 @@ $ go get github.com/ppcsuite/ppcd/txscript
   (http://godoc.org/github.com/ppcsuite/ppcd/txscript#example-ExtractPkScriptAddrs)  
   Demonstrates extracting information from a standard public key script.
 
+* [Manually Signing a Transaction Output]
+  (http://godoc.org/github.com/ppcsuite/ppcd/txscript#example-SignTxOutput)  
+  Demonstrates manually creating and signing a redeem transaction.
+
 ## GPG Verification Key
 
 All official release tags are signed by Conformal so users can ensure the code

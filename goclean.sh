@@ -12,7 +12,7 @@ set -e
 # Automatic checks
 test -z $(gofmt -l -w . | tee /dev/stderr)
 test -z $(goimports -l -w . | tee /dev/stderr)
-test -z $(golint ./... | grep -v "ALL_CAPS" | grep -v "OP_" | grep -v "NewFieldVal" | tee /dev/stderr)
+test -z $(golint ./... | grep -v "ALL_CAPS\|OP_\|NewFieldVal\|Id\|RpcCommand\|RpcRawCommand\|RpcSend\|Dns" | tee /dev/stderr)
 go tool vet -structtags=false .
 env GORACE="halt_on_error=1" go test -v -race ./...
 
@@ -21,7 +21,7 @@ env GORACE="halt_on_error=1" go test -v -race ./...
 echo "mode: count" > profile.cov
 
 # Standard go tooling behavior is to ignore dirs with leading underscores.
-for dir in $(/bin/find . -maxdepth 10 -not -path '.' -not -path './.git*' \
+for dir in $(find . -maxdepth 10 -not -path '.' -not -path './.git*' \
     -not -path '*/_*' -not -path './cmd*' -not -path './release*' -type d)
 do
 if ls $dir/*.go &> /dev/null; then

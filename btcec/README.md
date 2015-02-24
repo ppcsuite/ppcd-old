@@ -1,7 +1,7 @@
 btcec
 =====
 
-[![Build Status](https://travis-ci.org/btcsuite/btcd.png?branch=master)]
+[![Build Status](https://travis-ci.org/ppcsuite/ppcd.png?branch=master)]
 (https://travis-ci.org/ppcsuite/ppcd/btcec)
 
 Package btcec implements elliptic curve cryptography needed for working with
