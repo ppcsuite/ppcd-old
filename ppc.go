@@ -8,8 +8,8 @@ import (
 	"strconv"
 
 	"github.com/ppcsuite/ppcd/blockchain"
-	"github.com/ppcsuite/ppcd/btcjson"
 	"github.com/ppcsuite/ppcd/btcjson/btcws"
+	"github.com/ppcsuite/ppcd/btcjson/v2/btcjson"
 	"github.com/ppcsuite/ppcd/database"
 	"github.com/ppcsuite/ppcd/wire"
 )
@@ -24,21 +24,21 @@ func ppcGetDifficultyRatio(db database.Db, sha *wire.ShaHash, proofOfStake bool)
 }
 
 // ppcHandleGetDifficulty implements the getdifficulty command.
-func ppcHandleGetDifficulty(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan struct{}) (interface{}, error) {
+func ppcHandleGetDifficulty(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	sha, _, err := s.server.db.NewestSha()
 	if err != nil {
-		rpcsLog.Errorf("Error getting sha: %v", err)
-		return nil, btcjson.ErrDifficulty
+		context := "Error getting sha"
+		return nil, internalRPCError(err.Error(), context)
 	}
 	powDifficulty, err := ppcGetDifficultyRatio(s.server.db, sha, false) // ppc: PoW
 	if err != nil {
-		rpcsLog.Errorf("Error getting difficulty: %v", err)
-		return nil, btcjson.ErrDifficulty
+		context := "Error getting difficulty"
+		return nil, internalRPCError(err.Error(), context)
 	}
 	posDifficulty, err := ppcGetDifficultyRatio(s.server.db, sha, true) // ppc: PoS
 	if err != nil {
-		rpcsLog.Errorf("Error getting difficulty: %v", err)
-		return nil, btcjson.ErrDifficulty
+		context := "Error getting difficulty"
+		return nil, internalRPCError(err.Error(), context)
 	}
 
 	ret := &btcjson.GetDifficultyResult{
@@ -51,19 +51,19 @@ func ppcHandleGetDifficulty(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan stru
 }
 
 // ppcHandleGetKernelStakeModifier implements the getkernelstakeModifier command.
-func ppcHandleGetKernelStakeModifier(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan struct{}) (interface{}, error) {
+func ppcHandleGetKernelStakeModifier(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*btcws.GetKernelStakeModifierCmd)
 	sha, err := wire.NewShaHashFromStr(c.Hash)
 	if err != nil {
-		rpcsLog.Errorf("Error generating sha: %v", err)
-		return nil, btcjson.ErrBlockNotFound
+		context := "Error generating sha"
+		return nil, internalRPCError(err.Error(), context)
 	}
 
 	chain := s.server.blockManager.blockChain
 	kernelStakeModifier, err := chain.GetKernelStakeModifier(sha, s.server.timeSource)
 	if err != nil {
-		rpcsLog.Errorf("Error getting kernel stake modifier for block %v : %v", sha, err)
-		return nil, btcjson.ErrBlockNotFound
+		context := "Error getting kernel stake modifier for block " + sha.String()
+		return nil, internalRPCError(err.Error(), context)
 	}
 
 	// When the verbose flag isn't set, simply return a string.
@@ -81,13 +81,13 @@ func ppcHandleGetKernelStakeModifier(s *rpcServer, cmd btcjson.Cmd, closeChan <-
 }
 
 // ppcHandleGetNextRequiredTarget implements the getNextRequiredTarget command.
-func ppcHandleGetNextRequiredTarget(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan struct{}) (interface{}, error) {
+func ppcHandleGetNextRequiredTarget(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*btcws.GetNextRequiredTargetCmd)
 	chain := s.server.blockManager.blockChain
 	nextRequiredTarget, err := chain.PPCCalcNextRequiredDifficulty(c.ProofOfStake)
 	if err != nil {
-		rpcsLog.Errorf("Error getting next required target : %v", err)
-		return nil, btcjson.ErrDifficulty
+		context := "Error getting next required target"
+		return nil, internalRPCError(err.Error(), context)
 	}
 
 	// When the verbose flag isn't set, simply return a string.

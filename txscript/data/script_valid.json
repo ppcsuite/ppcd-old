@@ -569,6 +569,51 @@
 ["0x04 0xffff7f80", "0x03 0xffffff NUMEQUAL", "", ""],
 ["0x04 0xffff7f00", "0x03 0xffff7f NUMEQUAL", "", ""],
 
+["Unevaluated non-minimal pushes are ignored"],
+
+["0 IF 0x4c 0x00 ENDIF 1", "", "MINIMALDATA", "non-minimal PUSHDATA1 ignored"],
+["0 IF 0x4d 0x0000 ENDIF 1", "", "MINIMALDATA", "non-minimal PUSHDATA2 ignored"],
+["0 IF 0x4c 0x00000000 ENDIF 1", "", "MINIMALDATA", "non-minimal PUSHDATA4 ignored"],
+["0 IF 0x01 0x81 ENDIF 1", "", "MINIMALDATA", "1NEGATE equiv"],
+["0 IF 0x01 0x01 ENDIF 1", "", "MINIMALDATA", "OP_1  equiv"],
+["0 IF 0x01 0x02 ENDIF 1", "", "MINIMALDATA", "OP_2  equiv"],
+["0 IF 0x01 0x03 ENDIF 1", "", "MINIMALDATA", "OP_3  equiv"],
+["0 IF 0x01 0x04 ENDIF 1", "", "MINIMALDATA", "OP_4  equiv"],
+["0 IF 0x01 0x05 ENDIF 1", "", "MINIMALDATA", "OP_5  equiv"],
+["0 IF 0x01 0x06 ENDIF 1", "", "MINIMALDATA", "OP_6  equiv"],
+["0 IF 0x01 0x07 ENDIF 1", "", "MINIMALDATA", "OP_7  equiv"],
+["0 IF 0x01 0x08 ENDIF 1", "", "MINIMALDATA", "OP_8  equiv"],
+["0 IF 0x01 0x09 ENDIF 1", "", "MINIMALDATA", "OP_9  equiv"],
+["0 IF 0x01 0x0a ENDIF 1", "", "MINIMALDATA", "OP_10 equiv"],
+["0 IF 0x01 0x0b ENDIF 1", "", "MINIMALDATA", "OP_11 equiv"],
+["0 IF 0x01 0x0c ENDIF 1", "", "MINIMALDATA", "OP_12 equiv"],
+["0 IF 0x01 0x0d ENDIF 1", "", "MINIMALDATA", "OP_13 equiv"],
+["0 IF 0x01 0x0e ENDIF 1", "", "MINIMALDATA", "OP_14 equiv"],
+["0 IF 0x01 0x0f ENDIF 1", "", "MINIMALDATA", "OP_15 equiv"],
+["0 IF 0x01 0x10 ENDIF 1", "", "MINIMALDATA", "OP_16 equiv"],
+
+["Numeric minimaldata rules are only applied when a stack item is numerically evaluated; the push itself is allowed"],
+
+["0x01 0x00", "1", "MINIMALDATA"],
+["0x01 0x80", "1", "MINIMALDATA"],
+["0x02 0x0180", "1", "MINIMALDATA"],
+["0x02 0x0100", "1", "MINIMALDATA"],
+["0x02 0x0200", "1", "MINIMALDATA"],
+["0x02 0x0300", "1", "MINIMALDATA"],
+["0x02 0x0400", "1", "MINIMALDATA"],
+["0x02 0x0500", "1", "MINIMALDATA"],
+["0x02 0x0600", "1", "MINIMALDATA"],
+["0x02 0x0700", "1", "MINIMALDATA"],
+["0x02 0x0800", "1", "MINIMALDATA"],
+["0x02 0x0900", "1", "MINIMALDATA"],
+["0x02 0x0a00", "1", "MINIMALDATA"],
+["0x02 0x0b00", "1", "MINIMALDATA"],
+["0x02 0x0c00", "1", "MINIMALDATA"],
+["0x02 0x0d00", "1", "MINIMALDATA"],
+["0x02 0x0e00", "1", "MINIMALDATA"],
+["0x02 0x0f00", "1", "MINIMALDATA"],
+["0x02 0x1000", "1", "MINIMALDATA"],
+
 ["Valid version of the 'Test every numeric-accepting opcode for correct handling of the numeric minimal encoding rule' script_invalid test"],
 
 ["1 0x02 0x0000", "PICK DROP", ""],
@@ -769,7 +814,13 @@
     "BIP66 example 12, with DERSIG"
 ],
 [
-    "0x49 0x304502203e4516da7253cf068effec6b95c41221c0cf3a8e6ccb8cbf1725b562e9afde2c022100ab1e3da73d67e32045a20e0b999e049978ea8d6ee5480d485fcf2ce0d03b2ef05101",
+    "0x48 0x304402203e4516da7253cf068effec6b95c41221c0cf3a8e6ccb8cbf1725b562e9afde2c022054e1c258c2981cdfba5df1f46661fb6541c44f77ca0092f3600331abfffb12510101",
+    "0x21 0x03363d90d447b00c9c99ceac05b6262ee053441c7e55552ffe526bad8f83ff4640 CHECKSIG",
+    "",
+    "P2PK with multi-byte hashtype, without DERSIG"
+],
+[
+    "0x48 0x304502203e4516da7253cf068effec6b95c41221c0cf3a8e6ccb8cbf1725b562e9afde2c022100ab1e3da73d67e32045a20e0b999e049978ea8d6ee5480d485fcf2ce0d03b2ef001",
     "0x21 0x03363d90d447b00c9c99ceac05b6262ee053441c7e55552ffe526bad8f83ff4640 CHECKSIG",
     "",
     "P2PK with high S but no LOW_S"
