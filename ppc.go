@@ -8,8 +8,7 @@ import (
 	"strconv"
 
 	"github.com/ppcsuite/ppcd/blockchain"
-	"github.com/ppcsuite/ppcd/btcjson"
-	"github.com/ppcsuite/ppcd/btcjson/btcws"
+	"github.com/ppcsuite/ppcd/btcjson/v2/btcjson"
 	"github.com/ppcsuite/ppcd/database"
 	"github.com/ppcsuite/ppcd/wire"
 )
@@ -24,21 +23,21 @@ func ppcGetDifficultyRatio(db database.Db, sha *wire.ShaHash, proofOfStake bool)
 }
 
 // ppcHandleGetDifficulty implements the getdifficulty command.
-func ppcHandleGetDifficulty(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan struct{}) (interface{}, error) {
+func ppcHandleGetDifficulty(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	sha, _, err := s.server.db.NewestSha()
 	if err != nil {
-		rpcsLog.Errorf("Error getting sha: %v", err)
-		return nil, btcjson.ErrDifficulty
+		context := "Error getting sha"
+		return nil, internalRPCError(err.Error(), context)
 	}
 	powDifficulty, err := ppcGetDifficultyRatio(s.server.db, sha, false) // ppc: PoW
 	if err != nil {
-		rpcsLog.Errorf("Error getting difficulty: %v", err)
-		return nil, btcjson.ErrDifficulty
+		context := "Error getting difficulty"
+		return nil, internalRPCError(err.Error(), context)
 	}
 	posDifficulty, err := ppcGetDifficultyRatio(s.server.db, sha, true) // ppc: PoS
 	if err != nil {
-		rpcsLog.Errorf("Error getting difficulty: %v", err)
-		return nil, btcjson.ErrDifficulty
+		context := "Error getting difficulty"
+		return nil, internalRPCError(err.Error(), context)
 	}
 
 	ret := &btcjson.GetDifficultyResult{
@@ -51,53 +50,53 @@ func ppcHandleGetDifficulty(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan stru
 }
 
 // ppcHandleGetKernelStakeModifier implements the getkernelstakeModifier command.
-func ppcHandleGetKernelStakeModifier(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcws.GetKernelStakeModifierCmd)
+func ppcHandleGetKernelStakeModifier(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	c := cmd.(*btcjson.GetKernelStakeModifierCmd)
 	sha, err := wire.NewShaHashFromStr(c.Hash)
 	if err != nil {
-		rpcsLog.Errorf("Error generating sha: %v", err)
-		return nil, btcjson.ErrBlockNotFound
+		context := "Error generating sha"
+		return nil, internalRPCError(err.Error(), context)
 	}
 
 	chain := s.server.blockManager.blockChain
 	kernelStakeModifier, err := chain.GetKernelStakeModifier(sha, s.server.timeSource)
 	if err != nil {
-		rpcsLog.Errorf("Error getting kernel stake modifier for block %v : %v", sha, err)
-		return nil, btcjson.ErrBlockNotFound
+		context := "Error getting kernel stake modifier for block " + sha.String()
+		return nil, internalRPCError(err.Error(), context)
 	}
 
 	// When the verbose flag isn't set, simply return a string.
-	if !c.Verbose {
+	if !*c.Verbose {
 		return strconv.FormatUint(kernelStakeModifier, 10), nil
 	}
 
 	// The verbose flag is set, so generate the JSON object and return it.
-	ksmReply := btcws.KernelStakeModifierResult{
+	ksmReply := btcjson.KernelStakeModifierResult{
 		Hash:                c.Hash,
-		KernelStakeModifier: btcws.StakeModifier(kernelStakeModifier),
+		KernelStakeModifier: btcjson.StakeModifier(kernelStakeModifier),
 	}
 
 	return ksmReply, nil
 }
 
 // ppcHandleGetNextRequiredTarget implements the getNextRequiredTarget command.
-func ppcHandleGetNextRequiredTarget(s *rpcServer, cmd btcjson.Cmd, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcws.GetNextRequiredTargetCmd)
+func ppcHandleGetNextRequiredTarget(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	c := cmd.(*btcjson.GetNextRequiredTargetCmd)
 	chain := s.server.blockManager.blockChain
-	nextRequiredTarget, err := chain.PPCCalcNextRequiredDifficulty(c.ProofOfStake)
+	nextRequiredTarget, err := chain.PPCCalcNextRequiredDifficulty(*c.ProofOfStake)
 	if err != nil {
-		rpcsLog.Errorf("Error getting next required target : %v", err)
-		return nil, btcjson.ErrDifficulty
+		context := "Error getting next required target"
+		return nil, internalRPCError(err.Error(), context)
 	}
 
 	// When the verbose flag isn't set, simply return a string.
-	if !c.Verbose {
+	if !*c.Verbose {
 		return strconv.FormatUint(uint64(nextRequiredTarget), 10), nil
 	}
 
 	// The verbose flag is set, so generate the JSON object and return it.
-	ksmReply := btcws.NextRequiredTargetResult{
-		Target: btcws.RequiredTarget(nextRequiredTarget),
+	ksmReply := btcjson.NextRequiredTargetResult{
+		Target: btcjson.RequiredTarget(nextRequiredTarget),
 	}
 
 	return ksmReply, nil
