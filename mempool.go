@@ -274,16 +274,6 @@ func checkTransactionStandard(tx *btcutil.Tx, height int64) error {
 				"script is not push only", i)
 			return txRuleError(wire.RejectNonstandard, str)
 		}
-
-		// Each transaction input signature script must only contain
-		// canonical data pushes.  A canonical data push is one where
-		// the minimum possible number of bytes is used to represent
-		// the data push as possible.
-		if !txscript.HasCanonicalPushes(txIn.SignatureScript) {
-			str := fmt.Sprintf("transaction input %d: signature "+
-				"script has a non-canonical data push", i)
-			return txRuleError(wire.RejectNonstandard, str)
-		}
 	}
 
 	// None of the output public key scripts can be a non-standard script or
@@ -1181,8 +1171,10 @@ func (mp *txMemPool) maybeAcceptTransaction(tx *btcutil.Tx, isNew, rateLimit boo
 	}
 
 	// Require that free transactions have sufficient priority to be mined
-	// in the next block.
-	if !cfg.NoRelayPriority && txFee < minFee {
+	// in the next block.  Transactions which are being added back to the
+	// memory pool from blocks that have been disconnected during a reorg
+	// are exempted.
+	if isNew && !cfg.NoRelayPriority && txFee < minFee {
 		txD := &TxDesc{
 			Tx:     tx,
 			Added:  time.Now(),

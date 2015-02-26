@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2014 Conformal Systems LLC.
+// Copyright (c) 2013-2015 Conformal Systems LLC.
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -111,17 +111,24 @@ func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, timeSource MedianTim
 	}
 
 	if !fastAdd && b.chainParams.Net != wire.TestNet3 {
+		// Reject version 2 blocks once a majority of the network has
+		// upgraded.  This is part of BIP0066.
+		/* ppc: if blockHeader.Version < 3 && b.isMajorityVersion(3, prevNode,
+			b.chainParams.BlockRejectNumRequired) {
+
+			str := "new blocks with version %d are no longer valid"
+			str = fmt.Sprintf(str, blockHeader.Version)
+			return ruleError(ErrBlockVersionTooOld, str)
+		}*/
+
 		// Reject version 1 blocks once a majority of the network has
 		// upgraded.  This is part of BIP0034.
-		if blockHeader.Version < 2 {
-			if b.isMajorityVersion(2, prevNode,
-				b.chainParams.BlockRejectNumRequired) {
+		if blockHeader.Version < 2 && b.isMajorityVersion(2, prevNode,
+			b.chainParams.BlockRejectNumRequired) {
 
-				str := "new blocks with version %d are no " +
-					"longer valid"
-				str = fmt.Sprintf(str, blockHeader.Version)
-				return ruleError(ErrBlockVersionTooOld, str)
-			}
+			str := "new blocks with version %d are no longer valid"
+			str = fmt.Sprintf(str, blockHeader.Version)
+			return ruleError(ErrBlockVersionTooOld, str)
 		}
 
 		// Ensure coinbase starts with serialized block heights for

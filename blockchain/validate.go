@@ -957,12 +957,39 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block) er
 		runScripts = false
 	}
 
+	// Get the previous block node.  This function is used over simply
+	// accessing node.parent directly as it will dynamically create previous
+	// block nodes as needed.  This helps allow only the pieces of the chain
+	// that are needed to remain in memory.
+	/* ppc: prevNode, err := b.getPrevNodeFromNode(node)
+	if err != nil {
+		log.Errorf("getPrevNodeFromNode: %v", err)
+		return err
+	}*/
+
+	// Blocks created after the BIP0016 activation time need to have the
+	// pay-to-script-hash checks enabled.
+	var scriptFlags txscript.ScriptFlags
+	if block.MsgBlock().Header.Timestamp.After(txscript.Bip16Activation) {
+		scriptFlags |= txscript.ScriptBip16
+	}
+
+	// Enforce DER signatures for block versions 3+ once the majority of the
+	// network has upgraded to the enforcement threshold.  This is part of
+	// BIP0066.
+	/* ppc: blockHeader := &block.MsgBlock().Header
+	if blockHeader.Version >= 3 && b.isMajorityVersion(3, prevNode,
+		b.chainParams.BlockEnforceNumRequired) {
+
+		scriptFlags |= txscript.ScriptVerifyDERSignatures
+	}*/
+
 	// Now that the inexpensive checks are done and have passed, verify the
 	// transactions are actually allowed to spend the coins by running the
 	// expensive ECDSA signature check scripts.  Doing this last helps
 	// prevent CPU exhaustion attacks.
 	if runScripts {
-		err := checkBlockScripts(block, txInputStore)
+		err := checkBlockScripts(block, txInputStore, scriptFlags)
 		if err != nil {
 			return err
 		}
