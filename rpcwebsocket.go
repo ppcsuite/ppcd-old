@@ -615,7 +615,7 @@ func blockDetails(block *btcutil.Block, txIndex int) *btcjson.BlockDetails {
 // with the passed parameters.
 func newRedeemingTxNotification(txHex string, index int, block *btcutil.Block) ([]byte, error) {
 	// Create and marshal the notification.
-	ntfn := btcjson.NewRedeemingTxNtfn(txHex, *blockDetails(block, index))
+	ntfn := btcjson.NewRedeemingTxNtfn(txHex, blockDetails(block, index))
 	return btcjson.MarshalCmd(nil, ntfn)
 }
 
@@ -649,7 +649,7 @@ func (m *wsNotificationManager) notifyForTxOuts(ops map[wire.OutPoint]map[chan s
 			if txHex == "" {
 				txHex = txHexString(tx)
 			}
-			ntfn := btcjson.NewRecvTxNtfn(txHex, *blockDetails(block,
+			ntfn := btcjson.NewRecvTxNtfn(txHex, blockDetails(block,
 				tx.Index()))
 
 			marshalledJSON, err := btcjson.MarshalCmd(nil, ntfn)
@@ -1640,7 +1640,7 @@ func rescanBlock(wsc *wsClient, lookups *rescanKeys, blk *btcutil.Block) {
 					txHex = txHexString(tx)
 				}
 				ntfn := btcjson.NewRecvTxNtfn(txHex,
-					*blockDetails(blk, tx.Index()))
+					blockDetails(blk, tx.Index()))
 
 				marshalledJSON, err := btcjson.MarshalCmd(nil, ntfn)
 				if err != nil {
