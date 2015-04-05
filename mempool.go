@@ -97,7 +97,7 @@ type txMemPool struct {
 	pool          map[wire.ShaHash]*TxDesc
 	orphans       map[wire.ShaHash]*btcutil.Tx
 	orphansByPrev map[wire.ShaHash]*list.List
-	addrindex     map[string]map[*btcutil.Tx]struct{} // maps address to txs
+	addrindex     map[string]map[wire.ShaHash]struct{} // maps address to txs
 	outpoints     map[wire.OutPoint]*btcutil.Tx
 	lastUpdated   time.Time // last time pool was updated
 	pennyTotal    float64   // exponentially decaying total for penny spends.
@@ -225,7 +225,7 @@ func checkPkScriptStandard(pkScript []byte, scriptClass txscript.ScriptClass) er
 // finalized, conforming to more stringent size constraints, having scripts
 // of recognized forms, and not containing "dust" outputs (those that are
 // so small it costs more to process them than they are worth).
-func checkTransactionStandard(tx *btcutil.Tx, height int64) error {
+func (mp *txMemPool) checkTransactionStandard(tx *btcutil.Tx, height int64) error {
 	msgTx := tx.MsgTx()
 
 	// The transaction must be a currently supported version.
@@ -238,7 +238,8 @@ func checkTransactionStandard(tx *btcutil.Tx, height int64) error {
 
 	// The transaction must be finalized to be standard and therefore
 	// considered for inclusion in a block.
-	if !blockchain.IsFinalizedTransaction(tx, height, time.Now()) {
+	adjustedTime := mp.server.timeSource.AdjustedTime()
+	if !blockchain.IsFinalizedTransaction(tx, height, adjustedTime) {
 		return txRuleError(wire.RejectNonstandard,
 			"transaction is not finalized")
 	}
@@ -390,6 +391,7 @@ func calcMinRequiredTxRelayFee(serializedSize int64) int64 {
 
 // removeOrphan is the internal function which implements the public
 // RemoveOrphan.  See the comment for RemoveOrphan for more details.
+//
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *txMemPool) removeOrphan(txHash *wire.ShaHash) {
 	// Nothing to do if passed tx is not an orphan.
@@ -423,6 +425,7 @@ func (mp *txMemPool) removeOrphan(txHash *wire.ShaHash) {
 
 // RemoveOrphan removes the passed orphan transaction from the orphan pool and
 // previous orphan index.
+//
 // This function is safe for concurrent access.
 func (mp *txMemPool) RemoveOrphan(txHash *wire.ShaHash) {
 	mp.Lock()
@@ -650,7 +653,7 @@ func (mp *txMemPool) removeScriptFromAddrIndex(pkScript []byte, tx *btcutil.Tx) 
 		return err
 	}
 	for _, addr := range addresses {
-		delete(mp.addrindex[addr.EncodeAddress()], tx)
+		delete(mp.addrindex[addr.EncodeAddress()], *tx.Sha())
 	}
 
 	return nil
@@ -774,9 +777,9 @@ func (mp *txMemPool) indexScriptAddressToTx(pkScript []byte, tx *btcutil.Tx) err
 
 	for _, addr := range addresses {
 		if mp.addrindex[addr.EncodeAddress()] == nil {
-			mp.addrindex[addr.EncodeAddress()] = make(map[*btcutil.Tx]struct{})
+			mp.addrindex[addr.EncodeAddress()] = make(map[wire.ShaHash]struct{})
 		}
-		mp.addrindex[addr.EncodeAddress()][tx] = struct{}{}
+		mp.addrindex[addr.EncodeAddress()][*tx.Sha()] = struct{}{}
 	}
 
 	return nil
@@ -831,7 +834,7 @@ func minInt(a, b int) int {
 // of each of its input values multiplied by their age (# of confirmations).
 // Thus, the final formula for the priority is:
 // sum(inputValue * inputAge) / adjustedTxSize
-func calcPriority(tx *btcutil.Tx, serializedTxSize int, inputValueAge float64) float64 {
+func calcPriority(tx *btcutil.Tx, inputValueAge float64) float64 {
 	// In order to encourage spending multiple old unspent transaction
 	// outputs thereby reducing the total set, don't count the constant
 	// overhead for each input as well as enough bytes of the signature
@@ -858,6 +861,7 @@ func calcPriority(tx *btcutil.Tx, serializedTxSize int, inputValueAge float64) f
 		overhead += 41 + minInt(110, len(txIn.SignatureScript))
 	}
 
+	serializedTxSize := tx.MsgTx().SerializeSize()
 	if overhead >= serializedTxSize {
 		return 0.0
 	}
@@ -876,8 +880,7 @@ func (txD *TxDesc) StartingPriority(txStore blockchain.TxStore) float64 {
 
 	// Compute our starting priority caching the result.
 	inputAge := calcInputValueAge(txD, txStore, txD.Height)
-	txSize := txD.Tx.MsgTx().SerializeSize()
-	txD.startingPriority = calcPriority(txD.Tx, txSize, inputAge)
+	txD.startingPriority = calcPriority(txD.Tx, inputAge)
 
 	return txD.startingPriority
 }
@@ -886,8 +889,7 @@ func (txD *TxDesc) StartingPriority(txStore blockchain.TxStore) float64 {
 // underlying transaction relative to the next block height.
 func (txD *TxDesc) CurrentPriority(txStore blockchain.TxStore, nextBlockHeight int64) float64 {
 	inputAge := calcInputValueAge(txD, txStore, nextBlockHeight)
-	txSize := txD.Tx.MsgTx().SerializeSize()
-	return calcPriority(txD.Tx, txSize, inputAge)
+	return calcPriority(txD.Tx, inputAge)
 }
 
 // checkPoolDoubleSpend checks whether or not the passed transaction is
@@ -963,8 +965,10 @@ func (mp *txMemPool) FilterTransactionsByAddress(addr btcutil.Address) ([]*btcut
 
 	if txs, exists := mp.addrindex[addr.EncodeAddress()]; exists {
 		addressTxs := make([]*btcutil.Tx, 0, len(txs))
-		for tx := range txs {
-			addressTxs = append(addressTxs, tx)
+		for txHash := range txs {
+			if tx, exists := mp.pool[txHash]; exists {
+				addressTxs = append(addressTxs, tx.Tx)
+			}
 		}
 		return addressTxs, nil
 	}
@@ -1030,7 +1034,7 @@ func (mp *txMemPool) maybeAcceptTransaction(tx *btcutil.Tx, isNew, rateLimit boo
 	// Don't allow non-standard transactions if the network parameters
 	// forbid their relaying.
 	if !activeNetParams.RelayNonStdTxs {
-		err := checkTransactionStandard(tx, nextBlockHeight)
+		err := mp.checkTransactionStandard(tx, nextBlockHeight)
 		if err != nil {
 			// Attempt to extract a reject code from the error so
 			// it can be retained.  When not possible, fall back to
@@ -1262,11 +1266,8 @@ func (mp *txMemPool) MaybeAcceptTransaction(tx *btcutil.Tx, isNew, rateLimit boo
 	return mp.maybeAcceptTransaction(tx, isNew, rateLimit)
 }
 
-// processOrphans determines if there are any orphans which depend on the passed
-// transaction hash (it is possible that they are no longer orphans) and
-// potentially accepts them to the memory pool.  It repeats the process for the
-// newly accepted transactions (to detect further orphans which may no longer be
-// orphans) until there are no more.
+// processOrphans is the internal function which implements the public
+// ProcessOrphans.  See the comment for ProcessOrphans for more details.
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *txMemPool) processOrphans(hash *wire.ShaHash) error {
@@ -1349,6 +1350,20 @@ func (mp *txMemPool) processOrphans(hash *wire.ShaHash) error {
 	}
 
 	return nil
+}
+
+// ProcessOrphans determines if there are any orphans which depend on the passed
+// transaction hash (it is possible that they are no longer orphans) and
+// potentially accepts them to the memory pool.  It repeats the process for the
+// newly accepted transactions (to detect further orphans which may no longer be
+// orphans) until there are no more.
+//
+// This function is safe for concurrent access.
+func (mp *txMemPool) ProcessOrphans(hash *wire.ShaHash) error {
+	mp.Lock()
+	defer mp.Unlock()
+
+	return mp.processOrphans(hash)
 }
 
 // ProcessTransaction is the main workhorse for handling insertion of new
@@ -1482,7 +1497,7 @@ func newTxMemPool(server *server) *txMemPool {
 		outpoints:     make(map[wire.OutPoint]*btcutil.Tx),
 	}
 	if cfg.AddrIndex {
-		memPool.addrindex = make(map[string]map[*btcutil.Tx]struct{})
+		memPool.addrindex = make(map[string]map[wire.ShaHash]struct{})
 	}
 	return memPool
 }

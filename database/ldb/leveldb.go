@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2014 Conformal Systems LLC.
+// Copyright (c) 2013-2015 Conformal Systems LLC.
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -80,6 +80,9 @@ func parseArgs(funcName string, args ...interface{}) (string, error) {
 	return dbPath, nil
 }
 
+// CurrentDBVersion is the database version.
+var CurrentDBVersion int32 = 1
+
 // OpenDB opens an existing database for use.
 func OpenDB(args ...interface{}) (database.Db, error) {
 	dbpath, err := parseArgs("OpenDB", args...)
@@ -142,10 +145,20 @@ blocknarrow:
 		}
 	}
 
+	log.Infof("Checking address index")
+
 	// Load the last block whose transactions have been indexed by address.
 	if sha, idx, err := ldb.fetchAddrIndexTip(); err == nil {
-		ldb.lastAddrIndexBlkSha = *sha
-		ldb.lastAddrIndexBlkIdx = idx
+		if err = ldb.checkAddrIndexVersion(); err == nil {
+			ldb.lastAddrIndexBlkSha = *sha
+			ldb.lastAddrIndexBlkIdx = idx
+			log.Infof("Address index good, continuing")
+		} else {
+			log.Infof("Address index in old, incompatible format, dropping...")
+			ldb.deleteOldAddrIndex()
+			ldb.DeleteAddrIndex()
+			log.Infof("Old, incompatible address index dropped and can now be rebuilt")
+		}
 	} else {
 		ldb.lastAddrIndexBlkIdx = -1
 	}
@@ -156,9 +169,6 @@ blocknarrow:
 
 	return db, nil
 }
-
-// CurrentDBVersion is the database version.
-var CurrentDBVersion int32 = 1
 
 func openDB(dbpath string, create bool) (pbdb database.Db, err error) {
 	var db LevelDb
@@ -339,6 +349,10 @@ func (db *LevelDb) DropAfterBlockBySha(sha *wire.ShaHash) (rerr error) {
 		db.lBatch().Delete(int64ToKey(height))
 	}
 
+	// update the last block cache
+	db.lastBlkShaCached = true
+	db.lastBlkSha = *sha
+	db.lastBlkIdx = keepidx
 	db.nextBlock = keepidx + 1
 
 	return nil
@@ -547,10 +561,11 @@ func (db *LevelDb) setclearSpentData(txsha *wire.ShaHash, idx uint32, set bool) 
 			spentTxList[len(spentTxList)-1] = nil
 			if len(spentTxList) == 1 {
 				// write entry to delete tx from spent pool
-				// XXX
+				db.txSpentUpdateMap[*txsha] = &spentTxUpdate{delete: true}
 			} else {
-				spentTxList = spentTxList[:len(spentTxList)-1]
-				// XXX format sTxList and set update Table
+				// This code should never be hit - aakselrod
+				return fmt.Errorf("fully-spent tx %v does not have 1 record: "+
+					"%v", txsha, len(spentTxList))
 			}
 
 			// Create 'new' Tx update data.
@@ -641,15 +656,20 @@ func shaBlkToKey(sha *wire.ShaHash) []byte {
 	return shaB
 }
 
+// These are used here and in tx.go's deleteOldAddrIndex() to prevent deletion
+// of indexes other than the addrindex now.
+var recordSuffixTx = []byte{'t', 'x'}
+var recordSuffixSpentTx = []byte{'s', 'x'}
+
 func shaTxToKey(sha *wire.ShaHash) []byte {
 	shaB := sha.Bytes()
-	shaB = append(shaB, "tx"...)
+	shaB = append(shaB, recordSuffixTx...)
 	return shaB
 }
 
 func shaSpentTxToKey(sha *wire.ShaHash) []byte {
 	shaB := sha.Bytes()
-	shaB = append(shaB, "sx"...)
+	shaB = append(shaB, recordSuffixSpentTx...)
 	return shaB
 }
 

@@ -135,8 +135,8 @@ func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, timeSource MedianTim
 		// blocks whose version is the serializedHeightVersion or
 		// newer once a majority of the network has upgraded.  This is
 		// part of BIP0034.
-		if blockHeader.Version >= serializedHeightVersion {
-			if b.isMajorityVersion(serializedHeightVersion, prevNode,
+		if ShouldHaveSerializedBlockHeight(blockHeader) &&
+			b.isMajorityVersion(serializedHeightVersion, prevNode,
 				b.chainParams.BlockEnforceNumRequired) {
 
 				expectedHeight := int64(0)

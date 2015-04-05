@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2014 Conformal Systems LLC.
+// Copyright (c) 2013-2015 Conformal Systems LLC.
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -80,14 +80,24 @@ func isNullOutpoint(outpoint *wire.OutPoint) bool {
 	return false
 }
 
-// IsCoinBase determines whether or not a transaction is a coinbase.  A coinbase
+// ShouldHaveSerializedBlockHeight determines if a block should have a
+// serialized block height embedded within the scriptSig of its
+// coinbase transaction. Judgement is based on the block version in the block
+// header. Blocks with version 2 and above satisfy this criteria. See BIP0034
+// for further information.
+func ShouldHaveSerializedBlockHeight(header *wire.BlockHeader) bool {
+	return header.Version >= serializedHeightVersion
+}
+
+// IsCoinBaseTx determines whether or not a transaction is a coinbase.  A coinbase
 // is a special transaction created by miners that has no inputs.  This is
 // represented in the block chain by a transaction with a single input that has
 // a previous output transaction index set to the maximum value along with a
 // zero hash.
-func IsCoinBase(tx *btcutil.Tx) bool {
-	msgTx := tx.MsgTx()
-
+//
+// This function only differs from IsCoinBase in that it works with a raw wire
+// transaction as opposed to a higher level util transaction.
+func IsCoinBaseTx(msgTx *wire.MsgTx) bool {
 	// A coin base must only have one transaction input.
 	if len(msgTx.TxIn) != 1 {
 		return false
@@ -95,12 +105,24 @@ func IsCoinBase(tx *btcutil.Tx) bool {
 
 	// The previous output of a coin base must have a max value index and
 	// a zero hash.
-	prevOut := msgTx.TxIn[0].PreviousOutPoint
+	prevOut := &msgTx.TxIn[0].PreviousOutPoint
 	if prevOut.Index != math.MaxUint32 || !prevOut.Hash.IsEqual(zeroHash) {
 		return false
 	}
 
 	return true
+}
+
+// IsCoinBase determines whether or not a transaction is a coinbase.  A coinbase
+// is a special transaction created by miners that has no inputs.  This is
+// represented in the block chain by a transaction with a single input that has
+// a previous output transaction index set to the maximum value along with a
+// zero hash.
+//
+// This function only differs from IsCoinBaseTx in that it works with a higher
+// level util transaction as opposed to a raw wire transaction.
+func IsCoinBase(tx *btcutil.Tx) bool {
+	return IsCoinBaseTx(tx.MsgTx())
 }
 
 // IsFinalizedTransaction determines whether or not a transaction is finalized.
@@ -568,16 +590,18 @@ func CheckBlockSanity(params *chaincfg.Params, block *btcutil.Block, powLimit *b
 	return checkBlockSanity(params, block, powLimit, timeSource, BFNone)
 }
 
-// checkSerializedHeight checks if the signature script in the passed
-// transaction starts with the serialized block height of wantHeight.
-func checkSerializedHeight(coinbaseTx *btcutil.Tx, wantHeight int64) error {
+// ExtractCoinbaseHeight attempts to extract the height of the block
+// from the scriptSig of a coinbase transaction. Coinbase heights
+// are only present in blocks of version 2 or later. This was added as part of
+// BIP0034.
+func ExtractCoinbaseHeight(coinbaseTx *btcutil.Tx) (int64, error) {
 	sigScript := coinbaseTx.MsgTx().TxIn[0].SignatureScript
 	if len(sigScript) < 1 {
 		str := "the coinbase signature script for blocks of " +
 			"version %d or greater must start with the " +
 			"length of the serialized block height"
 		str = fmt.Sprintf(str, serializedHeightVersion)
-		return ruleError(ErrMissingCoinbaseHeight, str)
+		return 0, ruleError(ErrMissingCoinbaseHeight, str)
 	}
 
 	serializedLen := int(sigScript[0])
@@ -586,19 +610,30 @@ func checkSerializedHeight(coinbaseTx *btcutil.Tx, wantHeight int64) error {
 			"version %d or greater must start with the " +
 			"serialized block height"
 		str = fmt.Sprintf(str, serializedLen)
-		return ruleError(ErrMissingCoinbaseHeight, str)
+		return 0, ruleError(ErrMissingCoinbaseHeight, str)
 	}
 
 	serializedHeightBytes := make([]byte, 8, 8)
 	copy(serializedHeightBytes, sigScript[1:serializedLen+1])
 	serializedHeight := binary.LittleEndian.Uint64(serializedHeightBytes)
-	if int64(serializedHeight) != wantHeight {
+
+	return int64(serializedHeight), nil
+}
+
+// checkSerializedHeight checks if the signature script in the passed
+// transaction starts with the serialized block height of wantHeight.
+func checkSerializedHeight(coinbaseTx *btcutil.Tx, wantHeight int64) error {
+	serializedHeight, err := ExtractCoinbaseHeight(coinbaseTx)
+	if err != nil {
+		return err
+	}
+
+	if serializedHeight != wantHeight {
 		str := fmt.Sprintf("the coinbase signature script serialized "+
 			"block height is %d when %d was expected",
 			serializedHeight, wantHeight)
 		return ruleError(ErrBadCoinbaseHeight, str)
 	}
-
 	return nil
 }
 

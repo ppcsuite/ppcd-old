@@ -59,6 +59,10 @@ const (
 )
 
 var (
+	// nodeCount is the total number of peer connections made since startup
+	// and is used to assign an id to a peer.
+	nodeCount int32
+
 	// userAgentName is the user agent name and is used to help identify
 	// ourselves to other bitcoin peers.
 	userAgentName = "ppcd"
@@ -153,6 +157,7 @@ type peer struct {
 	conn               net.Conn
 	addr               string
 	na                 *wire.NetAddress
+	id                 int32
 	inbound            bool
 	persistent         bool
 	knownAddresses     map[string]struct{}
@@ -182,13 +187,16 @@ type peer struct {
 	versionKnown       bool
 	protocolVersion    uint32
 	services           wire.ServiceFlag
+	timeOffset         int64
 	timeConnected      time.Time
 	lastSend           time.Time
 	lastRecv           time.Time
 	bytesReceived      uint64
 	bytesSent          uint64
 	userAgent          string
+	startingHeight     int32
 	lastBlock          int32
+	lastAnnouncedBlock *wire.ShaHash
 	lastPingNonce      uint64    // Set to nonce if we have a pending ping.
 	lastPingTime       time.Time // Time we sent last ping.
 	lastPingMicros     int64     // Time for last ping to return.
@@ -212,6 +220,27 @@ func (p *peer) isKnownInventory(invVect *wire.InvVect) bool {
 		return true
 	}
 	return false
+}
+
+// UpdateLastBlockHeight updates the last known block for the peer. It is safe
+// for concurrent access.
+func (p *peer) UpdateLastBlockHeight(newHeight int32) {
+	p.StatsMtx.Lock()
+	defer p.StatsMtx.Unlock()
+
+	peerLog.Tracef("Updating last block height of peer %v from %v to %v",
+		p.addr, p.lastBlock, newHeight)
+	p.lastBlock = int32(newHeight)
+}
+
+// UpdateLastAnnouncedBlock updates meta-data about the last block sha this
+// peer is known to have announced. It is safe for concurrent access.
+func (p *peer) UpdateLastAnnouncedBlock(blkSha *wire.ShaHash) {
+	p.StatsMtx.Lock()
+	defer p.StatsMtx.Unlock()
+
+	peerLog.Tracef("Updating last blk for peer %v, %v", p.addr, blkSha)
+	p.lastAnnouncedBlock = blkSha
 }
 
 // AddKnownInventory adds the passed inventory to the cache of known inventory
@@ -399,6 +428,7 @@ func (p *peer) handleVersionMsg(msg *wire.MsgVersion) {
 	peerLog.Debugf("Negotiated protocol version %d for peer %s",
 		p.protocolVersion, p)
 	p.lastBlock = msg.LastBlock
+	p.startingHeight = msg.LastBlock
 
 	// Set the supported services for the peer to what the remote peer
 	// advertised.
@@ -406,6 +436,12 @@ func (p *peer) handleVersionMsg(msg *wire.MsgVersion) {
 
 	// Set the remote peer's user agent.
 	p.userAgent = msg.UserAgent
+
+	// Set the peer's time offset.
+	p.timeOffset = msg.Timestamp.Unix() - time.Now().Unix()
+
+	// Set the peer's ID.
+	p.id = atomic.AddInt32(&nodeCount, 1)
 
 	p.StatsMtx.Unlock()
 

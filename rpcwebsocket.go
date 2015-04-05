@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/fastsha256"
+	"github.com/btcsuite/golangcrypto/ripemd160"
 	"github.com/btcsuite/websocket"
 	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/btcjson/v2/btcjson"

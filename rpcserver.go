@@ -1833,6 +1833,10 @@ func handleGetNetTotals(s *rpcServer, cmd interface{}, closeChan <-chan struct{}
 
 // handleGetNetworkHashPS implements the getnetworkhashps command.
 func handleGetNetworkHashPS(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	// Note: All valid error return paths should return an int64.
+	// Literal zeros are inferred as int, and won't coerce to int64
+	// because the return value is an interface{}.
+
 	c := cmd.(*btcjson.GetNetworkHashPSCmd)
 
 	_, newestHeight, err := s.server.db.NewestSha()
@@ -1845,12 +1849,12 @@ func handleGetNetworkHashPS(s *rpcServer, cmd interface{}, closeChan <-chan stru
 	// since we can't reasonably calculate the number of network hashes
 	// per second from invalid values.  When it's negative, use the current
 	// best block height.
-	var endHeight int64
+	endHeight := int64(-1)
 	if c.Height != nil {
 		endHeight = int64(*c.Height)
 	}
 	if endHeight > newestHeight || endHeight == 0 {
-		return 0, nil
+		return int64(0), nil
 	}
 	if endHeight < 0 {
 		endHeight = newestHeight
@@ -1860,7 +1864,7 @@ func handleGetNetworkHashPS(s *rpcServer, cmd interface{}, closeChan <-chan stru
 	// blocks.  When the passed value is negative, use the last block the
 	// difficulty changed as the starting height.  Also make sure the
 	// starting height is not before the beginning of the chain.
-	var numBlocks int64
+	numBlocks := int64(120)
 	if c.Blocks != nil {
 		numBlocks = int64(*c.Blocks)
 	}
@@ -1913,7 +1917,7 @@ func handleGetNetworkHashPS(s *rpcServer, cmd interface{}, closeChan <-chan stru
 	// time difference.
 	timeDiff := int64(maxTimestamp.Sub(minTimestamp) / time.Second)
 	if timeDiff == 0 {
-		return 0, nil
+		return int64(0), nil
 	}
 
 	hashesPerSec := new(big.Int).Div(totalWork, big.NewInt(timeDiff))
@@ -2611,15 +2615,6 @@ func handleSearchRawTransactions(s *rpcServer, cmd interface{}, closeChan <-chan
 
 	var addressTxs []*database.TxListReply
 
-	// First check the mempool for relevent transactions.
-	memPoolTxs, err := s.server.txMemPool.FilterTransactionsByAddress(addr)
-	if err == nil && len(memPoolTxs) != 0 {
-		for _, tx := range memPoolTxs {
-			txReply := &database.TxListReply{Tx: tx.MsgTx(), Sha: tx.Sha()}
-			addressTxs = append(addressTxs, txReply)
-		}
-	}
-
 	var numRequested, numToSkip int
 	if c.Count != nil {
 		numRequested = *c.Count
@@ -2633,17 +2628,31 @@ func handleSearchRawTransactions(s *rpcServer, cmd interface{}, closeChan <-chan
 			numToSkip = 0
 		}
 	}
-	if len(addressTxs) >= numRequested {
-		// Tx's in the mempool exceed the requested number of tx's.
-		// Slice off any possible overflow.
-		addressTxs = addressTxs[:numRequested]
-	} else {
-		// Otherwise, we'll also take a look into the database.
-		dbTxs, err := s.server.db.FetchTxsForAddr(addr, numToSkip,
-			numRequested-len(addressTxs))
-		if err == nil && len(dbTxs) != 0 {
-			for _, txReply := range dbTxs {
+
+	// While it's more efficient to check the mempool for relevant transactions
+	// first, we want to return results in order of occurrence/dependency so
+	// we'll check the mempool only if there aren't enough results returned
+	// by the database.
+	dbTxs, err := s.server.db.FetchTxsForAddr(addr, numToSkip,
+		numRequested-len(addressTxs))
+	if err == nil {
+		for _, txReply := range dbTxs {
+			addressTxs = append(addressTxs, txReply)
+		}
+	}
+
+	// This code (and txMemPool.FilterTransactionsByAddress()) doesn't sort by
+	// dependency. This might be something we want to do in the future when we
+	// return results for the client's convenience, or leave it to the client.
+	if len(addressTxs) < numRequested {
+		memPoolTxs, err := s.server.txMemPool.FilterTransactionsByAddress(addr)
+		if err == nil {
+			for _, tx := range memPoolTxs {
+				txReply := &database.TxListReply{Tx: tx.MsgTx(), Sha: tx.Sha()}
 				addressTxs = append(addressTxs, txReply)
+				if len(addressTxs) == numRequested {
+					break
+				}
 			}
 		}
 	}

@@ -9,12 +9,12 @@ import (
 
 	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/wire"
-	"golang.org/x/crypto/ripemd160"
+	"github.com/btcsuite/golangcrypto/ripemd160"
 )
 
 // Errors that the various database functions may return.
 var (
-	ErrAddrIndexDoesNotExist  = errors.New("address index hasn't been built up yet")
+	ErrAddrIndexDoesNotExist  = errors.New("address index hasn't been built or is an older version")
 	ErrUnsupportedAddressType = errors.New("address type is not supported " +
 		"by the address-index")
 	ErrPrevShaMissing  = errors.New("previous sha missing from database")

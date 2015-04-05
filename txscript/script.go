@@ -9,6 +9,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/ppcsuite/btcutil"
@@ -123,17 +124,35 @@ var (
 	// is over the limit.
 	ErrStackOverflow = errors.New("Stacks overflowed")
 
+	// ErrStackInvalidLowSSignature is returned when the ScriptVerifyLowS
+	// flag is set and the script contains any signatures whose S values
+	// are higher than the half order.
+	ErrStackInvalidLowSSignature = errors.New("invalid low s signature")
+
 	// ErrStackInvalidPubKey is returned when the ScriptVerifyScriptEncoding
 	// flag is set and the script contains invalid pubkeys.
 	ErrStackInvalidPubKey = errors.New("invalid strict pubkey")
+
+	// ErrStackCleanStack is returned when the ScriptVerifyCleanStack flag
+	// is set and after evalution the stack does not contain only one element,
+	// which also must be true if interpreted as a boolean.
+	ErrStackCleanStack = errors.New("stack is not clean")
 
 	// ErrStackMinimalData is returned when the ScriptVerifyMinimalData flag
 	// is set and the script contains push operations that do not use
 	// the minimal opcode required.
 	ErrStackMinimalData = errors.New("non-minimally encoded script number")
+
+	// ErrInvalidFlags is returned when the passed flags to NewScript contain
+	// an invalid combination.
+	ErrInvalidFlags = errors.New("invalid flags combination")
 )
 
 const (
+	// maxDataCarrierSize is the maximum number of bytes allowed in pushed
+	// data to be considered a nulldata transaction
+	maxDataCarrierSize = 80
+
 	// maxStackSize is the maximum combined height of stack and alt stack
 	// during execution.
 	maxStackSize = 1000
@@ -150,6 +169,9 @@ var ErrUnsupportedAddress = errors.New("unsupported address type")
 // blockchain.  To be used to determine if BIP0016 should be called for or not.
 // This timestamp corresponds to Sun Apr 1 00:00:00 UTC 2012.
 var Bip16Activation = time.Unix(1333238400, 0)
+
+// curve halforder, used to tame ECDSA malleability (see BIP0062)
+var halfOrder = new(big.Int).Rsh(btcec.S256().N, 1)
 
 // SigHashType represents hash type bits at the end of a signature.
 type SigHashType byte
@@ -218,7 +240,9 @@ type Script struct {
 	strictMultiSig           bool     // verify multisig stack item is zero length
 	discourageUpgradableNops bool     // NOP1 to NOP10 are reserved for future soft-fork upgrades
 	verifyStrictEncoding     bool     // verify strict encoding of signatures
-	verifyDERSignatures      bool     // verify signatures compily with the DER
+	verifyCleanStack         bool     // verify stack is clean after script evaluation
+	verifyDERSignatures      bool     // verify signatures comply with the DER format
+	verifyLowS               bool     // verify signatures comply with the DER format and have an S value <= halforder
 	savedFirstStack          [][]byte // stack from first script for bip16 scripts
 }
 
@@ -303,7 +327,8 @@ func isMultiSig(pops []parsedOpcode) bool {
 // false otherwise.
 func isNullData(pops []parsedOpcode) bool {
 	// A nulldata transaction is either a single OP_RETURN or an
-	// OP_RETURN SMALLDATA (where SMALLDATA is a push data up to 40 bytes).
+	// OP_RETURN SMALLDATA (where SMALLDATA is a push data up to
+	// maxDataCarrierSize bytes).
 	l := len(pops)
 	if l == 1 && pops[0].opcode.value == OP_RETURN {
 		return true
@@ -312,7 +337,7 @@ func isNullData(pops []parsedOpcode) bool {
 	return l == 2 &&
 		pops[0].opcode.value == OP_RETURN &&
 		pops[1].opcode.value <= OP_PUSHDATA4 &&
-		len(pops[1].data) <= 40
+		len(pops[1].data) <= maxDataCarrierSize
 }
 
 // isPushOnly returns true if the script only pushes data, false otherwise.
@@ -373,7 +398,7 @@ func (s *Script) checkPubKeyEncoding(pubKey []byte) error {
 // checkSignatureEncoding returns whether or not the passed signature adheres to
 // the strict encoding requirements if enabled.
 func (s *Script) checkSignatureEncoding(sig []byte) error {
-	if !s.verifyStrictEncoding && !s.verifyDERSignatures {
+	if !s.verifyDERSignatures && !s.verifyLowS && !s.verifyStrictEncoding {
 		return nil
 	}
 
@@ -453,6 +478,14 @@ func (s *Script) checkSignatureEncoding(sig []byte) error {
 	// otherwise be interpreted as a negative number.
 	if sLen > 1 && sig[rLen+6] == 0x00 && sig[rLen+7]&0x80 == 0 {
 		return fmt.Errorf("malformed signature: invalid S value")
+	}
+
+	// Verify the S value is <= halforder.
+	if s.verifyLowS {
+		sValue := new(big.Int).SetBytes(sig[rLen+6 : rLen+6+sLen])
+		if sValue.Cmp(halfOrder) > 0 {
+			return ErrStackInvalidLowSSignature
+		}
 	}
 
 	return nil
@@ -619,9 +652,20 @@ const (
 	// executed.
 	ScriptDiscourageUpgradableNops
 
+	// ScriptVerifyCleanStack defines that the stack must contain only
+	// one stack element after evaluation and that the element must be
+	// true if interpreted as a boolean.  This is rule 6 of BIP0062.
+	// This flag should never be used without the ScriptBip16 flag.
+	ScriptVerifyCleanStack
+
 	// ScriptVerifyDERSignatures defines that signatures are required
 	// to compily with the DER format.
 	ScriptVerifyDERSignatures
+
+	// ScriptVerifyLowS defines that signtures are required to comply with
+	// the DER format and whose S value is <= order / 2.  This is rule 5
+	// of BIP0062.
+	ScriptVerifyLowS
 
 	// ScriptVerifyMinimalData defines that signatures must use the smallest
 	// push operator. This is both rules 3 and 4 of BIP0062.
@@ -650,7 +694,8 @@ const (
 		ScriptVerifyStrictEncoding |
 		ScriptVerifyMinimalData |
 		ScriptStrictMultiSig |
-		ScriptDiscourageUpgradableNops
+		ScriptDiscourageUpgradableNops |
+		ScriptVerifyCleanStack
 )
 
 // NewScript returns a new script engine for the provided tx and input idx with
@@ -685,8 +730,7 @@ func NewScript(scriptSig []byte, scriptPubKey []byte, txidx int, tx *wire.MsgTx,
 	}
 
 	// Parse flags.
-	bip16 := flags&ScriptBip16 == ScriptBip16
-	if bip16 && isScriptHash(m.scripts[1]) {
+	if flags&ScriptBip16 == ScriptBip16 && isScriptHash(m.scripts[1]) {
 		// if we are pay to scripthash then we only accept input
 		// scripts that push data
 		if !isPushOnly(m.scripts[0]) {
@@ -709,6 +753,15 @@ func NewScript(scriptSig []byte, scriptPubKey []byte, txidx int, tx *wire.MsgTx,
 	if flags&ScriptVerifyMinimalData == ScriptVerifyMinimalData {
 		m.dstack.verifyMinimalData = true
 		m.astack.verifyMinimalData = true
+	}
+	if flags&ScriptVerifyCleanStack == ScriptVerifyCleanStack {
+		if flags&ScriptBip16 != ScriptBip16 {
+			return nil, ErrInvalidFlags
+		}
+		m.verifyCleanStack = true
+	}
+	if flags&ScriptVerifyLowS == ScriptVerifyLowS {
+		m.verifyLowS = true
 	}
 
 	m.tx = *tx
@@ -750,23 +803,29 @@ func (s *Script) Execute() (err error) {
 		}))
 	}
 
-	return s.CheckErrorCondition()
+	return s.CheckErrorCondition(true)
 }
 
 // CheckErrorCondition returns nil if the running script has ended and was
 // successful, leaving a a true boolean on the stack. An error otherwise,
 // including if the script has not finished.
-func (s *Script) CheckErrorCondition() (err error) {
+func (s *Script) CheckErrorCondition(finalScript bool) error {
 	// Check we are actually done. if pc is past the end of script array
 	// then we have run out of scripts to run.
 	if s.scriptidx < len(s.scripts) {
 		return ErrStackScriptUnfinished
 	}
-	if s.dstack.Depth() < 1 {
+	if finalScript && s.verifyCleanStack && s.dstack.Depth() != 1 {
+		return ErrStackCleanStack
+	} else if s.dstack.Depth() < 1 {
 		return ErrStackEmptyStack
 	}
+
 	v, err := s.dstack.PopBool()
-	if err == nil && v == false {
+	if err != nil {
+		return err
+	}
+	if v == false {
 		// log interesting data.
 		log.Tracef("%v", newLogClosure(func() string {
 			dis0, _ := s.DisasmScript(0)
@@ -774,9 +833,9 @@ func (s *Script) CheckErrorCondition() (err error) {
 			return fmt.Sprintf("scripts failed: script0: %s\n"+
 				"script1: %s", dis0, dis1)
 		}))
-		err = ErrStackScriptFailed
+		return ErrStackScriptFailed
 	}
-	return err
+	return nil
 }
 
 // Step will execute the next instruction and move the program counter to the
@@ -822,7 +881,7 @@ func (s *Script) Step() (done bool, err error) {
 			s.scriptidx++
 			// We check script ran ok, if so then we pull
 			// the script out of the first stack and executre that.
-			err := s.CheckErrorCondition()
+			err := s.CheckErrorCondition(false)
 			if err != nil {
 				return false, err
 			}
@@ -875,10 +934,12 @@ func (s *Script) validPC() error {
 
 // DisasmScript returns the disassembly string for the script at offset
 // ``idx''.  Where 0 is the scriptSig and 1 is the scriptPubKey.
-func (s *Script) DisasmScript(idx int) (disstr string, err error) {
+func (s *Script) DisasmScript(idx int) (string, error) {
 	if idx >= len(s.scripts) {
 		return "", ErrStackInvalidIndex
 	}
+
+	var disstr string
 	for i := range s.scripts[idx] {
 		disstr = disstr + s.disasm(idx, i) + "\n"
 	}
@@ -887,7 +948,7 @@ func (s *Script) DisasmScript(idx int) (disstr string, err error) {
 
 // DisasmPC returns the string for the disassembly of the opcode that will be
 // next to execute when Step() is called.
-func (s *Script) DisasmPC() (disstr string, err error) {
+func (s *Script) DisasmPC() (string, error) {
 	scriptidx, scriptoff, err := s.curPC()
 	if err != nil {
 		return "", err
@@ -1728,7 +1789,6 @@ func CalcScriptInfo(sigscript, pkscript []byte, bip16 bool) (*ScriptInfo, error)
 
 		shInputs := expectedInputs(shPops, shClass)
 		if shInputs == -1 {
-			// We have no fucking clue, then.
 			si.ExpectedInputs = -1
 		} else {
 			si.ExpectedInputs += shInputs
