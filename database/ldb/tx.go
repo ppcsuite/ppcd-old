@@ -15,8 +15,6 @@ import (
 	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/database"
 	"github.com/ppcsuite/ppcd/wire"
-
-	"golang.org/x/crypto/ripemd160"
 )
 
 const (

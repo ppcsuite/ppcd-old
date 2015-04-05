@@ -25,7 +25,6 @@ import (
 	"github.com/ppcsuite/ppcd/database"
 	"github.com/ppcsuite/ppcd/txscript"
 	"github.com/ppcsuite/ppcd/wire"
-	"golang.org/x/crypto/ripemd160"
 )
 
 const (

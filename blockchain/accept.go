@@ -139,15 +139,14 @@ func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, timeSource MedianTim
 			b.isMajorityVersion(serializedHeightVersion, prevNode,
 				b.chainParams.BlockEnforceNumRequired) {
 
-				expectedHeight := int64(0)
-				if prevNode != nil {
-					expectedHeight = prevNode.height + 1
-				}
-				coinbaseTx := block.Transactions()[0]
-				err := checkSerializedHeight(coinbaseTx, expectedHeight)
-				if err != nil {
-					return err
-				}
+			expectedHeight := int64(0)
+			if prevNode != nil {
+				expectedHeight = prevNode.height + 1
+			}
+			coinbaseTx := block.Transactions()[0]
+			err := checkSerializedHeight(coinbaseTx, expectedHeight)
+			if err != nil {
+				return err
 			}
 		}
 	}

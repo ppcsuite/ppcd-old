@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/btcsuite/btcutil"
+	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/btcec"
 	"github.com/ppcsuite/ppcd/chaincfg"
