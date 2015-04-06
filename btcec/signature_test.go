@@ -12,8 +12,8 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/ppcsuite/ppcd/btcec"
 	"github.com/btcsuite/fastsha256"
+	"github.com/ppcsuite/ppcd/btcec"
 )
 
 type signatureTest struct {

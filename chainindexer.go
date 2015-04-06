@@ -11,12 +11,12 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/btcsuite/golangcrypto/ripemd160"
 	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/blockchain"
 	"github.com/ppcsuite/ppcd/database"
 	"github.com/ppcsuite/ppcd/txscript"
 	"github.com/ppcsuite/ppcd/wire"
-	"github.com/btcsuite/golangcrypto/ripemd160"
 )
 
 type indexState int

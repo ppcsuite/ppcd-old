@@ -7,8 +7,8 @@ package blockchain_test
 import (
 	"testing"
 
-	"github.com/ppcsuite/ppcd/blockchain"
 	"github.com/ppcsuite/btcutil"
+	"github.com/ppcsuite/ppcd/blockchain"
 )
 
 // BenchmarkIsCoinBase performs a simple benchmark against the IsCoinBase

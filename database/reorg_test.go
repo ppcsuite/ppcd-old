@@ -13,8 +13,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ppcsuite/ppcd/wire"
 	"github.com/ppcsuite/btcutil"
+	"github.com/ppcsuite/ppcd/wire"
 )
 
 // testReorganization performs reorganization tests for the passed DB type.
