@@ -171,20 +171,20 @@ func (b *BlockChain) ppcCalcNextRequiredDifficulty(lastNode *blockNode, proofOfS
 // after the end of the current best chain based on the difficulty retarget
 // rules.
 //
-// This function is NOT safe for concurrent access.
+// This function is NOT safe for concurrent access. Use blockmanager.
 func (b *BlockChain) PPCCalcNextRequiredDifficulty(proofOfStake bool) (uint32, error) {
 	return b.ppcCalcNextRequiredDifficulty(b.bestChain, proofOfStake)
 }
 
-// SetCoinbaseMaturity sets required coinbase maturity and return old one
+// setCoinbaseMaturity sets required coinbase maturity and return old one
 // Required for tests
-func (b *BlockChain) SetCoinbaseMaturity(coinbaseMaturity int64) (old int64) {
+func (b *BlockChain) setCoinbaseMaturity(coinbaseMaturity int64) (old int64) {
 	old = b.chainParams.CoinbaseMaturity
 	b.chainParams.CoinbaseMaturity = coinbaseMaturity
 	return
 }
 
-// CalcTrust calculates a work value from difficulty bits.  Bitcoin increases
+// calcTrust calculates a work value from difficulty bits.  Bitcoin increases
 // the difficulty for generating a block by decreasing the value which the
 // generated hash must be less than.  This difficulty target is stored in each
 // block header using a compact representation as described in the documenation
@@ -194,7 +194,7 @@ func (b *BlockChain) SetCoinbaseMaturity(coinbaseMaturity int64) (old int64) {
 // accumulated must be the inverse of the difficulty.  Also, in order to avoid
 // potential division by zero and really small floating point numbers, the
 // result adds 1 to the denominator and multiplies the numerator by 2^256.
-func CalcTrust(bits uint32, proofOfStake bool) *big.Int {
+func calcTrust(bits uint32, proofOfStake bool) *big.Int {
 	// Return a work value of zero if the passed difficulty bits represent
 	// a negative number. Note this should not happen in practice with valid
 	// blocks, but an invalid block could trigger it.
@@ -210,8 +210,8 @@ func CalcTrust(bits uint32, proofOfStake bool) *big.Int {
 	return new(big.Int).Div(oneLsh256, denominator)
 }
 
-// CalcMintAndMoneySupply TODO(?) golint
-func (b *BlockChain) CalcMintAndMoneySupply(node *blockNode, block *btcutil.Block) error {
+// calcMintAndMoneySupply TODO(?) golint
+func (b *BlockChain) calcMintAndMoneySupply(node *blockNode, block *btcutil.Block) error {
 
 	nFees := int64(0)
 	nValueIn := int64(0)
@@ -243,7 +243,7 @@ func (b *BlockChain) CalcMintAndMoneySupply(node *blockNode, block *btcutil.Bloc
 			}
 			nValueIn += nTxValueIn
 			nValueOut += nTxValueOut
-			if !IsCoinStake(tx) {
+			if !isCoinStake(tx) {
 				nFees += nTxValueIn - nTxValueOut
 			}
 		}
@@ -368,9 +368,9 @@ func getProofOfStakeReward(nCoinAge int64) int64 {
 	return nSubsidy
 }
 
-// IsCoinStake determines whether or not a transaction is a coinstake.  A coinstake
+// isCoinStake determines whether or not a transaction is a coinstake.  A coinstake
 // is a special transaction created by peercoin minters.
-func IsCoinStake(tx *btcutil.Tx) bool {
+func isCoinStake(tx *btcutil.Tx) bool {
 	return tx.MsgTx().IsCoinStake()
 }
 
@@ -385,7 +385,7 @@ func ppcNewBlockNode(
 	// of the full block/block header preventing it from being garbage
 	// collected.
 	prevHash := blockHeader.PrevBlock
-	workSum := CalcTrust(blockHeader.Bits, (blockMeta.Flags&FBlockProofOfStake) > 0)
+	workSum := calcTrust(blockHeader.Bits, (blockMeta.Flags&FBlockProofOfStake) > 0)
 	//log.Debugf("Height = %v, WorkSum = %v", height, workSum)
 	node := blockNode{
 		hash:       blockSha,
@@ -451,8 +451,8 @@ func setMetaStakeEntropyBit(meta *wire.Meta, entropyBit uint32) {
 	}
 }
 
-// BigToShaHash converts a big.Int into a wire.ShaHash.
-func BigToShaHash(value *big.Int) (*wire.ShaHash, error) {
+// bigToShaHash converts a big.Int into a wire.ShaHash.
+func bigToShaHash(value *big.Int) (*wire.ShaHash, error) {
 
 	buf := value.Bytes()
 
@@ -472,10 +472,10 @@ func BigToShaHash(value *big.Int) (*wire.ShaHash, error) {
 	return wire.NewShaHash(pbuf)
 }
 
-// PPCGetProofOfWorkReward is Peercoin's validate.go:CalcBlockSubsidy(...)
+// ppcGetProofOfWorkReward is Peercoin's validate.go:CalcBlockSubsidy(...)
 // counterpart.
 // https://github.com/ppcoin/ppcoin/blob/v0.4.0ppc/src/main.cpp#L829
-func PPCGetProofOfWorkReward(nBits uint32, netParams *chaincfg.Params) (subsidy int64) {
+func ppcGetProofOfWorkReward(nBits uint32, netParams *chaincfg.Params) (subsidy int64) {
 	bigTwo := new(big.Int).SetInt64(2)
 	bnSubsidyLimit := new(big.Int).SetInt64(MaxMintProofOfWork)
 	bnTarget := CompactToBig(nBits)
@@ -510,18 +510,18 @@ func PPCGetProofOfWorkReward(nBits uint32, netParams *chaincfg.Params) (subsidy 
 	return
 }
 
-// GetMinFee calculates minimum required required for transaction.
+// getMinFee calculates minimum required required for transaction.
 // https://github.com/ppcoin/ppcoin/blob/v0.4.0ppc/src/main.h#L592
-func GetMinFee(tx *btcutil.Tx) int64 {
+func getMinFee(tx *btcutil.Tx) int64 {
 	baseFee := MinTxFee
 	bytes := tx.MsgTx().SerializeSize()
 	minFee := (1 + int64(bytes)/1000) * baseFee
 	return minFee
 }
 
-// CheckBlockSignature ppc: check block signature
+// checkBlockSignature ppc: check block signature
 // https://github.com/ppcoin/ppcoin/blob/v0.4.0ppc/src/main.cpp#L2116
-func CheckBlockSignature(msgBlock *wire.MsgBlock,
+func checkBlockSignature(msgBlock *wire.MsgBlock,
 	params *chaincfg.Params) bool {
 	sha, err := msgBlock.BlockSha()
 	if err != nil {
@@ -563,7 +563,7 @@ func ppcCheckTransactionSanity(tx *btcutil.Tx) error {
 		// https://github.com/ppcoin/ppcoin/blob/v0.4.0ppc/src/main.cpp#L461
 		// if (txout.IsEmpty() && (!IsCoinBase()) && (!IsCoinStake()))
 		// 	return DoS(100, error("CTransaction::CheckTransaction() : txout empty for user transaction"));
-		if txOut.IsEmpty() && (!IsCoinBase(tx)) && (!IsCoinStake(tx)) {
+		if txOut.IsEmpty() && (!IsCoinBase(tx)) && (!isCoinStake(tx)) {
 			str := "transaction output empty for user transaction"
 			return ruleError(ErrEmptyTxOut, str)
 		}
@@ -597,13 +597,13 @@ func ppcCheckTransactionInputs(tx *btcutil.Tx, txStore TxStore, blockChain *Bloc
 	// if (nStakeReward > getProofOfStakeReward(nCoinAge) - GetMinFee() + MIN_TX_FEE)
 	// 	return DoS(100, error("ConnectInputs() : %s stake reward exceeded", GetHash().ToString().substr(0,10).c_str()));
 	// }
-	if IsCoinStake(tx) {
+	if isCoinStake(tx) {
 		coinAge, err := blockChain.getCoinAgeTx(tx, txStore)
 		if err != nil {
 			return fmt.Errorf("unable to get coin age for coinstake: %v", err)
 		}
 		stakeReward := satoshiOut - satoshiIn
-		maxReward := getProofOfStakeReward(int64(coinAge)) - GetMinFee(tx) + MinTxFee
+		maxReward := getProofOfStakeReward(int64(coinAge)) - getMinFee(tx) + MinTxFee
 		if stakeReward > maxReward {
 			str := fmt.Sprintf("%v stake reward value %v exceeded %v", tx.Sha(), stakeReward, maxReward)
 			return ruleError(ErrBadCoinstakeValue, str)
@@ -614,8 +614,8 @@ func ppcCheckTransactionInputs(tx *btcutil.Tx, txStore TxStore, blockChain *Bloc
 		// if (nTxFee < GetMinFee())
 		// 	return fBlock? DoS(100, error("ConnectInputs() : %s not paying required fee=%s, paid=%s", GetHash().ToString().substr(0,10).c_str(), FormatMoney(GetMinFee()).c_str(), FormatMoney(nTxFee).c_str())) : false;
 		txFee := satoshiIn - satoshiOut
-		if txFee < GetMinFee(tx) {
-			str := fmt.Sprintf("%v not paying required fee=%v, paid=%v", tx.Sha(), GetMinFee(tx), txFee)
+		if txFee < getMinFee(tx) {
+			str := fmt.Sprintf("%v not paying required fee=%v, paid=%v", tx.Sha(), getMinFee(tx), txFee)
 			return ruleError(ErrInsufficientFee, str)
 		}
 	}
@@ -681,7 +681,7 @@ func ppcCheckBlockSanity(params *chaincfg.Params, block *btcutil.Block) error {
 	// ppc: check block signature
 	// if (!CheckBlockSignature())
 	// 	return DoS(100, error("CheckBlock() : bad block signature"));
-	if !CheckBlockSignature(msgBlock, params) {
+	if !checkBlockSignature(msgBlock, params) {
 		str := "bad block signature"
 		return ruleError(ErrBadBlockSignature, str)
 	}
@@ -766,6 +766,7 @@ func GetLastBlockHeader(db database.Db, lastSha *wire.ShaHash, proofOfStake bool
 }
 
 // GetKernelStakeModifier
+// This function is NOT safe for concurrent access. Use blockmanager.
 func (b *BlockChain) GetKernelStakeModifier(hash *wire.ShaHash, timeSource MedianTimeSource) (uint64, error) {
 	stakeModifier, _, _, err := b.getKernelStakeModifier(hash, timeSource, false)
 	return stakeModifier, err

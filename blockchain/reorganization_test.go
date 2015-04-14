@@ -56,11 +56,11 @@ func TestReorganization(t *testing.T) {
 	// Since we're not dealing with the real block chain, disable
 	// checkpoints and set the coinbase maturity to 1.
 	chain.DisableCheckpoints(true)
-	// Peercoin
+	// ppc:
 	// blockchain.TstSetCoinbaseMaturity(1)
-	originalMaturity := chain.SetCoinbaseMaturity(1)
+	originalMaturity := chain.setCoinbaseMaturity(1)
 	defer func() {
-		chain.SetCoinbaseMaturity(originalMaturity)
+		chain.setCoinbaseMaturity(originalMaturity)
 	}()
 
 	timeSource := blockchain.NewMedianTime()

@@ -58,8 +58,7 @@ func ppcHandleGetKernelStakeModifier(s *rpcServer, cmd interface{}, closeChan <-
 		return nil, internalRPCError(err.Error(), context)
 	}
 
-	chain := s.server.blockManager.blockChain
-	kernelStakeModifier, err := chain.GetKernelStakeModifier(sha, s.server.timeSource)
+	kernelStakeModifier, err := s.server.blockManager.GetKernelStakeModifier(sha)
 	if err != nil {
 		context := "Error getting kernel stake modifier for block " + sha.String()
 		return nil, internalRPCError(err.Error(), context)
@@ -82,8 +81,7 @@ func ppcHandleGetKernelStakeModifier(s *rpcServer, cmd interface{}, closeChan <-
 // ppcHandleGetNextRequiredTarget implements the getNextRequiredTarget command.
 func ppcHandleGetNextRequiredTarget(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*btcjson.GetNextRequiredTargetCmd)
-	chain := s.server.blockManager.blockChain
-	nextRequiredTarget, err := chain.PPCCalcNextRequiredDifficulty(*c.ProofOfStake)
+	nextRequiredTarget, err := s.server.blockManager.PPCCalcNextRequiredDifficulty(*c.ProofOfStake)
 	if err != nil {
 		context := "Error getting next required target"
 		return nil, internalRPCError(err.Error(), context)
@@ -100,4 +98,52 @@ func ppcHandleGetNextRequiredTarget(s *rpcServer, cmd interface{}, closeChan <-c
 	}
 
 	return ksmReply, nil
+}
+
+// ppcCalcNextReqDifficultyResponse is a response sent to the reply channel of a
+// ppcCalcNextReqDifficultyMsg query.
+type ppcCalcNextReqDifficultyResponse struct {
+	difficulty uint32
+	err        error
+}
+
+// ppcCalcNextReqDifficultyMsg is a message type to be sent across the message
+// channel for requesting the required difficulty of the next block.
+type ppcCalcNextReqDifficultyMsg struct {
+	proofOfStake bool
+	reply        chan ppcCalcNextReqDifficultyResponse
+}
+
+// PPCCalcNextRequiredDifficulty calculates the required difficulty for the block
+// after the end of the current best chain based on the difficulty retarget
+// rules.
+func (b *blockManager) PPCCalcNextRequiredDifficulty(proofOfStake bool) (uint32, error) {
+	reply := make(chan ppcCalcNextReqDifficultyResponse, 1)
+	b.msgChan <- ppcCalcNextReqDifficultyMsg{proofOfStake: proofOfStake, reply: reply}
+	response := <-reply
+	return response.difficulty, response.err
+}
+
+// getKernelStakeModifierResponse is a response sent to the reply channel of a
+// getKernelStakeModifierMsg.
+type getKernelStakeModifierResponse struct {
+	StakeModifier uint64
+	err           error
+}
+
+// getKernelStakeModifierMsg is a message type to be sent across the message
+// channel getting the stake modifier for some block.
+type getKernelStakeModifierMsg struct {
+	hash       *wire.ShaHash
+	timeSource blockchain.MedianTimeSource
+	reply      chan getKernelStakeModifierResponse
+}
+
+// GetKernelStakeModifier TODO(mably)
+func (b *blockManager) GetKernelStakeModifier(hash *wire.ShaHash) (uint64, error) {
+
+	reply := make(chan getKernelStakeModifierResponse, 1)
+	b.msgChan <- getKernelStakeModifierMsg{hash: hash, timeSource: b.server.timeSource, reply: reply}
+	response := <-reply
+	return response.StakeModifier, response.err
 }

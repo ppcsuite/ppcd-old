@@ -161,7 +161,7 @@ func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, timeSource MedianTim
 	}
 
 	// ppc: populate all ppcoin specific block meta data
-	err = b.AddToBlockIndex(block)
+	err = b.addToBlockIndex(block)
 	if err != nil {
 		return err
 	}
@@ -176,7 +176,7 @@ func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, timeSource MedianTim
 	}
 
 	// ppcoin: populate all ppcoin specific block meta data
-	err = b.AddToBlockIndex(block)
+	err = b.addToBlockIndex(block)
 	if err != nil {
 		return err
 	}

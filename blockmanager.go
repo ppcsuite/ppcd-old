@@ -1133,6 +1133,22 @@ out:
 					err:     err,
 				}
 
+			case getKernelStakeModifierMsg: // ppc:
+				stakeModifier, err := b.blockChain.GetKernelStakeModifier(
+					msg.hash, msg.timeSource)
+				msg.reply <- getKernelStakeModifierResponse{
+					StakeModifier: stakeModifier,
+					err:           err,
+				}
+
+			case ppcCalcNextReqDifficultyMsg: // ppc:
+				difficulty, err :=
+					b.blockChain.PPCCalcNextRequiredDifficulty(msg.proofOfStake)
+				msg.reply <- ppcCalcNextReqDifficultyResponse{
+					difficulty: difficulty,
+					err:        err,
+				}
+
 			case processBlockMsg:
 				isOrphan, err := b.blockChain.ProcessBlock(
 					msg.block, b.server.timeSource,

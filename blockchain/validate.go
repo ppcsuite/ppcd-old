@@ -810,7 +810,7 @@ func CheckTransactionInputs(tx *btcutil.Tx, txHeight int64, txStore TxStore,
 	}
 
 	// Ensure the user transaction does not spend more than its inputs.
-	if (!IsCoinStake(tx)) && totalSatoshiIn < totalSatoshiOut {
+	if (!isCoinStake(tx)) && totalSatoshiIn < totalSatoshiOut {
 		str := fmt.Sprintf("total value of all transaction inputs for "+
 			"transaction %v is %v which is less than the amount "+
 			"spent of %v", txHash, totalSatoshiIn, totalSatoshiOut)
@@ -829,7 +829,7 @@ func CheckTransactionInputs(tx *btcutil.Tx, txHeight int64, txStore TxStore,
 	// the inputs are >= the outputs.
 	txFeeInSatoshi := totalSatoshiIn - totalSatoshiOut
 	// TODO(kac-) how to handle it properly?
-	if IsCoinStake(tx) {
+	if isCoinStake(tx) {
 		if txFeeInSatoshi < 0 {
 			return 0, nil
 		}
@@ -971,7 +971,7 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block) er
 		for _, txOut := range transactions[0].MsgTx().TxOut {
 			totalSatoshiOut += txOut.Value
 		}
-		expectedSatoshiOut := PPCGetProofOfWorkReward(node.bits, b.chainParams)
+		expectedSatoshiOut := ppcGetProofOfWorkReward(node.bits, b.chainParams)
 		if totalSatoshiOut > expectedSatoshiOut {
 			str := fmt.Sprintf("coinbase transaction for block pays %v "+
 				"which is more than expected value of %v",

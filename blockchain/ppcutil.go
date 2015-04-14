@@ -31,7 +31,7 @@ const (
 )
 
 func getBlockTrust(block *btcutil.Block) *big.Int {
-	return CalcTrust(block.MsgBlock().Header.Bits, block.MsgBlock().IsProofOfStake())
+	return calcTrust(block.MsgBlock().Header.Bits, block.MsgBlock().IsProofOfStake())
 }
 
 // ppcoin: entropy bit for stake modifier if chosen by modifier

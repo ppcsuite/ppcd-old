@@ -176,7 +176,7 @@ func selectBlockFromCandidates(
 			tmp := ShaHashToBig(hashSelection)
 			//hashSelection >>= 32
 			tmp = tmp.Rsh(tmp, 32)
-			hashSelection, err = BigToShaHash(tmp)
+			hashSelection, err = bigToShaHash(tmp)
 			if err != nil {
 				return
 			}
@@ -355,17 +355,17 @@ func (b *BlockChain) computeNextStakeModifier(pindexCurrent *btcutil.Block) (
 	return
 }
 
-// AddToBlockIndex processes all ppcoin specific block meta data
-func (b *BlockChain) AddToBlockIndex(block *btcutil.Block) (err error) {
+// addToBlockIndex processes all ppcoin specific block meta data
+func (b *BlockChain) addToBlockIndex(block *btcutil.Block) (err error) {
 
-	defer timeTrack(now(), fmt.Sprintf("AddToBlockIndex(%v)", slice(block.Sha())[0]))
+	defer timeTrack(now(), fmt.Sprintf("addToBlockIndex(%v)", slice(block.Sha())[0]))
 
 	meta := block.Meta()
 
 	// ppcoin: compute stake entropy bit for stake modifier
 	stakeEntropyBit, err := getStakeEntropyBit(b, block)
 	if err != nil {
-		err = errors.New("AddToBlockIndex() : GetStakeEntropyBit() failed")
+		err = errors.New("addToBlockIndex() : GetStakeEntropyBit() failed")
 		return
 	}
 	setMetaStakeEntropyBit(meta, stakeEntropyBit)
@@ -376,7 +376,7 @@ func (b *BlockChain) AddToBlockIndex(block *btcutil.Block) (err error) {
 	nStakeModifier, fGeneratedStakeModifier, err =
 		b.computeNextStakeModifier(block)
 	if err != nil {
-		err = fmt.Errorf("AddToBlockIndex() : computeNextStakeModifier() failed %v", err)
+		err = fmt.Errorf("addToBlockIndex() : computeNextStakeModifier() failed %v", err)
 		return
 	}
 
@@ -385,16 +385,16 @@ func (b *BlockChain) AddToBlockIndex(block *btcutil.Block) (err error) {
 
 	meta.StakeModifierChecksum, err = b.getStakeModifierChecksum(block)
 
-	log.Debugf("AddToBlockIndex() : height=%d, modifier=%v, checksum=%v",
+	log.Debugf("addToBlockIndex() : height=%d, modifier=%v, checksum=%v",
 		block.Height(), getStakeModifierHexString(meta.StakeModifier),
 		getStakeModifierCSHexString(meta.StakeModifierChecksum))
 
 	if err != nil {
-		err = errors.New("AddToBlockIndex() : getStakeModifierChecksum() failed")
+		err = errors.New("addToBlockIndex() : getStakeModifierChecksum() failed")
 		return
 	}
 	if !b.checkStakeModifierCheckpoints(block.Height(), meta.StakeModifierChecksum) {
-		err = fmt.Errorf("AddToBlockIndex() : Rejected by stake modifier checkpoint height=%d, modifier=%d", block.Height(), meta.StakeModifier)
+		err = fmt.Errorf("addToBlockIndex() : Rejected by stake modifier checkpoint height=%d, modifier=%d", block.Height(), meta.StakeModifier)
 		return
 	}
 
