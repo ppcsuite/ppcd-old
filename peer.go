@@ -186,6 +186,8 @@ type peer struct {
 	StatsMtx           sync.Mutex // protects all statistics below here.
 	versionKnown       bool
 	protocolVersion    uint32
+	versionSent        bool
+	verAckReceived     bool
 	services           wire.ServiceFlag
 	timeOffset         int64
 	timeConnected      time.Time
@@ -1153,6 +1155,12 @@ func (p *peer) handleGetAddrMsg(msg *wire.MsgGetAddr) {
 		return
 	}
 
+	// Do not accept getaddr requests from outbound peers.  This reduces
+	// fingerprinting attacks.
+	if !p.inbound {
+		return
+	}
+
 	// Get the current known addresses from the address manager.
 	addrCache := p.server.addrManager.AddressCache()
 
@@ -1527,25 +1535,36 @@ out:
 		}
 
 		// Handle each supported message type.
-		markConnected := false
 		switch msg := rmsg.(type) {
 		case *wire.MsgVersion:
 			p.handleVersionMsg(msg)
-			markConnected = true
 
 		case *wire.MsgVerAck:
-			// Do nothing.
+			p.StatsMtx.Lock()
+			versionSent := p.versionSent
+			verAckReceived := p.verAckReceived
+			p.StatsMtx.Unlock()
+
+			if !versionSent {
+				peerLog.Infof("Received 'verack' from peer %v "+
+					"before version was sent -- disconnecting", p)
+				break out
+			}
+			if verAckReceived {
+				peerLog.Infof("Already received 'verack' from "+
+					"peer %v -- disconnecting", p)
+				break out
+			}
+			p.verAckReceived = true
 
 		case *wire.MsgGetAddr:
 			p.handleGetAddrMsg(msg)
 
 		case *wire.MsgAddr:
 			p.handleAddrMsg(msg)
-			markConnected = true
 
 		case *wire.MsgPing:
 			p.handlePingMsg(msg)
-			markConnected = true
 
 		case *wire.MsgPong:
 			p.handlePongMsg(msg)
@@ -1571,7 +1590,6 @@ out:
 
 		case *wire.MsgInv:
 			p.handleInvMsg(msg)
-			markConnected = true
 
 		case *wire.MsgHeaders:
 			p.handleHeadersMsg(msg)
@@ -1584,7 +1602,6 @@ out:
 
 		case *wire.MsgGetData:
 			p.handleGetDataMsg(msg)
-			markConnected = true
 
 		case *wire.MsgGetBlocks:
 			p.handleGetBlocksMsg(msg)
@@ -1610,16 +1627,6 @@ out:
 				rmsg.Command())
 		}
 
-		// Mark the address as currently connected and working as of
-		// now if one of the messages that trigger it was processed.
-		if markConnected && atomic.LoadInt32(&p.disconnect) == 0 {
-			if p.na == nil {
-				peerLog.Warnf("we're getting stuff before we " +
-					"got a version message. that's bad")
-				continue
-			}
-			p.server.addrManager.Connected(p.na)
-		}
 		// ok we got a message, reset the timer.
 		// timer just calls p.Disconnect() after logging.
 		idleTimer.Reset(idleTimeoutMinutes * time.Minute)
@@ -1803,7 +1810,10 @@ out:
 			reset := true
 			switch m := msg.msg.(type) {
 			case *wire.MsgVersion:
-				// should get an ack
+				// should get a verack
+				p.StatsMtx.Lock()
+				p.versionSent = true
+				p.StatsMtx.Unlock()
 			case *wire.MsgGetAddr:
 				// should get addresses
 			case *wire.MsgPing:
@@ -1922,6 +1932,15 @@ func (p *peer) Disconnect() {
 	if atomic.AddInt32(&p.disconnect, 1) != 1 {
 		return
 	}
+
+	// Update the address' last seen time if the peer has acknowledged
+	// our version and has sent us its version as well.
+	p.StatsMtx.Lock()
+	if p.verAckReceived && p.versionKnown && p.na != nil {
+		p.server.addrManager.Connected(p.na)
+	}
+	p.StatsMtx.Unlock()
+
 	peerLog.Tracef("disconnecting %s", p)
 	close(p.quit)
 	if atomic.LoadInt32(&p.connected) != 0 {
