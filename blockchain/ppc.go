@@ -524,10 +524,7 @@ func getMinFee(tx *btcutil.Tx) int64 {
 // Export required for tests only
 func CheckBlockSignature(msgBlock *wire.MsgBlock,
 	params *chaincfg.Params) bool {
-	sha, err := msgBlock.BlockSha()
-	if err != nil {
-		return false
-	}
+	sha := msgBlock.BlockSha()
 	if sha.IsEqual(params.GenesisHash) {
 		return len(msgBlock.Signature) == 0
 	}
