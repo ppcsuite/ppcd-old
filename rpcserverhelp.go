@@ -495,6 +495,17 @@ var helpDescsEnUS = map[string]string{
 	"rescan-addresses":  "List of addresses to include in the rescan",
 	"rescan-outpoints":  "List of transaction outpoints to include in the rescan",
 	"rescan-endblock":   "Hash of final block to rescan",
+
+	// ppc:
+	"getkernelstakemodifier--synopsis":              "TODO(mably)",
+	"getkernelstakemodifier-verbose":                "TODO(mably)",
+	"getkernelstakemodifier-hash":                   "TODO(mably)",
+	"getnextrequiredtarget--synopsis":               "TODO(mably)",
+	"getnextrequiredtarget-proofofstake":            "TODO(mably)",
+	"getnextrequiredtarget-verbose":                 "TODO(mably)",
+	"kernelstakemodifierresult-hash":                "TODO(mably)",
+	"kernelstakemodifierresult-kernelstakemodifier": "TODO(mably)",
+	"nextrequiredtargetresult-target":               "TODO(mably)",
 }
 
 // rpcResultTypes specifies the result types that each RPC command can return.
@@ -545,6 +556,10 @@ var rpcResultTypes = map[string][]interface{}{
 	"notifyreceived":        nil,
 	"notifyspent":           nil,
 	"rescan":                nil,
+
+	// ppc:
+	"getkernelstakemodifier": []interface{}{(*btcjson.KernelStakeModifierResult)(nil)},
+	"getnextrequiredtarget":  []interface{}{(*btcjson.NextRequiredTargetResult)(nil)},
 }
 
 // helpCacher provides a concurrent safe type that provides help and usage for

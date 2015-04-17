@@ -58,9 +58,9 @@ func TestReorganization(t *testing.T) {
 	chain.DisableCheckpoints(true)
 	// ppc:
 	// blockchain.TstSetCoinbaseMaturity(1)
-	originalMaturity := chain.setCoinbaseMaturity(1)
+	originalMaturity := chain.SetCoinbaseMaturity(1)
 	defer func() {
-		chain.setCoinbaseMaturity(originalMaturity)
+		chain.SetCoinbaseMaturity(originalMaturity)
 	}()
 
 	timeSource := blockchain.NewMedianTime()

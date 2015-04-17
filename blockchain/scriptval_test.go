@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/btcsuite/btcd/txscript"
+	"github.com/ppcsuite/ppcd/txscript"
 	"github.com/ppcsuite/ppcd/blockchain"
 )
 

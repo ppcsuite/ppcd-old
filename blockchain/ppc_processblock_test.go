@@ -37,7 +37,7 @@ func TestPPCProcessBlocks(t *testing.T) {
 	//blocks, _ := _loadBlocksMax(t, "blk0001.dat", 10000, 1)
 	timeSource := blockchain.NewMedianTime()
 	for h, block := range blocks {
-		sha, _ := block.Sha()
+		sha := block.Sha()
 		isOrphan, err := bc.ProcessBlock(block, timeSource, blockchain.BFNone)
 		if err != nil {
 			t.Errorf("processBlock: block %v %v", h, err)

@@ -177,8 +177,8 @@ func (b *BlockChain) PPCCalcNextRequiredDifficulty(proofOfStake bool) (uint32, e
 }
 
 // setCoinbaseMaturity sets required coinbase maturity and return old one
-// Required for tests
-func (b *BlockChain) setCoinbaseMaturity(coinbaseMaturity int64) (old int64) {
+// Export required for tests only
+func (b *BlockChain) SetCoinbaseMaturity(coinbaseMaturity int64) (old int64) {
 	old = b.chainParams.CoinbaseMaturity
 	b.chainParams.CoinbaseMaturity = coinbaseMaturity
 	return
@@ -521,7 +521,8 @@ func getMinFee(tx *btcutil.Tx) int64 {
 
 // checkBlockSignature ppc: check block signature
 // https://github.com/ppcoin/ppcoin/blob/v0.4.0ppc/src/main.cpp#L2116
-func checkBlockSignature(msgBlock *wire.MsgBlock,
+// Export required for tests only
+func CheckBlockSignature(msgBlock *wire.MsgBlock,
 	params *chaincfg.Params) bool {
 	sha, err := msgBlock.BlockSha()
 	if err != nil {
@@ -681,7 +682,7 @@ func ppcCheckBlockSanity(params *chaincfg.Params, block *btcutil.Block) error {
 	// ppc: check block signature
 	// if (!CheckBlockSignature())
 	// 	return DoS(100, error("CheckBlock() : bad block signature"));
-	if !checkBlockSignature(msgBlock, params) {
+	if !CheckBlockSignature(msgBlock, params) {
 		str := "bad block signature"
 		return ruleError(ErrBadBlockSignature, str)
 	}

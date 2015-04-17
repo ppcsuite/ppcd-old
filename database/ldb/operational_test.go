@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"compress/bzip2"
 	"encoding/binary"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -19,6 +18,7 @@ import (
 	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/ppcd/database"
+	"github.com/ppcsuite/ppcd/txscript"
 	"github.com/ppcsuite/ppcd/wire"
 )
 
