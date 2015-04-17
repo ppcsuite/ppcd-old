@@ -733,11 +733,10 @@ func handleDecodeRawTransaction(s *rpcServer, cmd interface{}, closeChan <-chan 
 			Message: "TX decode failed: " + err.Error(),
 		}
 	}
-	txHash, _ := mtx.TxSha()
 
 	// Create and return the result.
 	txReply := btcjson.TxRawDecodeResult{
-		Txid:     txHash.String(),
+		Txid:     mtx.TxSha().String(),
 		Version:  mtx.Version,
 		Locktime: mtx.LockTime,
 		Vin:      createVinList(&mtx),
@@ -1367,7 +1366,7 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 	transactions := make([]btcjson.GetBlockTemplateResultTx, 0, numTx-1)
 	txIndex := make(map[wire.ShaHash]int64, numTx)
 	for i, tx := range msgBlock.Transactions {
-		txHash, _ := tx.TxSha()
+		txHash := tx.TxSha()
 		txIndex[txHash] = int64(i)
 
 		// Skip the coinbase transaction.
@@ -1451,7 +1450,6 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 
 		// Serialize the transaction for conversion to hex.
 		tx := msgBlock.Transactions[0]
-		txHash, _ := tx.TxSha()
 		txBuf := bytes.NewBuffer(make([]byte, 0, tx.SerializeSize()))
 		if err := tx.Serialize(txBuf); err != nil {
 			context := "Failed to serialize transaction"
@@ -1460,7 +1458,7 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 
 		resultTx := btcjson.GetBlockTemplateResultTx{
 			Data:    hex.EncodeToString(txBuf.Bytes()),
-			Hash:    txHash.String(),
+			Hash:    tx.TxSha().String(),
 			Depends: []int64{},
 			Fee:     template.fees[0],
 			SigOps:  template.sigOpCounts[0],
