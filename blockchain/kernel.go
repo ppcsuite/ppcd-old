@@ -258,11 +258,7 @@ func (b *BlockChain) computeNextStakeModifier(pindexCurrent *btcutil.Block) (
 			log.Debugf("computeNextStakeModifier: (v0.4+) no new interval keep current modifier: pindexCurrent nHeight=%d nTime=%d", pindexCurrent.Height(), pindexCurrentHeader.Timestamp.Unix())
 			return
 		}
-		currentSha, errSha := pindexCurrent.Sha()
-		if errSha != nil {
-			err = errSha
-			return
-		}
+		currentSha := pindexCurrent.Sha()
 		log.Debugf("computeNextStakeModifier: v0.3 modifier at block %s not meeting v0.4+ protocol: pindexCurrent nHeight=%d nTime=%d", currentSha.String(), pindexCurrent.Height(), pindexCurrentHeader.Timestamp.Unix())
 	}
 
@@ -539,10 +535,7 @@ func (b *BlockChain) checkStakeKernelHash(
 	var nStakeModifierTime int64
 	if isProtocolV03(b, nTimeTx) { // v0.3 protocol
 		var blockFromSha *wire.ShaHash
-		blockFromSha, err = blockFrom.Sha()
-		if err != nil {
-			return
-		}
+		blockFromSha = blockFrom.Sha()
 		nStakeModifier, nStakeModifierHeight, nStakeModifierTime, err =
 			b.getKernelStakeModifier(blockFromSha, timeSource, fPrintProofOfStake)
 		if err != nil {
@@ -739,10 +732,7 @@ func (b *BlockChain) checkBlockProofOfStake(block *btcutil.Block, timeSource Med
 
 	if block.MsgBlock().IsProofOfStake() {
 
-		blockHash, err := block.Sha()
-		if err != nil {
-			return err
-		}
+		blockHash := block.Sha()
 		log.Tracef("Block %v is PoS", blockHash)
 
 		tx, err := block.Tx(1)

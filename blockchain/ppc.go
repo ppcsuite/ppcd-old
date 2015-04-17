@@ -694,10 +694,7 @@ func (b *BlockChain) ppcProcessOrphan(block *btcutil.Block) error {
 	if block.IsProofOfStake() {
 		// Limited duplicity on stake: prevents block flood attack
 		// Duplicate stake allowed only when there is orphan child block
-		sha, err := block.Sha()
-		if err != nil {
-			return err
-		}
+		sha := block.Sha()
 		stake := getProofOfStakeFromBlock(block)
 		_, seen := stakeSeen[stake]
 		childs, hasChild := b.prevOrphans[*sha]
@@ -728,10 +725,7 @@ func (b *BlockChain) ppcProcessBlock(block *btcutil.Block, phase processPhase) e
 		// Duplicate stake allowed only when there is orphan child block
 		// TODO(kac-) should it be exported to limitedStakeDuplicityCheck(block)error ?
 		if block.IsProofOfStake() {
-			sha, err := block.Sha()
-			if err != nil {
-				return err
-			}
+			sha := block.Sha()
 			stake := getProofOfStakeFromBlock(block)
 			_, seen := stakeSeen[stake]
 			childs, hasChild := b.prevOrphans[*sha]

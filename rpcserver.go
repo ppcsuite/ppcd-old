@@ -2625,8 +2625,7 @@ func handleGetWorkSubmission(s *rpcServer, hexData string) (interface{}, error) 
 	}
 
 	// The block was accepted.
-	blockSha, _ := block.Sha()
-	rpcsLog.Infof("Block submitted via getwork accepted: %s", blockSha)
+	rpcsLog.Infof("Block submitted via getwork accepted: %s", block.Sha())
 	return true, nil
 }
 
@@ -2854,7 +2853,7 @@ func handleSearchRawTransactions(s *rpcServer, cmd interface{}, closeChan <-chan
 
 		var blkHash *wire.ShaHash
 		if blk != nil {
-			blkHash, _ = blk.Sha()
+			blkHash = blk.Sha()
 		}
 
 		rawTxn, err := createTxRawResult(s.server.chainParams,
@@ -2987,10 +2986,7 @@ func handleSubmitBlock(s *rpcServer, cmd interface{}, closeChan <-chan struct{})
 		return fmt.Sprintf("rejected: %s", err.Error()), nil
 	}
 
-	blockSha, err := block.Sha()
-	if err == nil {
-		rpcsLog.Infof("Accepted block %s via submitblock", blockSha)
-	}
+	rpcsLog.Infof("Accepted block %s via submitblock", block.Sha())
 	return nil, nil
 }
 

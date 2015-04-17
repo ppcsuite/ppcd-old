@@ -326,11 +326,7 @@ func checkProofOfWork(block *btcutil.Block, powLimit *big.Int, flags BehaviorFla
 	// to avoid proof of work checks is set.
 	if flags&BFNoPoWCheck != BFNoPoWCheck {
 		// The block hash must be less than the claimed target.
-		blockHash, err := block.Sha()
-		if err != nil {
-			return err
-		}
-		hashNum := ShaHashToBig(blockHash)
+		hashNum := ShaHashToBig(block.Sha())
 		if hashNum.Cmp(target) > 0 {
 			str := fmt.Sprintf("block hash of %v is higher than "+
 				"expected max of %v", hashNum, target)
@@ -1044,9 +1040,8 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block) er
 // This function is NOT safe for concurrent access.
 func (b *BlockChain) CheckConnectBlock(block *btcutil.Block) error {
 	prevNode := b.bestChain
-	blockSha, _ := block.Sha()
 	newNode := ppcNewBlockNode(
-		&block.MsgBlock().Header, blockSha, block.Height(), block.Meta())
+		&block.MsgBlock().Header, block.Sha(), block.Height(), block.Meta())
 	if prevNode != nil {
 		newNode.parent = prevNode
 		newNode.workSum.Add(prevNode.workSum, newNode.workSum)

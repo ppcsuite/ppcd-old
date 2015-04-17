@@ -40,7 +40,7 @@ func getStakeEntropyBit(b *BlockChain, block *btcutil.Block) (uint32, error) {
 	defer timeTrack(now(), fmt.Sprintf("getStakeEntropyBit(%v)", slice(block.Sha())[0]))
 
 	nEntropyBit := uint32(0)
-	hash, _ := block.Sha()
+	hash := block.Sha()
 
 	if isProtocolV04(b, int64(block.MsgBlock().Header.Timestamp.Unix())) {
 

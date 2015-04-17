@@ -374,11 +374,7 @@ func (db *LevelDb) InsertBlock(block *btcutil.Block) (height int64, rerr error) 
 		}
 	}()
 
-	blocksha, err := block.Sha()
-	if err != nil {
-		log.Warnf("Failed to compute block sha %v", blocksha)
-		return 0, err
-	}
+	blocksha := block.Sha()
 
 	defer btcutil.TimeTrack(log, btcutil.Now(), fmt.Sprintf("InsertBlock(%v)", blocksha))
 
