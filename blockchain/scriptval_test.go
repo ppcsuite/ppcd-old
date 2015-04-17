@@ -9,8 +9,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/ppcsuite/ppcd/txscript"
 	"github.com/ppcsuite/ppcd/blockchain"
+	"github.com/ppcsuite/ppcd/txscript"
 )
 
 // TestCheckBlockScripts ensures that validating the all of the scripts in a
