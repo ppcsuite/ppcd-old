@@ -100,6 +100,26 @@ func ppcHandleGetNextRequiredTarget(s *rpcServer, cmd interface{}, closeChan <-c
 	return ksmReply, nil
 }
 
+// ppcHandleGetLastProofOfWorkReward implements the getLastProofOfWorkReward command.
+func ppcHandleGetLastProofOfWorkReward(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	//c := cmd.(*btcjson.GetLastProofOfWorkRewardCmd)
+	reward, err := s.server.blockManager.PPCGetLastProofOfWorkReward()
+	if err != nil {
+		context := "Error getting last proof of work reward"
+		return nil, internalRPCError(err.Error(), context)
+	}
+
+	// When the verbose flag isn't set, simply return a string.
+	//return strconv.FormatInt(int64(reward), 10), nil
+
+	// The verbose flag is set, so generate the JSON object and return it.
+	lpowrReply := btcjson.LastProofOfWorkRewardResult{
+		Subsidy: btcjson.BlockReward(reward),
+	}
+
+	return lpowrReply, nil
+}
+
 // ppcCalcNextReqDifficultyResponse is a response sent to the reply channel of a
 // ppcCalcNextReqDifficultyMsg query.
 type ppcCalcNextReqDifficultyResponse struct {
@@ -141,9 +161,29 @@ type getKernelStakeModifierMsg struct {
 
 // GetKernelStakeModifier TODO(mably)
 func (b *blockManager) GetKernelStakeModifier(hash *wire.ShaHash) (uint64, error) {
-
 	reply := make(chan getKernelStakeModifierResponse, 1)
 	b.msgChan <- getKernelStakeModifierMsg{hash: hash, timeSource: b.server.timeSource, reply: reply}
 	response := <-reply
 	return response.StakeModifier, response.err
+}
+
+// ppcGetLastProofOfWorkRewardResponse is a response sent to the reply channel of a
+// ppcGetLastProofOfWorkRewardMsg query.
+type ppcGetLastProofOfWorkRewardResponse struct {
+	subsidy int64
+	err     error
+}
+
+// ppcGetLastProofOfWorkRewardMsg is a message type to be sent across the message
+// channel for requesting the last proof of work reward.
+type ppcGetLastProofOfWorkRewardMsg struct {
+	reply chan ppcGetLastProofOfWorkRewardResponse
+}
+
+// PPCGetLastProofOfWorkReward calculates the last proof of work reward.
+func (b *blockManager) PPCGetLastProofOfWorkReward() (int64, error) {
+	reply := make(chan ppcGetLastProofOfWorkRewardResponse, 1)
+	b.msgChan <- ppcGetLastProofOfWorkRewardMsg{reply: reply}
+	response := <-reply
+	return response.subsidy, response.err
 }

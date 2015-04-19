@@ -106,6 +106,40 @@ type NextRequiredTargetResult struct {
 	Target RequiredTarget `json:"target"`
 }
 
+// GetLastProofOfWorkRewardCmd is a type handling custom marshaling and
+// unmarshaling of getLastProofOfWorkReward JSON RPC commands.
+type GetLastProofOfWorkRewardCmd struct {
+}
+
+// NewGetNextRequiredTargetCmd creates a new GetNextRequiredTargetCmd.
+func NewGetLastProofOfWorkRewardCmd() *GetLastProofOfWorkRewardCmd {
+	return &GetLastProofOfWorkRewardCmd{}
+}
+
+// StakeModifier specific type with custom marshalling
+type BlockReward int64
+
+// MarshalJSON provides a custom Marshal method for BlockReward.
+func (v BlockReward) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf("\"%d\"", int64(v))), nil
+}
+
+// UnmarshalJSON provides a custom Unmarshal method for BlockReward.
+func (v *BlockReward) UnmarshalJSON(b []byte) (err error) {
+	var s string
+	json.Unmarshal(b, &s)
+	var u int64
+	u, err = strconv.ParseInt(s, 0, 64)
+	*v = BlockReward(u)
+	return
+}
+
+// LastProofOfWorkRewardResult models the data from the getlastproofofworkreward
+// command.
+type LastProofOfWorkRewardResult struct {
+	Subsidy BlockReward `json:"subsidy"`
+}
+
 // FindStakeCmd is a type handling custom marshaling and
 // unmarshaling of FindStake JSON RPC commands.
 type FindStakeCmd struct {
@@ -137,6 +171,7 @@ func init() {
 
 	MustRegisterCmd("getkernelstakemodifier", (*GetKernelStakeModifierCmd)(nil), flags)
 	MustRegisterCmd("getnextrequiredtarget", (*GetNextRequiredTargetCmd)(nil), flags)
+	MustRegisterCmd("getlastproofofworkreward", (*GetLastProofOfWorkRewardCmd)(nil), flags)
 
 	MustRegisterCmd("findstake", (*FindStakeCmd)(nil), UFWalletOnly)
 }

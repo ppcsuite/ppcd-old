@@ -10,6 +10,9 @@ import (
 	"math/big"
 )
 
+// Obsolete: maximum size for mined blocks
+const MaxBlockPayloadGen = MaxBlockPayload / 2
+
 var ZeroSha = ShaHash{}
 
 type Meta struct {

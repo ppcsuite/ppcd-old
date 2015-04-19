@@ -167,8 +167,9 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"verifychain":           handleVerifyChain,
 	"verifymessage":         handleVerifyMessage,
 
-	"getkernelstakemodifier": ppcHandleGetKernelStakeModifier, // ppc:
-	"getnextrequiredtarget":  ppcHandleGetNextRequiredTarget,  // ppc:
+	"getkernelstakemodifier":   ppcHandleGetKernelStakeModifier,   // ppc:
+	"getnextrequiredtarget":    ppcHandleGetNextRequiredTarget,    // ppc:
+	"getlastproofofworkreward": ppcHandleGetLastProofOfWorkReward, // ppc:
 }
 
 // list of commands that we recognise, but for which btcd has no support because

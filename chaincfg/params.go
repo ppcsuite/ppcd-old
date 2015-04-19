@@ -106,7 +106,7 @@ type Params struct {
 	// address generation.
 	HDCoinType uint32
 
-	// Peercoin
+	// ppc: peercoin specific parameters
 	StakeMinAge int64
 	// CoinbaseMaturity is the number of blocks required before newly
 	// mined bitcoins (coinbase transactions) can be spent.

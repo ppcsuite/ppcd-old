@@ -104,16 +104,16 @@ func (b *BlockChain) getLastStakeModifier(pindex *blockNode) (
 }
 
 // Get selection interval section (in seconds)
-func getStakeModifierSelectionIntervalSection(b *BlockChain, nSection int) int64 {
+func getStakeModifierSelectionIntervalSection(params *chaincfg.Params, nSection int) int64 {
 	//assert (nSection >= 0 && nSection < 64)
-	return (b.chainParams.ModifierInterval * 63 / (63 + ((63 - int64(nSection)) * (nModifierIntervalRatio - 1))))
+	return (params.ModifierInterval * 63 / (63 + ((63 - int64(nSection)) * (nModifierIntervalRatio - 1))))
 }
 
 // Get stake modifier selection interval (in seconds)
-func getStakeModifierSelectionInterval(b *BlockChain) int64 {
+func getStakeModifierSelectionInterval(params *chaincfg.Params) int64 {
 	nSelectionInterval := int64(0)
 	for nSection := 0; nSection < 64; nSection++ {
-		nSelectionInterval += getStakeModifierSelectionIntervalSection(b, nSection)
+		nSelectionInterval += getStakeModifierSelectionIntervalSection(params, nSection)
 	}
 	return nSelectionInterval
 }
@@ -268,7 +268,7 @@ func (b *BlockChain) computeNextStakeModifier(pindexCurrent *btcutil.Block) (
 	//vSortedByTimestamp := make([]blockTimeHash, 0)
 	var vSortedByTimestamp []blockTimeHash // golint suggestion
 	//vSortedByTimestamp.reserve(64 * nModifierInterval / STAKE_TARGET_SPACING)
-	nSelectionInterval := getStakeModifierSelectionInterval(b)
+	nSelectionInterval := getStakeModifierSelectionInterval(b.chainParams)
 	nSelectionIntervalStart := (pindexPrev.timestamp.Unix()/b.chainParams.ModifierInterval)*b.chainParams.ModifierInterval - nSelectionInterval
 	log.Debugf("computeNextStakeModifier: nSelectionInterval = %d, nSelectionIntervalStart = %s[%d]", nSelectionInterval, dateTimeStrFormat(nSelectionIntervalStart), nSelectionIntervalStart)
 	pindex := pindexPrev
@@ -289,7 +289,7 @@ func (b *BlockChain) computeNextStakeModifier(pindexCurrent *btcutil.Block) (
 	mapSelectedBlocks := make(map[*wire.ShaHash]*blockNode)
 	for nRound := 0; nRound < minInt(64, len(vSortedByTimestamp)); nRound++ {
 		// add an interval section to the current selection round
-		nSelectionIntervalStop += getStakeModifierSelectionIntervalSection(b, nRound)
+		nSelectionIntervalStop += getStakeModifierSelectionIntervalSection(b.chainParams, nRound)
 		// select a block from the candidates of current round
 		pindex, errSelBlk := selectBlockFromCandidates(b, vSortedByTimestamp,
 			mapSelectedBlocks, nSelectionIntervalStop, nStakeModifier)
@@ -422,7 +422,7 @@ func (b *BlockChain) getKernelStakeModifier(
 	nStakeModifierHeight = int32(blockFromHeight)
 	blockFromTimestamp := blockFrom.Timestamp.Unix()
 	nStakeModifierTime = blockFromTimestamp
-	nStakeModifierSelectionInterval := getStakeModifierSelectionInterval(b)
+	nStakeModifierSelectionInterval := getStakeModifierSelectionInterval(b.chainParams)
 	block := blockFrom
 	blockHeight := blockFromHeight
 	meta := metaFrom

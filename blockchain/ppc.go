@@ -322,12 +322,12 @@ func (b *BlockChain) getCoinAgeTx(tx *btcutil.Tx, txStore TxStore) (uint64, erro
 			new(big.Int).Div(new(big.Int).Mul(big.NewInt(nValueIn), big.NewInt((nTime-txPrevTime))),
 				big.NewInt(Cent)))
 
-		log.Debugf("coin age nValueIn=%v nTimeDiff=%v bnCentSecond=%v\n", nValueIn, nTime-txPrevTime, bnCentSecond)
+		log.Debugf("coin age nValueIn=%v nTimeDiff=%v bnCentSecond=%v", nValueIn, nTime-txPrevTime, bnCentSecond.String())
 	}
 
 	bnCoinDay := new(big.Int).Div(new(big.Int).Mul(bnCentSecond, big.NewInt(Cent)),
 		big.NewInt(int64(Coin)*24*60*60))
-	log.Debugf("coin age bnCoinDay=%v\n", bnCoinDay)
+	log.Debugf("coin age bnCoinDay=%v", bnCoinDay.String())
 
 	return bnCoinDay.Uint64(), nil
 }
@@ -358,6 +358,15 @@ func (b *BlockChain) getCoinAgeBlock(node *blockNode, block *btcutil.Block) (uin
 	log.Debugf("block coin age total nCoinDays=%v", nCoinAge)
 
 	return nCoinAge, nil
+}
+
+// PPCGetProofOfStakeReward
+// Export requited, used my ppcwallet createCoinStake method
+func PPCGetProofOfStakeReward(nCoinAge int64) btcutil.Amount {
+	nRewardCoinYear := Cent // creation amount per coin-year
+	nSubsidy := nCoinAge * 33 / (365*33 + 8) * nRewardCoinYear
+	log.Debugf("getProofOfStakeReward(): create=%v nCoinAge=%v", nSubsidy, nCoinAge)
+	return btcutil.Amount(nSubsidy)
 }
 
 // ppc: miner's coin stake is rewarded based on coin age spent (coin-days)
@@ -472,6 +481,13 @@ func bigToShaHash(value *big.Int) (*wire.ShaHash, error) {
 	return wire.NewShaHash(pbuf)
 }
 
+// PPCGetLastProofOfWorkReward
+// Export required, used in ppcwallet CreateCoinStake method
+func (b *BlockChain) PPCGetLastProofOfWorkReward() (subsidy int64) {
+	lastPOWNode := b.getLastBlockIndex(b.bestChain, false)
+	return ppcGetProofOfWorkReward(lastPOWNode.bits, b.chainParams)
+}
+
 // ppcGetProofOfWorkReward is Peercoin's validate.go:CalcBlockSubsidy(...)
 // counterpart.
 // https://github.com/ppcoin/ppcoin/blob/v0.4.0ppc/src/main.cpp#L829
@@ -510,8 +526,18 @@ func ppcGetProofOfWorkReward(nBits uint32, netParams *chaincfg.Params) (subsidy 
 	return
 }
 
+// GetMinFee calculates minimum required required for transaction.
+// Export required, used in ppcwallet createCoinStake method
+func GetMinFee(tx *wire.MsgTx) int64 {
+	baseFee := MinTxFee
+	bytes := tx.SerializeSize()
+	minFee := (1 + int64(bytes)/1000) * baseFee
+	return minFee
+}
+
 // getMinFee calculates minimum required required for transaction.
 // https://github.com/ppcoin/ppcoin/blob/v0.4.0ppc/src/main.h#L592
+// Export required, used in ppcwallet createCoinStake method
 func getMinFee(tx *btcutil.Tx) int64 {
 	baseFee := MinTxFee
 	bytes := tx.MsgTx().SerializeSize()

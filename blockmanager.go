@@ -1142,6 +1142,13 @@ out:
 					err:        err,
 				}
 
+			case ppcGetLastProofOfWorkRewardMsg: // ppc:
+				subsidy := b.blockChain.PPCGetLastProofOfWorkReward()
+				msg.reply <- ppcGetLastProofOfWorkRewardResponse{
+					subsidy: subsidy,
+					err:     nil,
+				}
+
 			case processBlockMsg:
 				isOrphan, err := b.blockChain.ProcessBlock(
 					msg.block, b.server.timeSource,
