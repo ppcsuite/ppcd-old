@@ -1,8 +1,8 @@
 btcjson
 =======
 
-[![Build Status](https://travis-ci.org/btcsuite/btcd.png?branch=master)]
-(https://travis-ci.org/btcsuite/btcd) [![ISC License]
+[![Build Status](https://travis-ci.org/ppcsuite/ppcd.png?branch=master)]
+(https://travis-ci.org/ppcsuite/ppcd) [![ISC License]
 (http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
 
 Package btcjson implements concrete types for marshalling to and from the
@@ -25,39 +25,39 @@ ints, etc) to higher-level types with many nice and useful properties.
 ## Documentation
 
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)]
-(http://godoc.org/github.com/btcsuite/btcd/btcjson/v2/btcjson)
+(http://godoc.org/github.com/ppcsuite/ppcd/btcjson/v2/btcjson)
 
 Full `go doc` style documentation for the project can be viewed online without
 installing this package by using the GoDoc site
-[here](http://godoc.org/github.com/btcsuite/btcd/btcjson/v2/btcjson).
+[here](http://godoc.org/github.com/ppcsuite/ppcd/btcjson/v2/btcjson).
 
 You can also view the documentation locally once the package is installed with
 the `godoc` tool by running `godoc -http=":6060"` and pointing your browser to
-http://localhost:6060/pkg/github.com/btcsuite/btcd/btcjson/v2/btcjson
+http://localhost:6060/pkg/github.com/ppcsuite/ppcd/btcjson/v2/btcjson
 
 ## Installation
 
 ```bash
-$ go get github.com/btcsuite/btcd/btcjson/v2/btcjson
+$ go get github.com/ppcsuite/ppcd/btcjson/v2/btcjson
 ```
 
 ## Examples
 
 * [Marshal Command]
-  (http://godoc.org/github.com/btcsuite/btcd/btcjson/v2/btcjson#example-MarshalCmd)  
+  (http://godoc.org/github.com/ppcsuite/ppcd/btcjson/v2/btcjson#example-MarshalCmd)  
   Demonstrates how to create and marshal a command into a JSON-RPC request.
 
 * [Unmarshal Command]
-  (http://godoc.org/github.com/btcsuite/btcd/btcjson/v2/btcjson#example-UnmarshalCmd)  
+  (http://godoc.org/github.com/ppcsuite/ppcd/btcjson/v2/btcjson#example-UnmarshalCmd)  
   Demonstrates how to unmarshal a JSON-RPC request and then unmarshal the
   concrete request into a concrete command.
 
 * [Marshal Response]
-  (http://godoc.org/github.com/btcsuite/btcd/btcjson/v2/btcjson#example-MarshalResponse)  
+  (http://godoc.org/github.com/ppcsuite/ppcd/btcjson/v2/btcjson#example-MarshalResponse)  
   Demonstrates how to marshal a JSON-RPC response.
 
 * [Unmarshal Response]
-  (http://godoc.org/github.com/btcsuite/btcd/btcjson/v2/btcjson#example-package--UnmarshalResponse)  
+  (http://godoc.org/github.com/ppcsuite/ppcd/btcjson/v2/btcjson#example-package--UnmarshalResponse)  
   Demonstrates how to unmarshal a JSON-RPC response and then unmarshal the
   result field in the response to a concrete type.
 
