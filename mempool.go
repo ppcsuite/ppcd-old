@@ -1010,6 +1010,13 @@ func (mp *txMemPool) maybeAcceptTransaction(tx *btcutil.Tx, isNew, rateLimit boo
 		return nil, txRuleError(wire.RejectInvalid, str)
 	}
 
+	// ppc: A standalone transaction must not be a coinstake transaction.
+	if blockchain.IsCoinStake(tx) {
+		str := fmt.Sprintf("transaction %v is an individual coinstake",
+			txHash)
+		return nil, txRuleError(wire.RejectInvalid, str)
+	}
+
 	// Don't accept transactions with a lock time after the maximum int32
 	// value for now.  This is an artifact of older bitcoind clients which
 	// treated this field as an int32 and would treat anything larger

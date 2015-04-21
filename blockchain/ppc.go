@@ -243,7 +243,7 @@ func (b *BlockChain) calcMintAndMoneySupply(node *blockNode, block *btcutil.Bloc
 			}
 			nValueIn += nTxValueIn
 			nValueOut += nTxValueOut
-			if !isCoinStake(tx) {
+			if !IsCoinStake(tx) {
 				nFees += nTxValueIn - nTxValueOut
 			}
 		}
@@ -377,9 +377,10 @@ func getProofOfStakeReward(nCoinAge int64) int64 {
 	return nSubsidy
 }
 
-// isCoinStake determines whether or not a transaction is a coinstake.  A coinstake
+// IsCoinStake determines whether or not a transaction is a coinstake.  A coinstake
 // is a special transaction created by peercoin minters.
-func isCoinStake(tx *btcutil.Tx) bool {
+// Export required as it is used in mempool.go
+func IsCoinStake(tx *btcutil.Tx) bool {
 	return tx.MsgTx().IsCoinStake()
 }
 
@@ -587,7 +588,7 @@ func ppcCheckTransactionSanity(tx *btcutil.Tx) error {
 		// https://github.com/ppcoin/ppcoin/blob/v0.4.0ppc/src/main.cpp#L461
 		// if (txout.IsEmpty() && (!IsCoinBase()) && (!IsCoinStake()))
 		// 	return DoS(100, error("CTransaction::CheckTransaction() : txout empty for user transaction"));
-		if txOut.IsEmpty() && (!IsCoinBase(tx)) && (!isCoinStake(tx)) {
+		if txOut.IsEmpty() && (!IsCoinBase(tx)) && (!IsCoinStake(tx)) {
 			str := "transaction output empty for user transaction"
 			return ruleError(ErrEmptyTxOut, str)
 		}
@@ -621,7 +622,7 @@ func ppcCheckTransactionInputs(tx *btcutil.Tx, txStore TxStore, blockChain *Bloc
 	// if (nStakeReward > getProofOfStakeReward(nCoinAge) - GetMinFee() + MIN_TX_FEE)
 	// 	return DoS(100, error("ConnectInputs() : %s stake reward exceeded", GetHash().ToString().substr(0,10).c_str()));
 	// }
-	if isCoinStake(tx) {
+	if IsCoinStake(tx) {
 		coinAge, err := blockChain.getCoinAgeTx(tx, txStore)
 		if err != nil {
 			return fmt.Errorf("unable to get coin age for coinstake: %v", err)

@@ -806,7 +806,7 @@ func CheckTransactionInputs(tx *btcutil.Tx, txHeight int64, txStore TxStore,
 	}
 
 	// Ensure the user transaction does not spend more than its inputs.
-	if (!isCoinStake(tx)) && totalSatoshiIn < totalSatoshiOut {
+	if (!IsCoinStake(tx)) && totalSatoshiIn < totalSatoshiOut {
 		str := fmt.Sprintf("total value of all transaction inputs for "+
 			"transaction %v is %v which is less than the amount "+
 			"spent of %v", txHash, totalSatoshiIn, totalSatoshiOut)
@@ -825,7 +825,7 @@ func CheckTransactionInputs(tx *btcutil.Tx, txHeight int64, txStore TxStore,
 	// the inputs are >= the outputs.
 	txFeeInSatoshi := totalSatoshiIn - totalSatoshiOut
 	// TODO(kac-) how to handle it properly?
-	if isCoinStake(tx) {
+	if IsCoinStake(tx) {
 		if txFeeInSatoshi < 0 {
 			return 0, nil
 		}
