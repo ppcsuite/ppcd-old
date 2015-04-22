@@ -33,7 +33,9 @@ var mainNetParams = params{
 	dnsSeeds: []string{
 		"seed.ppcoin.net",
 		"seedppc.ppcoin.net",
+		"ppcseed.ns.7server.net",
 		"dnsseed.ppc.altcointech.net",
+		"seed.diandianbi.org",
 	},
 }
 
