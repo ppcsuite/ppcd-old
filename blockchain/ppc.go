@@ -379,9 +379,16 @@ func getProofOfStakeReward(nCoinAge int64) int64 {
 
 // IsCoinStake determines whether or not a transaction is a coinstake.  A coinstake
 // is a special transaction created by peercoin minters.
+// Export required as it is used in ppcwallet
+func IsCoinStakeTx(tx *wire.MsgTx) bool {
+	return tx.IsCoinStake()
+}
+
+// IsCoinStake determines whether or not a transaction is a coinstake.  A coinstake
+// is a special transaction created by peercoin minters.
 // Export required as it is used in mempool.go
 func IsCoinStake(tx *btcutil.Tx) bool {
-	return tx.MsgTx().IsCoinStake()
+	return IsCoinStakeTx(tx.MsgTx())
 }
 
 // ppcNewBlockNode returns a new block node for the given block header.  It is
