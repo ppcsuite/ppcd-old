@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2015 Conformal Systems LLC.
+// Copyright (c) 2013-2015 The btcsuite developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -59,24 +59,6 @@ const (
 	// ScriptVerifyStrictEncoding defines that signature scripts and
 	// public keys must follow the strict encoding requirements.
 	ScriptVerifyStrictEncoding
-
-	// StandardVerifyFlags are the script flags which are used when
-	// executing transaction scripts to enforce additional checks which
-	// are required for the script to be considered standard.  These checks
-	// help reduce issues related to transaction malleability as well as
-	// allow pay-to-script hash transactions.  Note these flags are
-	// different than what is required for the consensus rules in that they
-	// are more strict.
-	//
-	// TODO: This definition does not belong here.  It belongs in a policy
-	// package.
-	StandardVerifyFlags = ScriptBip16 |
-		ScriptVerifyDERSignatures |
-		ScriptVerifyStrictEncoding |
-		ScriptVerifyMinimalData |
-		ScriptStrictMultiSig |
-		ScriptDiscourageUpgradableNops |
-		ScriptVerifyCleanStack
 )
 
 const (
@@ -548,7 +530,7 @@ func getStack(stack *stack) [][]byte {
 	array := make([][]byte, stack.Depth())
 	for i := range array {
 		// PeekByteArry can't fail due to overflow, already checked
-		array[len(array)-i-1], _ = stack.PeekByteArray(i)
+		array[len(array)-i-1], _ = stack.PeekByteArray(int32(i))
 	}
 	return array
 }

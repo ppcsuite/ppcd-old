@@ -1,4 +1,4 @@
-// Copyright (c) 2014 Conformal Systems LLC.
+// Copyright (c) 2014 The btcsuite developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -182,7 +182,8 @@ func mergeTxStore(txStoreA blockchain.TxStore, txStoreB blockchain.TxStore) {
 // the extra nonce as well as additional coinbase flags.
 func standardCoinbaseScript(nextBlockHeight int64, extraNonce uint64) ([]byte, error) {
 	return txscript.NewScriptBuilder().AddInt64(nextBlockHeight).
-		AddUint64(extraNonce).AddData([]byte(coinbaseFlags)).Script()
+		AddInt64(int64(extraNonce)).AddData([]byte(coinbaseFlags)).
+		Script()
 }
 
 // createCoinbaseTx returns a coinbase transaction paying an appropriate subsidy
