@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"github.com/ppcsuite/ppcd/blockchain"
-	"github.com/ppcsuite/ppcd/btcjson/v2/btcjson"
+	"github.com/ppcsuite/ppcd/btcjson"
 	"github.com/ppcsuite/ppcd/database"
 	"github.com/ppcsuite/ppcd/wire"
 )

@@ -32,7 +32,6 @@ import (
 	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/blockchain"
 	"github.com/ppcsuite/ppcd/btcec"
-	"github.com/ppcsuite/ppcd/btcjson/btcws"
 	"github.com/ppcsuite/ppcd/btcjson"
 	"github.com/ppcsuite/ppcd/chaincfg"
 	"github.com/ppcsuite/ppcd/database"
