@@ -10,7 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/ppcsuite/ppcd/btcjson/v2/btcjson"
+	"github.com/ppcsuite/ppcd/btcjson"
 )
 
 // helpDescsEnUS defines the English descriptions used for the help strings.

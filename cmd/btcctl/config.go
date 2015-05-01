@@ -13,7 +13,7 @@ import (
 
 	flags "github.com/btcsuite/go-flags"
 	"github.com/ppcsuite/btcutil"
-	"github.com/ppcsuite/ppcd/btcjson/v2/btcjson"
+	"github.com/ppcsuite/ppcd/btcjson"
 )
 
 const (
