@@ -10,6 +10,18 @@ import (
 	"strconv"
 )
 
+func init() {
+	// No special flags for commands in this file.
+	flags := UsageFlag(0)
+
+	MustRegisterCmd("getkernelstakemodifier", (*GetKernelStakeModifierCmd)(nil), flags)
+	MustRegisterCmd("getnextrequiredtarget", (*GetNextRequiredTargetCmd)(nil), flags)
+	MustRegisterCmd("getlastproofofworkreward", (*GetLastProofOfWorkRewardCmd)(nil), flags)
+	MustRegisterCmd("sendcoinstaketransaction", (*SendCoinStakeTransactionCmd)(nil), flags)
+
+	MustRegisterCmd("findstake", (*FindStakeCmd)(nil), UFWalletOnly)
+}
+
 // FloatAmount specific type with custom marshalling
 type FloatAmount float64
 
@@ -165,13 +177,22 @@ type FindStakeResult struct {
 	Time       int64   `json:"time"`
 }
 
-func init() {
-	// No special flags for commands in this file.
-	flags := UsageFlag(0)
+// SendCoinStakeTransactionCmd defines the sendcoinstaketransaction JSON-RPC command.
+type SendCoinStakeTransactionCmd struct {
+	HexTx string
+}
 
-	MustRegisterCmd("getkernelstakemodifier", (*GetKernelStakeModifierCmd)(nil), flags)
-	MustRegisterCmd("getnextrequiredtarget", (*GetNextRequiredTargetCmd)(nil), flags)
-	MustRegisterCmd("getlastproofofworkreward", (*GetLastProofOfWorkRewardCmd)(nil), flags)
+// NewSendCoinStakeTransactionCmd returns a new instance which can be used to
+// issue a sendcoinstaketransaction JSON-RPC command.
+//
+// The parameters which are pointers indicate they are optional.  Passing nil
+// for optional parameters will use the default value.
+func NewSendCoinStakeTransactionCmd(hexTx string) *SendCoinStakeTransactionCmd {
+	return &SendCoinStakeTransactionCmd{
+		HexTx: hexTx,
+	}
+}
 
-	MustRegisterCmd("findstake", (*FindStakeCmd)(nil), UFWalletOnly)
+// SendCoinStakeTransactionResult models the data of sendcoinstaketransaction command.
+type SendCoinStakeTransactionResult struct {
 }

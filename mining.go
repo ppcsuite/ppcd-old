@@ -366,7 +366,7 @@ func medianAdjustedTime(chainState *chainState, timeSource blockchain.MedianTime
 //  |  transactions (while block size   |   |
 //  |  <= cfg.BlockMinSize)             |   |
 //   -----------------------------------  --
-func NewBlockTemplate(mempool *txMemPool, payToAddress btcutil.Address) (*BlockTemplate, error) {
+func NewBlockTemplate(mempool *txMemPool, payToAddress btcutil.Address, coinStakeTx *btcutil.Tx) (*BlockTemplate, error) {
 	blockManager := mempool.server.blockManager
 	timeSource := mempool.server.timeSource
 	chainState := &blockManager.chainState
@@ -416,6 +416,11 @@ func NewBlockTemplate(mempool *txMemPool, payToAddress btcutil.Address) (*BlockT
 	blockTxns = append(blockTxns, coinbaseTx)
 	blockTxStore := make(blockchain.TxStore)
 
+	// ppc:
+	if coinStakeTx != nil {
+		blockTxns = append(blockTxns, coinStakeTx)
+	}
+
 	// dependers is used to track transactions which depend on another
 	// transaction in the memory pool.  This, in conjunction with the
 	// dependsOn map kept with each dependent transaction helps quickly
@@ -442,8 +447,8 @@ mempoolLoop:
 		// A block can't have more than one coinbase or contain
 		// non-finalized transactions.
 		tx := txDesc.Tx
-		if blockchain.IsCoinBase(tx) {
-			minrLog.Tracef("Skipping coinbase tx %s", tx.Sha())
+		if blockchain.IsCoinBase(tx) || blockchain.IsCoinStake(tx) { // ppc:
+			minrLog.Tracef("Skipping coinbase/coinstake tx %s", tx.Sha())
 			continue
 		}
 		if !blockchain.IsFinalizedTransaction(tx, nextBlockHeight,
@@ -602,6 +607,12 @@ mempoolLoop:
 			continue
 		}
 
+		// ppc: timestamp limit
+		if tx.MsgTx().Time.After(timeSource.AdjustedTime()) ||
+			(coinStakeTx != nil && tx.MsgTx().Time.After(coinStakeTx.MsgTx().Time)) {
+			continue
+		}
+
 		// Skip free transactions once the block is larger than the
 		// minimum block size.
 		if sortedByFee && prioItem.feePerKB < minTxRelayFee &&
@@ -643,6 +654,12 @@ mempoolLoop:
 				heap.Push(priorityQueue, prioItem)
 				continue
 			}
+		}
+
+		// ppc: simplify transaction fee - allow free = false
+		nMinFee := blockchain.GetMinFee(tx.MsgTx()) // ppc: TODO(mably)
+		if prioItem.fee < nMinFee {
+			continue
 		}
 
 		// Ensure the transaction inputs pass all of the necessary
@@ -711,13 +728,30 @@ mempoolLoop:
 	// Calculate the required difficulty for the block.  The timestamp
 	// is potentially adjusted to ensure it comes after the median time of
 	// the last several blocks per the chain consensus rules.
-	ts, err := medianAdjustedTime(chainState, timeSource)
+	var ts time.Time
+	if coinStakeTx == nil {
+		ts, err = medianAdjustedTime(chainState, timeSource)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		ts = coinStakeTx.MsgTx().Time // ppc:
+	}
+	requiredDifficulty, err :=
+		blockManager.PPCCalcNextRequiredDifficulty(coinStakeTx != nil) // ppc:
 	if err != nil {
 		return nil, err
 	}
-	requiredDifficulty, err := blockManager.CalcNextRequiredDifficulty(ts)
-	if err != nil {
-		return nil, err
+
+	// ppc:
+	if coinStakeTx == nil {
+		coinbaseTx.MsgTx().TxOut[0].Value =
+			blockchain.PPCGetProofOfWorkReward(
+				requiredDifficulty, mempool.server.chainParams)
+	} else {
+		coinbaseTx.MsgTx().Time = coinStakeTx.MsgTx().Time
+		coinbaseTx.MsgTx().TxOut[0].Value = int64(0)
+		coinbaseTx.MsgTx().TxOut[0].PkScript = nil
 	}
 
 	// Create a new block ready to be solved.
@@ -778,7 +812,7 @@ func UpdateBlockTime(msgBlock *wire.MsgBlock, bManager *blockManager) error {
 
 	// If running on a network that requires recalculating the difficulty,
 	// do so now.
-	if activeNetParams.ResetMinDifficulty {
+	if bManager.server.chainParams.ResetMinDifficulty {
 		difficulty, err := bManager.CalcNextRequiredDifficulty(newTimestamp)
 		if err != nil {
 			return err

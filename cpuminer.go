@@ -300,7 +300,7 @@ out:
 		// Create a new block template using the available transactions
 		// in the memory pool as a source of transactions to potentially
 		// include in the block.
-		template, err := NewBlockTemplate(m.server.txMemPool, payToAddr)
+		template, err := NewBlockTemplate(m.server.txMemPool, payToAddr, nil) // ppc:
 		m.submitBlockLock.Unlock()
 		if err != nil {
 			errStr := fmt.Sprintf("Failed to create new block "+

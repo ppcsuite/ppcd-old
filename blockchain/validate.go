@@ -967,7 +967,7 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block) er
 		for _, txOut := range transactions[0].MsgTx().TxOut {
 			totalSatoshiOut += txOut.Value
 		}
-		expectedSatoshiOut := ppcGetProofOfWorkReward(node.bits, b.chainParams)
+		expectedSatoshiOut := PPCGetProofOfWorkReward(node.bits, b.chainParams)
 		if totalSatoshiOut > expectedSatoshiOut {
 			str := fmt.Sprintf("coinbase transaction for block pays %v "+
 				"which is more than expected value of %v",

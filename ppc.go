@@ -5,8 +5,12 @@
 package main
 
 import (
+	"bytes"
+	"encoding/hex"
+	"fmt"
 	"strconv"
 
+	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/blockchain"
 	"github.com/ppcsuite/ppcd/btcjson"
 	"github.com/ppcsuite/ppcd/database"
@@ -186,4 +190,66 @@ func (b *blockManager) PPCGetLastProofOfWorkReward() (int64, error) {
 	b.msgChan <- ppcGetLastProofOfWorkRewardMsg{reply: reply}
 	response := <-reply
 	return response.subsidy, response.err
+}
+
+// ppcHandleSendCoinStakeTransaction implements the sendCoinStakeTransaction command.
+func ppcHandleSendCoinStakeTransaction(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	c := cmd.(*btcjson.SendCoinStakeTransactionCmd)
+	hexStr := c.HexTx
+	if len(hexStr)%2 != 0 {
+		hexStr = "0" + hexStr
+	}
+	serializedTx, err := hex.DecodeString(hexStr)
+	if err != nil {
+		return nil, rpcDecodeHexError(hexStr)
+	}
+	msgtx := wire.NewMsgTx()
+	err = msgtx.Deserialize(bytes.NewReader(serializedTx))
+	if err != nil {
+		return nil, &btcjson.RPCError{
+			Code:    btcjson.ErrRPCDeserialization,
+			Message: "TX decode failed: " + err.Error(),
+		}
+	}
+
+	s.server.cpuMiner.MintBlock(msgtx)
+
+	scstrReply := btcjson.SendCoinStakeTransactionResult{}
+
+	return scstrReply, nil
+}
+
+// MintBlock
+func (m *CPUMiner) MintBlock(coinStakeTx *wire.MsgTx) bool {
+
+	minrLog.Infof("Minting block, coinstaketx = %v", coinStakeTx.TxSha().String())
+
+	// No point in searching for a solution before the chain is
+	// synced.  Also, grab the same lock as used for block
+	// submission, since the current block will be changing and
+	// this would otherwise end up building a new block template on
+	// a block that is in the process of becoming stale.
+	m.submitBlockLock.Lock()
+	_, curHeight := m.server.blockManager.chainState.Best()
+	if curHeight != 0 && !m.server.blockManager.IsCurrent() {
+		m.submitBlockLock.Unlock()
+		return false
+	}
+
+	// Create a new block template using the available transactions
+	// in the memory pool as a source of transactions to potentially
+	// include in the block.
+	template, err := NewBlockTemplate(
+		m.server.txMemPool, nil, btcutil.NewTx(coinStakeTx))
+	m.submitBlockLock.Unlock()
+	if err != nil {
+		errStr := fmt.Sprintf("Failed to create new block "+
+			"template: %v", err)
+		minrLog.Errorf(errStr)
+		return false
+	}
+
+	block := btcutil.NewBlock(template.block)
+
+	return m.submitBlock(block)
 }

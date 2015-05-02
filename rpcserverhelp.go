@@ -506,6 +506,8 @@ var helpDescsEnUS = map[string]string{
 	"kernelstakemodifierresult-hash":                "TODO(mably)",
 	"kernelstakemodifierresult-kernelstakemodifier": "TODO(mably)",
 	"nextrequiredtargetresult-target":               "TODO(mably)",
+	"getlastproofofworkreward--synopsis":            "TODO(mably)",
+	"sendcoinstaketransactioncmd-hextx":             "TODO(mably)",
 }
 
 // rpcResultTypes specifies the result types that each RPC command can return.
@@ -558,8 +560,10 @@ var rpcResultTypes = map[string][]interface{}{
 	"rescan":                nil,
 
 	// ppc:
-	"getkernelstakemodifier": []interface{}{(*btcjson.KernelStakeModifierResult)(nil)},
-	"getnextrequiredtarget":  []interface{}{(*btcjson.NextRequiredTargetResult)(nil)},
+	"getkernelstakemodifier":   []interface{}{(*btcjson.KernelStakeModifierResult)(nil)},
+	"getnextrequiredtarget":    []interface{}{(*btcjson.NextRequiredTargetResult)(nil)},
+	"getlastproofofworkreward": []interface{}{(*btcjson.GetLastProofOfWorkRewardCmd)(nil)},
+	"sendcoinstaketransaction": []interface{}{(*btcjson.SendCoinStakeTransactionCmd)(nil)},
 }
 
 // helpCacher provides a concurrent safe type that provides help and usage for

@@ -44,20 +44,20 @@ $ go get github.com/ppcsuite/ppcd/btcjson
 ## Examples
 
 * [Marshal Command]
-  (http://godoc.org/github.com/btcsuite/btcd/btcjson#example-MarshalCmd)  
+  (http://godoc.org/github.com/ppcsuite/ppcd/btcjson#example-MarshalCmd)  
   Demonstrates how to create and marshal a command into a JSON-RPC request.
 
 * [Unmarshal Command]
-  (http://godoc.org/github.com/btcsuite/btcd/btcjson#example-UnmarshalCmd)  
+  (http://godoc.org/github.com/ppcsuite/ppcd/btcjson#example-UnmarshalCmd)  
   Demonstrates how to unmarshal a JSON-RPC request and then unmarshal the
   concrete request into a concrete command.
 
 * [Marshal Response]
-  (http://godoc.org/github.com/btcsuite/btcd/btcjson#example-MarshalResponse)  
+  (http://godoc.org/github.com/ppcsuite/ppcd/btcjson#example-MarshalResponse)  
   Demonstrates how to marshal a JSON-RPC response.
 
 * [Unmarshal Response]
-  (http://godoc.org/github.com/btcsuite/btcd/btcjson#example-package--UnmarshalResponse)  
+  (http://godoc.org/github.com/ppcsuite/ppcd/btcjson#example-package--UnmarshalResponse)  
   Demonstrates how to unmarshal a JSON-RPC response and then unmarshal the
   result field in the response to a concrete type.
 

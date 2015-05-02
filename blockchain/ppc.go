@@ -493,13 +493,14 @@ func bigToShaHash(value *big.Int) (*wire.ShaHash, error) {
 // Export required, used in ppcwallet CreateCoinStake method
 func (b *BlockChain) PPCGetLastProofOfWorkReward() (subsidy int64) {
 	lastPOWNode := b.getLastBlockIndex(b.bestChain, false)
-	return ppcGetProofOfWorkReward(lastPOWNode.bits, b.chainParams)
+	return PPCGetProofOfWorkReward(lastPOWNode.bits, b.chainParams)
 }
 
 // ppcGetProofOfWorkReward is Peercoin's validate.go:CalcBlockSubsidy(...)
 // counterpart.
 // https://github.com/ppcoin/ppcoin/blob/v0.4.0ppc/src/main.cpp#L829
-func ppcGetProofOfWorkReward(nBits uint32, netParams *chaincfg.Params) (subsidy int64) {
+// Export required, used in NewBlockTemplate method
+func PPCGetProofOfWorkReward(nBits uint32, netParams *chaincfg.Params) (subsidy int64) {
 	bigTwo := new(big.Int).SetInt64(2)
 	bnSubsidyLimit := new(big.Int).SetInt64(MaxMintProofOfWork)
 	bnTarget := CompactToBig(nBits)

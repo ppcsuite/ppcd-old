@@ -169,6 +169,7 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"getkernelstakemodifier":   ppcHandleGetKernelStakeModifier,   // ppc:
 	"getnextrequiredtarget":    ppcHandleGetNextRequiredTarget,    // ppc:
 	"getlastproofofworkreward": ppcHandleGetLastProofOfWorkReward, // ppc:
+	"sendcoinstaketransaction": ppcHandleSendCoinStakeTransaction, // ppc:
 }
 
 // list of commands that we recognise, but for which btcd has no support because
@@ -264,6 +265,9 @@ var rpcLimited = map[string]struct{}{
 	"submitblock":           struct{}{},
 	"validateaddress":       struct{}{},
 	"verifymessage":         struct{}{},
+
+	//ppc:
+	"sendcoinstaketransaction": struct{}{},
 }
 
 // builderScript is a convenience function which is used for hard-coded scripts
@@ -1246,7 +1250,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *rpcServer, useCoinbaseValue bo
 		// block template doesn't include the coinbase, so the caller
 		// will ultimately create their own coinbase which pays to the
 		// appropriate address(es).
-		blkTemplate, err := NewBlockTemplate(s.server.txMemPool, payAddr)
+		blkTemplate, err := NewBlockTemplate(s.server.txMemPool, payAddr, nil) // ppc:
 		if err != nil {
 			return internalRPCError("Failed to create new block "+
 				"template: "+err.Error(), "")
@@ -2392,7 +2396,7 @@ func handleGetWorkRequest(s *rpcServer) (interface{}, error) {
 		// Choose a payment address at random.
 		payToAddr := cfg.miningAddrs[rand.Intn(len(cfg.miningAddrs))]
 
-		template, err := NewBlockTemplate(s.server.txMemPool, payToAddr)
+		template, err := NewBlockTemplate(s.server.txMemPool, payToAddr, nil) // ppc:
 		if err != nil {
 			context := "Failed to create new block template"
 			return nil, internalRPCError(err.Error(), context)
