@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strconv"
+	"sync"
 
 	"github.com/ppcsuite/btcutil"
 	"github.com/ppcsuite/ppcd/blockchain"
@@ -16,6 +17,21 @@ import (
 	"github.com/ppcsuite/ppcd/database"
 	"github.com/ppcsuite/ppcd/wire"
 )
+
+// mintState houses state that is used in between multiple RPC invocations to
+// mintblock.
+type mintState struct {
+	sync.Mutex
+	blockInfo map[wire.ShaHash]*BlockTemplate
+}
+
+// newMintState returns a new instance of a mintState with all internal fields
+// initialized and ready to use.
+func newMintState() *mintState {
+	return &mintState{
+		blockInfo: make(map[wire.ShaHash]*BlockTemplate),
+	}
+}
 
 // getDifficultyRatio returns the latest PoW or PoS difficulty up to block sha.
 func ppcGetDifficultyRatio(db database.Db, sha *wire.ShaHash, proofOfStake bool) (float64, error) {
@@ -212,17 +228,54 @@ func ppcHandleSendCoinStakeTransaction(s *rpcServer, cmd interface{}, closeChan 
 		}
 	}
 
-	s.server.cpuMiner.MintBlock(msgtx)
+	blockTemplate := s.server.cpuMiner.BuildMintBlock(msgtx)
 
 	scstrReply := btcjson.SendCoinStakeTransactionResult{}
+
+	if blockTemplate != nil {
+
+		block := blockTemplate.block
+
+		// Protect concurrent access from multiple RPC invocations for mint
+		// requests and submission.
+		s.mintState.Lock()
+		defer s.mintState.Unlock()
+
+		s.mintState.blockInfo[msgtx.TxSha()] = blockTemplate
+
+		scstrReply.HexBlockSha = block.BlockSha().String()
+	}
 
 	return scstrReply, nil
 }
 
-// MintBlock
-func (m *CPUMiner) MintBlock(coinStakeTx *wire.MsgTx) bool {
+// ppcHandleSendMintBlockSignature implements the sendMintBlockSignature command.
+func ppcHandleSendMintBlockSignature(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	c := cmd.(*btcjson.SendMintBlockSignatureCmd)
 
-	minrLog.Infof("Minting block, coinstaketx = %v", coinStakeTx.TxSha().String())
+	s.mintState.Lock()
+	defer s.mintState.Unlock()
+
+	txSha, _ := wire.NewShaHashFromStr(c.HexTx)
+
+	if blockTemplate, ok := s.mintState.blockInfo[*txSha]; ok {
+
+		block := blockTemplate.block
+		block.Signature, _ = hex.DecodeString(c.HexSignature)
+
+		s.server.cpuMiner.SubmitMintBlock(block)
+
+	}
+
+	scstrReply := btcjson.SendMintBlockSignatureResult{}
+
+	return scstrReply, nil
+}
+
+// BuildMintBlock
+func (m *CPUMiner) BuildMintBlock(coinStakeTx *wire.MsgTx) *BlockTemplate {
+
+	minrLog.Infof("MintBlock: coinstaketx = %v", coinStakeTx.TxSha().String())
 
 	// No point in searching for a solution before the chain is
 	// synced.  Also, grab the same lock as used for block
@@ -233,7 +286,7 @@ func (m *CPUMiner) MintBlock(coinStakeTx *wire.MsgTx) bool {
 	_, curHeight := m.server.blockManager.chainState.Best()
 	if curHeight != 0 && !m.server.blockManager.IsCurrent() {
 		m.submitBlockLock.Unlock()
-		return false
+		return nil
 	}
 
 	// Create a new block template using the available transactions
@@ -246,10 +299,16 @@ func (m *CPUMiner) MintBlock(coinStakeTx *wire.MsgTx) bool {
 		errStr := fmt.Sprintf("Failed to create new block "+
 			"template: %v", err)
 		minrLog.Errorf(errStr)
-		return false
+		return nil
 	}
 
-	block := btcutil.NewBlock(template.block)
+	return template
+}
+
+// SubmitMintBlock
+func (m *CPUMiner) SubmitMintBlock(mintBlock *wire.MsgBlock) bool {
+
+	block := btcutil.NewBlock(mintBlock)
 
 	return m.submitBlock(block)
 }

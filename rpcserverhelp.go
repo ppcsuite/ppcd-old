@@ -564,6 +564,7 @@ var rpcResultTypes = map[string][]interface{}{
 	"getnextrequiredtarget":    []interface{}{(*btcjson.NextRequiredTargetResult)(nil)},
 	"getlastproofofworkreward": []interface{}{(*btcjson.GetLastProofOfWorkRewardCmd)(nil)},
 	"sendcoinstaketransaction": []interface{}{(*btcjson.SendCoinStakeTransactionCmd)(nil)},
+	"sendmintblocksignature":   []interface{}{(*btcjson.SendMintBlockSignatureCmd)(nil)},
 }
 
 // helpCacher provides a concurrent safe type that provides help and usage for

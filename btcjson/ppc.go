@@ -18,6 +18,7 @@ func init() {
 	MustRegisterCmd("getnextrequiredtarget", (*GetNextRequiredTargetCmd)(nil), flags)
 	MustRegisterCmd("getlastproofofworkreward", (*GetLastProofOfWorkRewardCmd)(nil), flags)
 	MustRegisterCmd("sendcoinstaketransaction", (*SendCoinStakeTransactionCmd)(nil), flags)
+	MustRegisterCmd("sendmintblocksignature", (*SendMintBlockSignatureCmd)(nil), flags)
 
 	MustRegisterCmd("findstake", (*FindStakeCmd)(nil), UFWalletOnly)
 }
@@ -195,4 +196,27 @@ func NewSendCoinStakeTransactionCmd(hexTx string) *SendCoinStakeTransactionCmd {
 
 // SendCoinStakeTransactionResult models the data of sendcoinstaketransaction command.
 type SendCoinStakeTransactionResult struct {
+	HexBlockSha string `json:"blocksha"`
+}
+
+// SendMintBlockSignatureCmd defines the sendMintBlockSignature JSON-RPC command.
+type SendMintBlockSignatureCmd struct {
+	HexTx        string
+	HexSignature string
+}
+
+// NewSendMintBlockSignatureCmd returns a new instance which can be used to
+// issue a sendmintblocksignature JSON-RPC command.
+//
+// The parameters which are pointers indicate they are optional.  Passing nil
+// for optional parameters will use the default value.
+func NewSendMintBlockSignatureCmd(hexTx string, hexSignature string) *SendMintBlockSignatureCmd {
+	return &SendMintBlockSignatureCmd{
+		HexTx:        hexTx,
+		HexSignature: hexSignature,
+	}
+}
+
+// SendMintBlockSignatureResult models the data of sendmintblocksignature command.
+type SendMintBlockSignatureResult struct {
 }

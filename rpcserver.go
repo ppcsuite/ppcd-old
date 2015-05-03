@@ -170,6 +170,7 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"getnextrequiredtarget":    ppcHandleGetNextRequiredTarget,    // ppc:
 	"getlastproofofworkreward": ppcHandleGetLastProofOfWorkReward, // ppc:
 	"sendcoinstaketransaction": ppcHandleSendCoinStakeTransaction, // ppc:
+	"sendmintblocksignature":   ppcHandleSendMintBlockSignature,   // ppc:
 }
 
 // list of commands that we recognise, but for which btcd has no support because
@@ -3149,6 +3150,7 @@ type rpcServer struct {
 	wg           sync.WaitGroup
 	listeners    []net.Listener
 	workState    *workState
+	mintState    *mintState // ppc:
 	gbtWorkState *gbtWorkState
 	helpCacher   *helpCacher
 	quit         chan int
@@ -3621,6 +3623,7 @@ func newRPCServer(listenAddrs []string, s *server) (*rpcServer, error) {
 		server:       s,
 		statusLines:  make(map[int]string),
 		workState:    newWorkState(),
+		mintState:    newMintState(), // ppc:
 		gbtWorkState: newGbtWorkState(s.timeSource),
 		helpCacher:   newHelpCacher(),
 		quit:         make(chan int),

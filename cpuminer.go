@@ -114,6 +114,8 @@ func (m *CPUMiner) submitBlock(block *btcutil.Block) bool {
 	m.submitBlockLock.Lock()
 	defer m.submitBlockLock.Unlock()
 
+	minrLog.Infof("Submitting block(%v) = %v", block.Height, block.Sha())
+
 	// Ensure the block is not stale since a new block could have shown up
 	// while the solution was being found.  Typically that condition is
 	// detected and all work on the stale block is halted to start work on
