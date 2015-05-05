@@ -174,12 +174,6 @@ func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, timeSource MedianTim
 		}
 	}
 
-	// ppcoin: populate all ppcoin specific block meta data
-	err = b.addToBlockIndex(block)
-	if err != nil {
-		return err
-	}
-
 	// Create a new block node for the block and add it to the in-memory
 	// block chain (could be either a side chain or the main chain).
 	newNode := ppcNewBlockNode(
