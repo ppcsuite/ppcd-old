@@ -726,7 +726,7 @@ func CheckTransactionInputs(tx *btcutil.Tx, txHeight int64, txStore TxStore,
 
 		// Ensure the transaction is not spending coins which have not
 		// yet reached the required coinbase maturity.
-		if IsCoinBase(originTx.Tx) {
+		if IsCoinBase(originTx.Tx) || IsCoinStake(originTx.Tx) { // ppc:
 			originHeight := originTx.BlockHeight
 			blocksSincePrev := txHeight - originHeight
 			if blocksSincePrev < blockChain.chainParams.CoinbaseMaturity {

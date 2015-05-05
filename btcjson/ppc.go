@@ -156,13 +156,13 @@ type LastProofOfWorkRewardResult struct {
 // FindStakeCmd is a type handling custom marshaling and
 // unmarshaling of FindStake JSON RPC commands.
 type FindStakeCmd struct {
-	MaxTime    int64
-	Difficulty float64
+	MaxTime    *int64
+	Difficulty *float64
 	Verbose    *bool `jsonrpcdefault:"true"`
 }
 
 // NewFindStakeCmd creates a new FindStakeCmd.
-func NewFindStakeCmd(maxTime int64, difficulty float64, verbose *bool) *FindStakeCmd {
+func NewFindStakeCmd(maxTime *int64, difficulty *float64, verbose *bool) *FindStakeCmd {
 	return &FindStakeCmd{
 		MaxTime:    maxTime,
 		Difficulty: difficulty,
