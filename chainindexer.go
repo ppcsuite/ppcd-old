@@ -464,7 +464,7 @@ func (a *addrIndexer) indexBlockAddrs(blk *btcutil.Block) (database.BlockAddrInd
 		txLoc := &txLocs[txIdx]
 		locInBlock := &wire.TxLoc{
 			TxStart: txLoc.TxStart + metaSize, // ppc: TxStart here is db offset not msgblock offset
-			TxLen: txLoc.TxLen,
+			TxLen:   txLoc.TxLen,
 		}
 
 		// Coinbases don't have any inputs.
