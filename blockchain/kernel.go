@@ -679,7 +679,7 @@ func (b *BlockChain) checkTxProofOfStake(tx *btcutil.Tx, timeSource MedianTimeSo
 	errVerif := verifySignature(txStore, txin, tx, 0, true, 0)
 	if errVerif != nil {
 		//return tx.DoS(100, error("CheckProofOfStake() : VerifySignature failed on coinstake %s", tx.Sha().String()))
-		err = fmt.Errorf("CheckProofOfStake() : VerifySignature failed on coinstake %s", tx.Sha().String())
+		err = fmt.Errorf("CheckProofOfStake() : VerifySignature failed on coinstake %s (%v)", tx.Sha().String(), errVerif)
 		return
 	}
 
@@ -688,12 +688,12 @@ func (b *BlockChain) checkTxProofOfStake(tx *btcutil.Tx, timeSource MedianTimeSo
 	// from the main chain database.
 	prevBlockHash, err := b.db.FetchBlockShaByHeight(prevBlockHeight)
 	if err != nil {
-		err = errors.New("CheckProofOfStake() : read block failed") // unable to read block of previous transaction
+		err = fmt.Errorf("CheckProofOfStake() : read block failed (%v)", err) // unable to read block of previous transaction
 		return
 	}
 	prevBlock, err := b.db.FetchBlockBySha(prevBlockHash)
 	if err != nil {
-		err = errors.New("CheckProofOfStake() : read block failed") // unable to read block of previous transaction
+		err = fmt.Errorf("CheckProofOfStake() : read block failed (%v)", err) // unable to read block of previous transaction
 		return
 	}
 
