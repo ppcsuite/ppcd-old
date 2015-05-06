@@ -456,9 +456,16 @@ func (a *addrIndexer) indexBlockAddrs(blk *btcutil.Block) (database.BlockAddrInd
 		return nil, err
 	}
 
+	metaSize := blk.Meta().GetSerializedSize() // ppc:
+
 	for txIdx, tx := range blk.Transactions() {
 		// Tx's offset and length in the block.
-		locInBlock := &txLocs[txIdx]
+		// ppc:
+		txLoc := &txLocs[txIdx]
+		locInBlock := &wire.TxLoc{
+			TxStart: txLoc.TxStart + metaSize, // ppc: TxStart here is db offset not msgblock offset
+			TxLen: txLoc.TxLen,
+		}
 
 		// Coinbases don't have any inputs.
 		if !blockchain.IsCoinBase(tx) {
