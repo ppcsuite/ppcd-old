@@ -298,20 +298,29 @@ func (db *LevelDb) fetchTxDataByLoc(blkHeight int64, txOff int, txLen int, txspe
 		return
 	}
 
+	// ppc: we need to calculate meta size to update txOffset accordingly
+	br := bytes.NewReader(blkbuf)
+	var meta wire.Meta
+	err = meta.Deserialize(br)
+	if err != nil {
+		return
+	}
+	metaSize := meta.GetSerializedSize()
+
 	//log.Trace("transaction %v is at block %v %v txoff %v, txlen %v\n",
 	//	txsha, blksha, blkHeight, txOff, txLen)
 
-	if len(blkbuf) < txOff+txLen {
+	if len(blkbuf) < metaSize+txOff+txLen {
 		err = database.ErrTxShaMissing
 		return
 	}
-	rbuf := bytes.NewReader(blkbuf[txOff : txOff+txLen])
+	rbuf := bytes.NewReader(blkbuf[metaSize+txOff : metaSize+txOff+txLen]) // ppc:
 
 	var tx wire.MsgTx
 	err = tx.Deserialize(rbuf)
 	if err != nil {
-		log.Warnf("unable to decode tx block %v %v txoff %v txlen %v",
-			blkHeight, blksha, txOff, txLen)
+		log.Warnf("unable to decode tx block %v %v txoff %v txlen %v (%v)",
+			blkHeight, blksha, txOff, txLen, err)
 		return
 	}
 
