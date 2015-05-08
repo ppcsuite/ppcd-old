@@ -456,14 +456,12 @@ func (a *addrIndexer) indexBlockAddrs(blk *btcutil.Block) (database.BlockAddrInd
 		return nil, err
 	}
 
-	metaSize := blk.Meta().GetSerializedSize() // ppc:
-
 	for txIdx, tx := range blk.Transactions() {
 		// Tx's offset and length in the block.
 		// ppc:
 		txLoc := &txLocs[txIdx]
 		locInBlock := &wire.TxLoc{
-			TxStart: txLoc.TxStart + metaSize, // ppc: TxStart here is db offset not msgblock offset
+			TxStart: txLoc.TxStart,
 			TxLen:   txLoc.TxLen,
 		}
 

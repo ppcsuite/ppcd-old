@@ -30,7 +30,12 @@ func (db *LevelDb) fetchBlockBySha(sha *wire.ShaHash) (blk *btcutil.Block, err e
 		return
 	}
 
-	blk, err = btcutil.NewBlockFromBytesWithMeta(buf)
+	metaBuf, err := db.getBlkMeta(sha) // ppc:
+	if err != nil {
+		return
+	}
+
+	blk, err = btcutil.NewBlockFromBytesWithMeta(buf, metaBuf) // ppc:
 	if err != nil {
 		return
 	}
@@ -59,22 +64,28 @@ func (db *LevelDb) FetchBlockHeaderBySha(sha *wire.ShaHash) (bh *wire.BlockHeade
 		return nil, nil, err
 	}
 
-	// Deserialize Meta
-	r := bytes.NewReader(buf)
-	var meta wire.Meta
-	err = meta.Deserialize(r)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	// Only deserialize the header portion and ensure the transaction count
 	// is zero since this is a standalone header.
+	br := bytes.NewReader(buf)
 	var blockHeader wire.BlockHeader
-	err = blockHeader.Deserialize(r)
+	err = blockHeader.Deserialize(br)
 	if err != nil {
 		return nil, nil, err
 	}
 	bh = &blockHeader
+
+
+	// ppc: Deserialize Meta
+	metaBuf, err := db.getBlkMeta(sha)
+	if err != nil {
+		return nil, nil, err
+	}
+	mr := bytes.NewReader(metaBuf)
+	var meta wire.Meta
+	err = meta.Deserialize(mr)
+	if err != nil {
+		return nil, nil, err
+	}
 	bm = &meta
 
 	return bh, bm, err

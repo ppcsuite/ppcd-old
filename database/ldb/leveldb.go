@@ -328,7 +328,11 @@ func (db *LevelDb) DropAfterBlockBySha(sha *wire.ShaHash) (rerr error) {
 		if err != nil {
 			return err
 		}
-		blk, err = btcutil.NewBlockFromBytesWithMeta(buf) // ppc:
+		metaBuf, err := db.getBlkMeta(sha) // ppc:
+		if err != nil {
+			return
+		}
+		blk, err = btcutil.NewBlockFromBytesWithMeta(buf, metaBuf) // ppc:
 		if err != nil {
 			return err
 		}
@@ -347,6 +351,7 @@ func (db *LevelDb) DropAfterBlockBySha(sha *wire.ShaHash) (rerr error) {
 		}
 		db.lBatch().Delete(shaBlkToKey(blksha))
 		db.lBatch().Delete(int64ToKey(height))
+		db.lBatch().Delete(shaMetaToKey(blksha)) // ppc:
 	}
 
 	// update the last block cache
@@ -384,7 +389,7 @@ func (db *LevelDb) InsertBlock(block *btcutil.Block) (height int64, rerr error) 
 		return 0, err
 	}
 
-	rawMsg, err := block.BytesWithMeta()
+	rawMsg, err := block.Bytes()
 	if err != nil {
 		log.Warnf("Failed to obtain raw block sha %v", blocksha)
 		return 0, err
@@ -392,7 +397,6 @@ func (db *LevelDb) InsertBlock(block *btcutil.Block) (height int64, rerr error) 
 
 	mblock := block.MsgBlock()
 	mmeta := block.Meta()
-	metaLen := mmeta.GetSerializedSize()
 
 	log.Tracef("Inserting block %+v, %+v", mblock, mmeta)
 
@@ -402,6 +406,14 @@ func (db *LevelDb) InsertBlock(block *btcutil.Block) (height int64, rerr error) 
 	if err != nil {
 		log.Warnf("Failed to insert block %v %v %v", blocksha,
 			&mblock.Header.PrevBlock, err)
+		return 0, err
+	}
+
+	// ppc: Set block meta into database
+	metaBytes, err := block.MetaBytes()
+	db.setBlkMeta(blocksha, metaBytes)
+	if err != nil {
+		log.Warnf("Failed to set blockmeta %v %v", blocksha, err)
 		return 0, err
 	}
 
@@ -422,7 +434,7 @@ func (db *LevelDb) InsertBlock(block *btcutil.Block) (height int64, rerr error) 
 			}
 		}
 
-		err = db.insertTx(txsha, newheight, metaLen+txloc[txidx].TxStart, txloc[txidx].TxLen, spentbuf)
+		err = db.insertTx(txsha, newheight, txloc[txidx].TxStart, txloc[txidx].TxLen, spentbuf)
 		if err != nil {
 			log.Warnf("block %v idx %v failed to insert tx %v %v err %v", blocksha, newheight, &txsha, txidx, err)
 			return 0, err
