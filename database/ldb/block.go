@@ -74,7 +74,6 @@ func (db *LevelDb) FetchBlockHeaderBySha(sha *wire.ShaHash) (bh *wire.BlockHeade
 	}
 	bh = &blockHeader
 
-
 	// ppc: Deserialize Meta
 	metaBuf, err := db.getBlkMeta(sha)
 	if err != nil {
