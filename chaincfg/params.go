@@ -135,7 +135,7 @@ var MainNetParams = Params{
 	GenerateSupported:      false,
 
 	// Checkpoints ordered from oldest to newest.
-	// ppc: https://github.com/ppcoin/ppcoin/blob/master/src/checkpoints.cpp#L26
+	// ppc: https://github.com/ppcoin/ppcoin/blob/v0.4.0ppc/src/checkpoints.cpp#L26
 	Checkpoints: []Checkpoint{
 		{19080, newShaHashFromStr("000000000000bca54d9ac17881f94193fd6a270c1bb21c3bf0b37f588a40dbd7")},
 		{30583, newShaHashFromStr("d39d1481a7eecba48932ea5913be58ad3894c7ee6d5a8ba8abeb772c66a6696e")},
