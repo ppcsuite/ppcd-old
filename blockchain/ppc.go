@@ -798,3 +798,26 @@ func (b *BlockChain) GetKernelStakeModifier(hash *wire.ShaHash, timeSource Media
 	stakeModifier, _, _, err := b.getKernelStakeModifier(hash, timeSource, false)
 	return stakeModifier, err
 }
+
+
+// WantedOrphan finds block wanted by given orphan block
+//
+// This function is safe for concurrent access.
+func (b *BlockChain) WantedOrphan(hash *wire.ShaHash) *wire.ShaHash {
+	// Protect concurrent access.  Using a read lock only so multiple
+	// readers can query without blocking each other.
+	b.orphanLock.RLock()
+	defer b.orphanLock.RUnlock()
+
+	// Work back to the first block in the orphan chain
+	prevHash := hash
+	for {
+		orphan, exists := b.orphans[*prevHash]
+		if !exists {
+			break
+		}
+		prevHash = &orphan.block.MsgBlock().Header.PrevBlock
+	}
+
+	return prevHash
+}

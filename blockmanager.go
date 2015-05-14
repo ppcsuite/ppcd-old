@@ -463,7 +463,7 @@ func (b *blockManager) handleTxMsg(tmsg *txMsg) {
 	// NOTE:  BitcoinJ, and possibly other wallets, don't follow the spec of
 	// sending an inventory message and allowing the remote peer to decide
 	// whether or not they want to request the transaction via a getdata
-	// message.  Unfortuantely the reference implementation permits
+	// message.  Unfortunately, the reference implementation permits
 	// unrequested data, so it has allowed wallets that don't follow the
 	// spec to proliferate.  While this is not ideal, there is no check here
 	// to disconnect peers for sending unsolicited transactions to provide
@@ -471,7 +471,9 @@ func (b *blockManager) handleTxMsg(tmsg *txMsg) {
 
 	// Process the transaction to include validation, insertion in the
 	// memory pool, orphan handling, etc.
-	err := tmsg.peer.server.txMemPool.ProcessTransaction(tmsg.tx, true, true)
+	allowOrphans := cfg.MaxOrphanTxs > 0
+	err := tmsg.peer.server.txMemPool.ProcessTransaction(tmsg.tx,
+		allowOrphans, true)
 
 	// Remove transaction from request maps. Either the mempool/chain
 	// already knows about it and as such we shouldn't have any more
@@ -643,6 +645,16 @@ func (b *blockManager) handleBlockMsg(bmsg *blockMsg) {
 		} else {
 			bmsg.peer.PushGetBlocksMsg(locator, orphanRoot)
 		}
+
+		// ppc: getblocks may not obtain the ancestor block rejected
+		// earlier by duplicate-stake check so we ask for it again directly
+		// https://github.com/ppcoin/ppcoin/blob/v0.4.0ppc/src/main.cpp#L2052
+		wantedOrphan := b.blockChain.WantedOrphan(blockSha)
+		iv := wire.NewInvVect(wire.InvTypeBlock, wantedOrphan)
+		msgGetData := wire.NewMsgGetData()
+		msgGetData.AddInvVect(iv)
+		bmsg.peer.QueueMessage(msgGetData, nil)
+
 	} else {
 		// When the block is not an orphan, log information about it and
 		// update the chain state.

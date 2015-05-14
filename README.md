@@ -85,10 +85,11 @@ Launch ppcd from your installation folder.
 $ ./ppcd
 ````
 
-## IRC server
+## IRC
 
 - chat.freenode.net:6697
 - channel #ppcd
+- [webchat](https://webchat.freenode.net/?channels=btcd)
 
 ## Forum
 
