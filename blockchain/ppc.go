@@ -799,7 +799,6 @@ func (b *BlockChain) GetKernelStakeModifier(hash *wire.ShaHash, timeSource Media
 	return stakeModifier, err
 }
 
-
 // WantedOrphan finds block wanted by given orphan block
 //
 // This function is safe for concurrent access.
