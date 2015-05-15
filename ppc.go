@@ -312,3 +312,15 @@ func (m *CPUMiner) SubmitMintBlock(mintBlock *wire.MsgBlock) bool {
 
 	return m.submitBlock(block)
 }
+
+// refetchDuplicateStakeRejectedAncestorBlock
+func (b *blockManager) refetchDuplicateStakeRejectedAncestorBlock(
+	peer *peer, blockSha *wire.ShaHash) {
+	if b.IsCurrent() {
+		wantedOrphan := b.blockChain.WantedOrphan(blockSha)
+		iv := wire.NewInvVect(wire.InvTypeBlock, wantedOrphan)
+		msgGetData := wire.NewMsgGetData()
+		msgGetData.AddInvVect(iv)
+		peer.QueueMessage(msgGetData, nil)
+	}
+}
