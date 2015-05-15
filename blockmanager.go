@@ -649,11 +649,13 @@ func (b *blockManager) handleBlockMsg(bmsg *blockMsg) {
 		// ppc: getblocks may not obtain the ancestor block rejected
 		// earlier by duplicate-stake check so we ask for it again directly
 		// https://github.com/ppcoin/ppcoin/blob/v0.4.0ppc/src/main.cpp#L2052
-		wantedOrphan := b.blockChain.WantedOrphan(blockSha)
-		iv := wire.NewInvVect(wire.InvTypeBlock, wantedOrphan)
-		msgGetData := wire.NewMsgGetData()
-		msgGetData.AddInvVect(iv)
-		bmsg.peer.QueueMessage(msgGetData, nil)
+		if b.IsCurrent() {
+			wantedOrphan := b.blockChain.WantedOrphan(blockSha)
+			iv := wire.NewInvVect(wire.InvTypeBlock, wantedOrphan)
+			msgGetData := wire.NewMsgGetData()
+			msgGetData.AddInvVect(iv)
+			bmsg.peer.QueueMessage(msgGetData, nil)
+		}
 
 	} else {
 		// When the block is not an orphan, log information about it and
