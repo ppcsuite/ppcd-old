@@ -328,11 +328,15 @@ func (db *LevelDb) DropAfterBlockBySha(sha *wire.ShaHash) (rerr error) {
 		if err != nil {
 			return err
 		}
-		metaBuf, err := db.getBlkMeta(sha) // ppc:
+		blk, err = btcutil.NewBlockFromBytes(buf)
+		if err != nil {
+			return err
+		}
+		metaBuf, err := db.getBlkMeta(blksha) // ppc:
 		if err != nil {
 			return
 		}
-		blk, err = btcutil.NewBlockFromBytesWithMeta(buf, metaBuf) // ppc:
+		err = blk.MetaFromBytes(metaBuf) // ppc:
 		if err != nil {
 			return err
 		}
@@ -410,7 +414,7 @@ func (db *LevelDb) InsertBlock(block *btcutil.Block) (height int64, rerr error) 
 	}
 
 	// ppc: Set block meta into database
-	metaBytes, err := block.MetaBytes()
+	metaBytes, err := block.MetaToBytes()
 	db.setBlkMeta(blocksha, metaBytes)
 	if err != nil {
 		log.Warnf("Failed to set blockmeta %v %v", blocksha, err)

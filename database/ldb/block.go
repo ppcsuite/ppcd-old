@@ -30,16 +30,27 @@ func (db *LevelDb) fetchBlockBySha(sha *wire.ShaHash) (blk *btcutil.Block, err e
 		return
 	}
 
-	metaBuf, err := db.getBlkMeta(sha) // ppc:
-	if err != nil {
-		return
-	}
-
-	blk, err = btcutil.NewBlockFromBytesWithMeta(buf, metaBuf) // ppc:
+	blk, err = btcutil.NewBlockFromBytes(buf)
 	if err != nil {
 		return
 	}
 	blk.SetHeight(height)
+
+	// ppc: bug fixed, shouldn't happen, keeping log just in case
+	if !sha.IsEqual(blk.Sha()) {
+		log.Errorf("fetchSha: requested sha(%v) differs from "+
+			"found one(%v) for height(%v)", sha, blk.Sha(), height)
+	}
+	// ppc: fetch block meta data from db
+	metaBuf, err := db.getBlkMeta(blk.Sha())
+	if err != nil {
+		return
+	}
+	// ppc: deserialize block meta
+	err = blk.MetaFromBytes(metaBuf)
+	if err != nil {
+		return nil, err
+	}
 
 	return
 }
@@ -75,7 +86,8 @@ func (db *LevelDb) FetchBlockHeaderBySha(sha *wire.ShaHash) (bh *wire.BlockHeade
 	bh = &blockHeader
 
 	// ppc: Deserialize Meta
-	metaBuf, err := db.getBlkMeta(sha)
+	blkSha := bh.BlockSha()
+	metaBuf, err := db.getBlkMeta(&blkSha)
 	if err != nil {
 		return nil, nil, err
 	}
