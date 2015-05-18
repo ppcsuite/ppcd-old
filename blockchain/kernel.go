@@ -221,7 +221,7 @@ func (b *BlockChain) computeNextStakeModifier(pindexCurrent *btcutil.Block) (
 	nStakeModifier = 0
 	fGeneratedStakeModifier = false
 
-	//log.Debugf("pindexCurrent = %v, %v", pindexCurrent.Height(), btcutil.Slice(pindexCurrent.Sha())[0])
+	//log.Debugf("pindexCurrent = %v, %v", pindexCurrent.Height(), pindexCurrent.Sha())
 
 	// Get a block node for the block previous to this one.  Will be nil
 	// if this is the genesis block.
@@ -433,7 +433,7 @@ func (b *BlockChain) getKernelStakeModifier(
 			blockTimestamp := block.Timestamp.Unix()
 			if fPrintProofOfStake || (blockTimestamp+b.chainParams.StakeMinAge-nStakeModifierSelectionInterval > timeSource.AdjustedTime().Unix()) {
 				err = fmt.Errorf("GetKernelStakeModifier() : reached best block %v at height %v from block %v",
-					btcutil.Slice(blockSha)[0], blockHeight, hashBlockFrom)
+					blockSha, blockHeight, hashBlockFrom)
 				return
 			}
 			return
