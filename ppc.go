@@ -318,11 +318,30 @@ func (b *blockManager) refetchDuplicateStakeRejectedAncestorBlock(
 	peer *peer, blockSha *wire.ShaHash) {
 	if b.current() {
 		wantedOrphan := b.blockChain.WantedOrphan(blockSha)
-		iv := wire.NewInvVect(wire.InvTypeBlock, wantedOrphan)
-		msgGetData := wire.NewMsgGetData()
-		msgGetData.AddInvVect(iv)
-		b.requestedBlocks[*wantedOrphan] = struct{}{}
-		peer.requestedBlocks[*wantedOrphan] = struct{}{}
-		peer.QueueMessage(msgGetData, nil)
+		bmgrLog.Debugf("Refetching duplicate stake rejected "+
+			"ancestor block: %v", wantedOrphan)
+		b.askForBlock(peer, wantedOrphan)
 	}
+}
+
+// askForBlock
+func (b *blockManager) askForBlock(peer *peer, blockSha *wire.ShaHash) {
+	iv := wire.NewInvVect(wire.InvTypeBlock, blockSha)
+	haveInv, err := b.haveInventory(iv)
+	if err != nil {
+		bmgrLog.Warnf("Unexpected failure when checking for "+
+			"existing inventory during block fetch: %v", err)
+	}
+	if !haveInv {
+		b.requestedBlocks[*blockSha] = struct{}{}
+		peer.requestedBlocks[*blockSha] = struct{}{}
+		peer.askFor(iv)
+	}
+}
+
+// askFor
+func (peer *peer) askFor(iv *wire.InvVect) {
+	msgGetData := wire.NewMsgGetData()
+	msgGetData.AddInvVect(iv)
+	peer.QueueMessage(msgGetData, nil)
 }
